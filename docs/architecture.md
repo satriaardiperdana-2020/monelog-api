@@ -44,13 +44,15 @@ The API is the only component accessed directly by the frontend. PostgreSQL is n
 
 ## 4. Repository layout
 
-The layout follows the handler-based pattern in the existing `monelog-be` repository. It keeps `internal/handlers`, `internal/middleware`, generated OpenAPI code in `internal/api`, and sqlc output in `internal/repository/postgresql`.
+The layout follows the handler-based pattern requested for Monelog. The `internal` folder has four direct child folders: `config`, `handlers`, `middleware`, and `repository`.
 
 ```text
 monelog-api/
 ├── api/
 │   ├── generate.yaml
-│   └── openapi.yaml
+│   ├── openapi.yaml
+│   └── generated/
+│       └── openapi.gen.go
 ├── cmd/
 │   ├── api/
 │   │   └── main.go
@@ -63,8 +65,6 @@ monelog-api/
 │   ├── api.md
 │   └── roadmap.md
 ├── internal/
-│   ├── api/
-│   │   └── openapi.gen.go
 │   ├── config/
 │   │   └── config.go
 │   ├── handlers/
@@ -80,24 +80,13 @@ monelog-api/
 │   │   ├── auth.go
 │   │   ├── request_id.go
 │   │   └── error.go
-│   ├── services/
-│   │   ├── auth.go
-│   │   ├── category.go
-│   │   ├── transaction.go
-│   │   ├── report.go
-│   │   ├── export.go
-│   │   └── backup.go
-│   ├── repository/
-│   │   └── postgresql/
-│   │       ├── connect.go
-│   │       ├── db.go
-│   │       ├── models.go
-│   │       ├── querier.go
-│   │       └── queries.sql.go
-│   └── platform/
-│       ├── clock.go
-│       ├── encryption.go
-│       └── drive.go
+│   └── repository/
+│       └── postgresql/
+│           ├── connect.go
+│           ├── db.go
+│           ├── models.go
+│           ├── querier.go
+│           └── queries.sql.go
 ├── script/
 │   └── sqlc/
 │       ├── queries/
@@ -117,15 +106,15 @@ monelog-api/
 
 ### Handler pattern
 
-- `internal/handlers/server.go` implements the generated `StrictServerInterface` and delegates each operation to a focused handler.
-- Files such as `auth.go`, `category.go`, and `transaction.go` translate generated OpenAPI request objects into service calls and map results into generated response objects.
-- Handlers may validate transport details, read authenticated context, and map errors. They do not execute sqlc queries directly.
-- `internal/services` contains business rules and transaction coordination so handlers remain small as backup, export, refresh-session, and reporting behavior grows.
-- `internal/repository/postgresql` contains sqlc-generated models and queries plus connection helpers.
-- `internal/api/openapi.gen.go` and `internal/repository/postgresql/*.sql.go` are generated; edits must be made in `api/openapi.yaml` or `script/sqlc` sources.
+- `internal/handlers/server.go` implements the generated `StrictServerInterface` and delegates each operation to a focused feature handler.
+- Files such as `auth.go`, `category.go`, and `transaction.go` receive generated OpenAPI request objects, enforce application rules, call the repository, and map generated response objects.
+- Shared handler helpers prevent repeated authentication, validation, transaction, and error-mapping code.
+- `internal/repository/postgresql` contains the database connection helpers and sqlc-generated database code.
+- `api/generated/openapi.gen.go` is generated from `api/openapi.yaml`.
+- Generated files are never edited manually; changes begin in OpenAPI or SQL source files.
 - IDE files under `.idea` are excluded from the repository.
 
-This preserves the familiar `monelog-be` structure while separating HTTP handling from business rules. Generated code is reproducible from committed OpenAPI, schema, queries, and generator configuration.
+The direct request path is `OpenAPI -> handler -> repository -> PostgreSQL`. If handler logic becomes difficult to maintain, a service layer can be proposed later through an architecture decision.
 
 ## 5. Request flow
 
@@ -134,27 +123,23 @@ A normal authenticated request follows this sequence:
 1. Echo receives the request and applies request ID, recovery, security headers, body-size, timeout, and logging middleware.
 2. The generated OpenAPI layer parses the request and enforces contract-level shapes.
 3. Authentication middleware verifies the JWT signature, issuer, audience, expiry, and token type.
-4. The handler converts HTTP input into a service command.
-5. The service enforces business rules and calls typed sqlc queries.
-6. PostgreSQL applies ownership, foreign-key, uniqueness, and value constraints.
-7. The handler maps the result to the standard API response or problem format.
-8. Logs include the request ID and safe metadata without credentials or financial notes.
+4. The feature handler validates application rules and calls typed sqlc queries through the repository.
+5. PostgreSQL applies ownership, foreign-key, uniqueness, and value constraints.
+6. The handler maps the result to the standard API response or problem format.
+7. Logs include the request ID and safe metadata without credentials or financial notes.
 
-Handlers do not contain SQL or substantial business rules. Services do not depend on Echo request/response objects.
+Handlers do not contain raw SQL. Shared helpers keep authentication, validation, transactions, and error mapping consistent across handlers.
 
 ## 6. Module responsibilities
 
 | Module | Responsibility |
 |---|---|
-| `handlers` | Implement generated server operations, translate HTTP input/output, delegate to services |
-| `services` | Authentication, categories, transactions, reports, exports, backup, and restore business rules |
+| `handlers` | Generated server operations, business rules, transaction coordination, and HTTP response mapping |
 | `middleware` | Authentication context, request IDs, recovery, security, and error handling |
 | `repository/postgresql` | Pool connection, transaction helpers, and sqlc-generated database access |
-| `api` | oapi-codegen generated server interfaces and models |
 | `config` | Environment configuration and startup validation |
-| `platform` | Clock, identifiers, encryption interfaces, and Google Drive client |
 
-Dependencies point inward: HTTP and external adapters call application services; services use narrow database/external interfaces.
+Handlers depend on repository interfaces or generated sqlc query types. Middleware and configuration remain independent of feature handlers.
 
 ## 7. API contract and code generation
 
