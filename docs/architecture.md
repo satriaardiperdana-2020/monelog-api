@@ -44,18 +44,18 @@ The API is the only component accessed directly by the frontend. PostgreSQL is n
 
 ## 4. Repository layout
 
+The layout follows the handler-based pattern in the existing `monelog-be` repository. It keeps `internal/handlers`, `internal/middleware`, generated OpenAPI code in `internal/api`, and sqlc output in `internal/repository/postgresql`.
+
 ```text
 monelog-api/
 ├── api/
+│   ├── generate.yaml
 │   └── openapi.yaml
 ├── cmd/
 │   ├── api/
 │   │   └── main.go
 │   └── worker/
 │       └── main.go
-├── db/
-│   ├── migrations/
-│   └── queries/
 ├── docs/
 │   ├── requirements.md
 │   ├── architecture.md
@@ -63,26 +63,69 @@ monelog-api/
 │   ├── api.md
 │   └── roadmap.md
 ├── internal/
-│   ├── auth/
-│   ├── backup/
-│   ├── category/
-│   ├── config/
-│   ├── database/
-│   ├── export/
-│   ├── httpapi/
-│   ├── platform/
-│   ├── report/
-│   └── transaction/
-├── generated/
 │   ├── api/
-│   └── db/
+│   │   └── openapi.gen.go
+│   ├── config/
+│   │   └── config.go
+│   ├── handlers/
+│   │   ├── server.go
+│   │   ├── auth.go
+│   │   ├── category.go
+│   │   ├── transaction.go
+│   │   ├── report.go
+│   │   ├── export.go
+│   │   ├── backup.go
+│   │   └── user.go
+│   ├── middleware/
+│   │   ├── auth.go
+│   │   ├── request_id.go
+│   │   └── error.go
+│   ├── services/
+│   │   ├── auth.go
+│   │   ├── category.go
+│   │   ├── transaction.go
+│   │   ├── report.go
+│   │   ├── export.go
+│   │   └── backup.go
+│   ├── repository/
+│   │   └── postgresql/
+│   │       ├── connect.go
+│   │       ├── db.go
+│   │       ├── models.go
+│   │       ├── querier.go
+│   │       └── queries.sql.go
+│   └── platform/
+│       ├── clock.go
+│       ├── encryption.go
+│       └── drive.go
+├── script/
+│   └── sqlc/
+│       ├── queries/
+│       │   ├── auth.sql
+│       │   ├── category.sql
+│       │   ├── transaction.sql
+│       │   ├── report.sql
+│       │   └── backup.sql
+│       ├── schema/
+│       │   └── 001_create_tables.sql
+│       └── sqlc.yaml
 ├── .env.example
 ├── go.mod
-├── sqlc.yaml
+├── go.sum
 └── README.md
 ```
 
-Business modules contain their service logic. Generated OpenAPI and sqlc code stays separate from handwritten code. Generated code is reproducible from committed OpenAPI, migrations, queries, and generator configuration.
+### Handler pattern
+
+- `internal/handlers/server.go` implements the generated `StrictServerInterface` and delegates each operation to a focused handler.
+- Files such as `auth.go`, `category.go`, and `transaction.go` translate generated OpenAPI request objects into service calls and map results into generated response objects.
+- Handlers may validate transport details, read authenticated context, and map errors. They do not execute sqlc queries directly.
+- `internal/services` contains business rules and transaction coordination so handlers remain small as backup, export, refresh-session, and reporting behavior grows.
+- `internal/repository/postgresql` contains sqlc-generated models and queries plus connection helpers.
+- `internal/api/openapi.gen.go` and `internal/repository/postgresql/*.sql.go` are generated; edits must be made in `api/openapi.yaml` or `script/sqlc` sources.
+- IDE files under `.idea` are excluded from the repository.
+
+This preserves the familiar `monelog-be` structure while separating HTTP handling from business rules. Generated code is reproducible from committed OpenAPI, schema, queries, and generator configuration.
 
 ## 5. Request flow
 
@@ -103,16 +146,13 @@ Handlers do not contain SQL or substantial business rules. Services do not depen
 
 | Module | Responsibility |
 |---|---|
-| `auth` | Registration, password verification, access tokens, refresh rotation, logout, session revocation |
-| `category` | User categories, type compatibility, rename, archive |
-| `transaction` | Create, list, view, edit, delete, idempotency |
-| `report` | Period validation and exact income/expense/category totals |
-| `export` | Authorized Excel and PDF generation using report rules |
-| `backup` | Google authorization metadata, scheduling, snapshots, retention, restore |
-| `httpapi` | Generated server interface adapters, middleware, error mapping |
-| `database` | Pool creation, transaction helpers, generated query access |
+| `handlers` | Implement generated server operations, translate HTTP input/output, delegate to services |
+| `services` | Authentication, categories, transactions, reports, exports, backup, and restore business rules |
+| `middleware` | Authentication context, request IDs, recovery, security, and error handling |
+| `repository/postgresql` | Pool connection, transaction helpers, and sqlc-generated database access |
+| `api` | oapi-codegen generated server interfaces and models |
 | `config` | Environment configuration and startup validation |
-| `platform` | Clock, identifiers, encryption interfaces, external API clients |
+| `platform` | Clock, identifiers, encryption interfaces, and Google Drive client |
 
 Dependencies point inward: HTTP and external adapters call application services; services use narrow database/external interfaces.
 
@@ -134,7 +174,7 @@ The JavaScript frontend consumes the published OpenAPI contract. A generated Jav
 
 ## 8. Database access and transactions
 
-SQL lives in `db/queries`; sqlc generates typed access code into `generated/db`.
+SQL sources live in `script/sqlc/queries` and migrations/schema files live in `script/sqlc/schema`; sqlc generates typed access code into `internal/repository/postgresql`.
 
 Rules:
 
