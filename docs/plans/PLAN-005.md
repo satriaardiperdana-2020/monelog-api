@@ -1,40 +1,44 @@
-# PLAN-005: Category management
+# PLAN-005: Category CRUD, Trash and restore
 
-Status: Draft — refine against actual repository and review before coding.
-Issue: ../issues/ISSUE-005-categories.md
-Repository: monelog-api; prerequisites: 004.
+Status: Draft — refine against actual repository before implementation.
+Updated: 14 September 2026 (v0.3)
+Issue: [ISSUE-005](../issues/ISSUE-005-categories.md)
+Repository: monelog-api
+Prerequisites: 004
+Requirements: FR-01, FR-05, FR-15, FR-17
 
 ## Before implementation
-Read linked issue and requirements/architecture/database/API. Verify prerequisite issues are Done. Inspect actual tree and existing changes; proposed paths are not verified existing paths. Resolve any product/security choices relevant to this issue.
+Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
+Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
+Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
 
 ## Implementation sequence
-1. Add owner-scoped category queries and uniqueness handling.
-2. Implement create/list/patch services and HTTP adapters.
-3. Enforce type immutability, trimmed names and archived-name uniqueness.
-4. Test safe read semantics for categories used by historical transactions.
-
-## Access-control implementation (14 September 2026)
-1. Keep all create/rename/archive paths tied to actor ID for both roles.
-2. Make category read projection and pagination reusable for the future authorized admin target adapter; include no credentials.
-3. Test foreign-category and type/owner mismatches without adding an admin write exception.
-
-Policy: [access-control.md](../access-control.md). FR-01/FR-15: admin category display/filtering is read-only through Issue 013; category management remains actor-owned.
+1. Implement scoped category list/detail/create/update/delete/restore queries and service validation.
+2. Use false active default and true Trash filter, with row-version checks on mutations.
+3. Keep category uniqueness across deleted rows and return conflict instead of ambiguous recreation.
+4. Preserve same-owner historical joins without filtering out transactions whose category is deleted.
+5. Expose core handlers and reuse authorized scope in 013's admin adapters.
 
 ## Affected areas
-Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
-
-Narrow these areas to exact file paths during repository inspection; do not edit all listed areas automatically.
+Category handlers/service; db category queries; internal/repository; active selectors and historical label integration tests.
+These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
 
 ## Validation
-CRUD authorization matrix; duplicate case-insensitive name; archived category visibility; invalid type.
-Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
+CRUD ownership; wrong type; duplicate name/case; soft-delete row retained; Trash; restore; stale version; category delete with existing transaction; concurrent selection/category deletion.
+Run go test ./..., go vet ./... and the configured PostgreSQL/HTTP integration suite where relevant. Verify generated-code drift for changed SQL/OpenAPI sources.
+Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
 
-Authorization validation: A cannot read/change B categories on personal paths; admin C cannot change B categories; same-target category query returns only target labels, including archived-history rules.
+## Authorization and lifecycle review
+Trace actor, selected owner, action, version and isDelete state through every affected boundary.
+Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
+For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
+Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
+Apply only the checks relevant to this issue's actual scope.
 
-Record actual results; unavailable infrastructure is a stated blocker, not a pass.
-
-## Risks and recovery
-No hard category deletion or shared global category editor. Preserve user changes. Keep PR focused. Use disposable database fixtures; if schema changes, test forward migration and document recovery before rollout. Roll back application through a reviewed prior build, never by erasing shared data. Incompatible/data-changing migrations require a separate recovery plan.
+## Scope and recovery
+No physical category deletion or resurrecting history by recreating a deleted name.
+Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
+After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
 
 ## Review checkpoint
-Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
+Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.

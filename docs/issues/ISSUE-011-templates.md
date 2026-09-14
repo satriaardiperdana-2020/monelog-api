@@ -1,33 +1,30 @@
-# ISSUE-011: Transaction templates
+# ISSUE-011: Owner/admin templates with soft delete
 
 Status: Backlog
+Updated: 14 September 2026 (v0.3)
 Repository: monelog-api + monelog-app
 Dependencies: 010
 Remote issue: Not created
-Plan: ../plans/PLAN-011.md
+Requirements: FR-01, FR-10, FR-15, FR-17
+Plan: [PLAN-011](../plans/PLAN-011.md)
+Policy: [Access control and soft deletion](../access-control.md)
 
 ## Goal
-Add single-transaction presets after confirming screenshot behavior.
+Provide reusable templates editable by their owner or an admin for the selected owner, with boolean deletion and restore.
 
 ## Acceptance criteria
-- [ ] Applying preset opens unsaved editable form
-- [ ] only Save creates transaction
-- [ ] ownership and archived categories checked.
+- [ ] Owner/admin template CRUD/Trash/Restore uses authorized owner, isDelete and versions.
+- [ ] Applying an active template opens an unsaved form; only explicit Save creates a transaction for the same owner.
+- [ ] Deleted/wrong-owner templates and incompatible/deleted categories are rejected appropriately.
+- [ ] Admin can manage any selected owner's templates; a regular user cannot access another owner's templates.
 
-- [ ] Template read/create/update/apply paths are owner-only for ordinary users and admins.
-- [ ] Admin View cannot read/apply/save a selected user's templates or create a transaction for that user.
-
-## Scope exclusions
-No recurring auto-created transactions or day bundles unless scope revised.
-
-## Access-control scope (14 September 2026)
-FR-01/FR-15: templates are personal convenience data; another user's visible transactions do not grant access to their templates.
-See [access-control.md](../access-control.md).
+## Scope and affected areas
+Template migration/queries/handlers/service; API contract; Vue template and transaction-form integration.
+No recurring automatic creation or whole-day bundles unless the requirement is revised.
 
 ## Verification
-Applying twice creates no records; edited preset save; category mismatch/archive; cross-user access.
-
-Additional authorization verification: Add admin C requesting/applying B template, target tampering on save/apply and hidden template controls in Admin View.
+Own CRUD and admin C managing B; A denied; isDelete false/true/restore; version race; apply twice creates no records; explicit Save; category lifecycle; owner switching.
 
 ## Definition of done
-Acceptance tests pass; relevant regressions pass; diff reviewed; documentation/contract updated; actual verification results recorded. No status change before implementation.
+Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
+Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.

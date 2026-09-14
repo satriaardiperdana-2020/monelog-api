@@ -1,42 +1,46 @@
-# PLAN-009: Excel and PDF report exports
+# PLAN-009: Owner/admin Excel and PDF exports
 
-Status: Draft — refine against actual repository and review before coding.
-Issue: ../issues/ISSUE-009-exports.md
-Repository: monelog-api + monelog-app; prerequisites: 008.
+Status: Draft — refine against actual repository before implementation.
+Updated: 14 September 2026 (v0.3)
+Issue: [ISSUE-009](../issues/ISSUE-009-exports.md)
+Repository: monelog-api + monelog-app
+Prerequisites: 008
+Requirements: FR-01, FR-08, FR-15, FR-16, FR-17
 
 ## Before implementation
-Read linked issue and requirements/architecture/database/API. Verify prerequisite issues are Done. Inspect actual tree and existing changes; proposed paths are not verified existing paths. Resolve any product/security choices relevant to this issue.
+Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
+Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
+Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
 
 ## Implementation sequence
-1. Add export_jobs schema, ownership, bounded workload and job lifecycle.
-2. Reuse report filters and stream/paginate all matching source records using a consistent snapshot.
-3. Generate XLSX/PDF with dates, currency, totals and safe user text.
-4. Add authenticated downloads, artifact retention cleanup and UI progress/retry.
-5. Document job execution and operational limits.
-
-## Access-control implementation (14 September 2026)
-1. Set export_jobs.owner_user_id from the authenticated actor at creation, never from selected target or client input.
-2. Reuse report calculations only with that personal owner scope; worker execution does not broaden scope because requester has an admin role.
-3. Recheck stored job ownership at status/download and keep export/share controls confined to My Data.
-4. Test admin C cannot obtain B's files even after successfully viewing B's read-only report.
-
-Policy: [access-control.md](../access-control.md). FR-01/FR-15: viewing another user's report grants no cross-user export/download permission. Admins may export their own records through My Data.
+1. Add export_jobs schema and personal/admin route parity with separate actor and owner.
+2. Atomically create job+admin audit as needed; recheck requester/owner/role before worker execution.
+3. Use a consistent source snapshot and shared active-owner filters to render every matching row.
+4. Generate formula-safe XLSX and readable PDF with totals, dates/currency and selected owner label.
+5. Authorize status/download by actual owner or current admin target; implement retention cleanup and UI progress/retry.
+6. Test target switches cannot change a pending export and audit/provider-independent failure behavior.
 
 ## Affected areas
-Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
-Frontend: src views/components/services/stores/router and focused tests; native platform files only for mobile issue.
-Narrow these areas to exact file paths during repository inspection; do not edit all listed areas automatically.
+Export jobs/migrations/worker; report service; file generators; download handlers; web export UI.
+These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
 
 ## Validation
-Over-page-size export; report parity; spreadsheet formula-injection safety; PDF layout/long title check; job failure/retry; expiry and foreign access.
-Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
-Run configured frontend unit/E2E commands and npm run build; establish exact script names from package.json.
-Authorization validation: Add owner override rejection, C attempting B's job status/download, UI target switching before export, worker owner tampering fixtures and owner-only totals.
+More-than-one-page export; exact report parity; true rows excluded; formula injection; long-title PDF layout; A denied/B own/C admin download; stale role; target switching; job retry/expiry.
+Run go test ./..., go vet ./... and the configured PostgreSQL/HTTP integration suite where relevant. Verify generated-code drift for changed SQL/OpenAPI sources.
+Run the configured frontend unit/component/E2E commands and npm run build; inspect package.json for exact names. Device builds/checks are required by the mobile issue.
+Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
 
-Record actual results; unavailable infrastructure is a stated blocker, not a pass.
+## Authorization and lifecycle review
+Trace actor, selected owner, action, version and isDelete state through every affected boundary.
+Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
+For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
+Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
+Apply only the checks relevant to this issue's actual scope.
 
-## Risks and recovery
-Not a full backup or import mechanism. Preserve user changes. Keep PR focused. Use disposable database fixtures; if schema changes, test forward migration and document recovery before rollout. Roll back application through a reviewed prior build, never by erasing shared data. Incompatible/data-changing migrations require a separate recovery plan.
+## Scope and recovery
+Export is a report artifact, not a data backup/import format. Report export never includes Trash.
+Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
+After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
 
 ## Review checkpoint
-Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
+Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.

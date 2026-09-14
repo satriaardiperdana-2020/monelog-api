@@ -1,41 +1,45 @@
 # PLAN-002: Database migrations and sqlc foundation
 
-Status: Draft — refine against actual repository and review before coding.
-Issue: ../issues/ISSUE-002-database-foundation.md
-Repository: monelog-api; prerequisites: 001.
+Status: Draft — refine against actual repository before implementation.
+Updated: 14 September 2026 (v0.3)
+Issue: [ISSUE-002](../issues/ISSUE-002-database-foundation.md)
+Repository: monelog-api
+Prerequisites: 001
+Requirements: FR-01, FR-15, FR-16, FR-17
 
 ## Before implementation
-Read linked issue and requirements/architecture/database/API. Verify prerequisite issues are Done. Inspect actual tree and existing changes; proposed paths are not verified existing paths. Resolve any product/security choices relevant to this issue.
+Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
+Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
+Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
 
 ## Implementation sequence
-1. Translate database.md into ordered migrations for users (with role)/categories/transactions/sessions/admin_access_events.
-2. Configure sqlc and basic scoped queries with exact decimal mapping.
-3. Add migration/generation commands and local fixture strategy.
-4. Commit-ready generated files and deterministic regeneration drift check.
-
-## Access-control implementation (14 September 2026)
-1. Add users.role with default user, NOT NULL and user/admin constraint; use a forward migration for populated fixtures.
-2. Add admin_access_events with validated actions/outcomes, nullable resolved target and append-only runtime privileges.
-3. Restrict runtime users INSERT/UPDATE columns so only the operator connection can change roles.
-4. Generate scoped read methods requiring owner ID and verify two ordinary users plus an admin have independent records.
-
-Policy: [access-control.md](../access-control.md). FR-01/FR-15/FR-16: role schema, role-write privilege boundary and audit records support upcoming admin reads; no OR is_admin owner-filter bypass.
+1. Inspect for existing schema; use the fresh design if none, otherwise add a forward migration preserving prior deleted/archived status.
+2. Create users, categories, transactions, sessions and admin_access_events in FK order.
+3. Add false defaults, version constraints, actor attribution, composite category ownership and active/Trash indexes.
+4. Generate scoped create/read/update/delete/restore queries, including authorization account-row locking and audit insert.
+5. Set runtime privileges separately from migration ownership; audit insert/read allowed, audit update/delete denied.
+6. Test A/B/C fixtures, bool defaults, constraints and generation drift on real PostgreSQL.
 
 ## Affected areas
-Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
-
-Narrow these areas to exact file paths during repository inspection; do not edit all listed areas automatically.
+db/migrations; db/queries; sqlc configuration; internal/repository/sqlc; PostgreSQL integration fixtures.
+These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
 
 ## Validation
-Real PostgreSQL migration and invalid FK/amount/duplicate tests; regenerate and check clean diff.
-Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
+Fresh migration; applicable legacy backfill; boolean NOT NULL/default; wrong owner/type/amount; duplicate request key; active versus Trash queries; runtime audit grants; deterministic regeneration.
+Run go test ./..., go vet ./... and the configured PostgreSQL/HTTP integration suite where relevant. Verify generated-code drift for changed SQL/OpenAPI sources.
+Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
 
-Authorization validation: Test role default/backfill and invalid role, attempted role update with runtime DB role, audit insert versus update/delete grants, and isolated A/B/admin fixtures using the same scoped queries.
+## Authorization and lifecycle review
+Trace actor, selected owner, action, version and isDelete state through every affected boundary.
+Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
+For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
+Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
+Apply only the checks relevant to this issue's actual scope.
 
-Record actual results; unavailable infrastructure is a stated blocker, not a pass.
-
-## Risks and recovery
-Do not run destructive migrations on shared databases. Preserve user changes. Keep PR focused. Use disposable database fixtures; if schema changes, test forward migration and document recovery before rollout. Roll back application through a reviewed prior build, never by erasing shared data. Incompatible/data-changing migrations require a separate recovery plan.
+## Scope and recovery
+No destructive migration on shared data or automatic promotion of existing accounts.
+Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
+After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
 
 ## Review checkpoint
-Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
+Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.

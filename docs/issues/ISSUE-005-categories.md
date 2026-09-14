@@ -1,34 +1,31 @@
-# ISSUE-005: Category management
+# ISSUE-005: Category CRUD, Trash and restore
 
 Status: Backlog
+Updated: 14 September 2026 (v0.3)
 Repository: monelog-api
 Dependencies: 004
 Remote issue: Not created
-Plan: ../plans/PLAN-005.md
+Requirements: FR-01, FR-05, FR-15, FR-17
+Plan: [PLAN-005](../plans/PLAN-005.md)
+Policy: [Access control and soft deletion](../access-control.md)
 
 ## Goal
-Implement per-user typed categories and archival.
+Implement scoped category management using boolean deletion while preserving historical transaction labels.
 
 ## Acceptance criteria
-- [ ] Users can create/rename/archive their categories
-- [ ] type immutable
-- [ ] archived history readable
-- [ ] ownership leaks prevented.
+- [ ] Regular users CRUD/restore only their own categories; scoped services support admin management through 013.
+- [ ] Delete sets true, restore sets false, and versioned operations retain the row.
+- [ ] Deleted categories disappear from active selectors but historical transaction totals/labels remain.
+- [ ] Type remains immutable and names unique per owner/type across active/deleted rows.
+- [ ] New/edit/restored transactions/templates cannot select a deleted or wrong-owner category.
 
-- [ ] Personal category mutations are owner-only for ordinary users and admins.
-- [ ] Category read queries can accept a service-authorized target for Issue 013 without returning other owners' categories.
-
-## Scope exclusions
-No hard category deletion or shared global category editor.
-
-## Access-control scope (14 September 2026)
-FR-01/FR-15: admin category display/filtering is read-only through Issue 013; category management remains actor-owned.
-See [access-control.md](../access-control.md).
+## Scope and affected areas
+Category handlers/service; db category queries; internal/repository; active selectors and historical label integration tests.
+No physical category deletion or resurrecting history by recreating a deleted name.
 
 ## Verification
-CRUD authorization matrix; duplicate case-insensitive name; archived category visibility; invalid type.
-
-Additional authorization verification: A cannot read/change B categories on personal paths; admin C cannot change B categories; same-target category query returns only target labels, including archived-history rules.
+CRUD ownership; wrong type; duplicate name/case; soft-delete row retained; Trash; restore; stale version; category delete with existing transaction; concurrent selection/category deletion.
 
 ## Definition of done
-Acceptance tests pass; relevant regressions pass; diff reviewed; documentation/contract updated; actual verification results recorded. No status change before implementation.
+Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
+Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.

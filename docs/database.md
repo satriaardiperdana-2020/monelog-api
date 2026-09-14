@@ -1,67 +1,96 @@
 # Database design
-Draft v0.2, 14 September 2026. ISSUE-002 produces executable migrations and tests; ISSUE-003 implements role provisioning; ISSUE-013 implements admin reads.
+Draft v0.3 • 14 September 2026
+Logical design; executable migrations/queries arrive in Issue 002. Full admin management is Issue 013.
+
+## Common conventions
+UUID identifiers. created_at/updated_at TIMESTAMPTZ; update timestamps on mutations.
+Soft-deletable entities have is_delete BOOLEAN NOT NULL DEFAULT FALSE and version INTEGER NOT NULL DEFAULT 1 CHECK(version>0).
+JSON exposes isDelete (exact spelling) and Go uses IsDelete. Other JSON fields remain snake_case.
+NULL is not a deletion state. Rows are active only when is_delete=false.
 
 ## Tables
-All IDs UUID. Audit timestamps TIMESTAMPTZ, created_at/updated_at default current timestamp; application updates updated_at.
-| Table | Columns / constraints |
+| Table | Main fields and constraints |
 | --- | --- |
-| users | id PK; email normalized lowercase UNIQUE NOT NULL; password_hash NOT NULL; role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','admin')); timezone NOT NULL default Asia/Jakarta; currency NOT NULL default IDR CHECK currency='IDR'; created_at; updated_at |
-| categories | id PK; user_id FK users NOT NULL; type CHECK IN ('income','expense'); name VARCHAR(80) NOT NULL; archived_at nullable; created_at; updated_at; UNIQUE(id,user_id,type) |
-| transactions | id PK; user_id FK users NOT NULL; category_id NOT NULL; type NOT NULL CHECK IN ('income','expense'); amount NUMERIC(14,2) NOT NULL CHECK(amount>0); transaction_date DATE NOT NULL; title VARCHAR(200) NOT NULL; version INTEGER NOT NULL default 1 CHECK(version>0); client_request_id UUID NOT NULL; request_hash TEXT NOT NULL; deleted_at nullable; created_at; updated_at; UNIQUE(user_id,client_request_id) |
+| users | id PK; email normalized lowercase UNIQUE NOT NULL; password_hash NOT NULL; role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','admin')); timezone NOT NULL default Asia/Jakarta; currency NOT NULL default IDR CHECK(currency='IDR'); is_delete; version; created_at; updated_at |
+| categories | id PK; user_id FK users NOT NULL; type NOT NULL CHECK IN ('income','expense'); name VARCHAR(80) NOT NULL; is_delete; version; created_at; updated_at; UNIQUE(id,user_id,type) |
+| transactions | id PK; user_id FK users NOT NULL; category_id NOT NULL; type NOT NULL CHECK IN ('income','expense'); amount NUMERIC(14,2) NOT NULL CHECK(amount>0); transaction_date DATE NOT NULL; title VARCHAR(200) NOT NULL; client_request_id UUID NOT NULL; request_hash TEXT NOT NULL; created_by/updated_by UUID NOT NULL FK users; is_delete; version; created_at; updated_at; UNIQUE(user_id,client_request_id) |
 | refresh_sessions | id PK; user_id FK users; family_id UUID; token_hash UNIQUE NOT NULL; expires_at NOT NULL; revoked_at nullable; replaced_by nullable self FK; created_at |
-| admin_access_events | id PK; actor_user_id UUID NOT NULL FK users; target_user_id UUID nullable FK users; action TEXT NOT NULL CHECK IN ('users.list','user.read','categories.list','transactions.list','transaction.read','daily_summaries.read','reports.summary','reports.breakdown'); resource_id UUID nullable; outcome TEXT NOT NULL CHECK IN ('allowed','forbidden','not_found'); request_id TEXT NOT NULL; created_at TIMESTAMPTZ NOT NULL default current_timestamp |
-| transaction_templates (later) | id PK; user_id FK; category_id; type; amount NUMERIC(14,2) CHECK(amount>0); title; name VARCHAR(80); created_at; updated_at |
-| drive_connections (later) | id PK; user_id UNIQUE FK; encrypted_refresh_token; provider_account_label; revoked_at; created_at; updated_at |
-| backup_jobs (later) | id PK; user_id FK; scheduled_for; status; attempt; provider_file_id nullable; checksum nullable; safe_error_code nullable; started_at; completed_at; UNIQUE(user_id,scheduled_for) |
+| admin_access_events | id PK; actor_user_id UUID NOT NULL FK users; target_user_id UUID nullable FK users; resource_type TEXT NOT NULL; resource_id UUID nullable; action TEXT NOT NULL; outcome TEXT NOT NULL; request_id TEXT NOT NULL; safe_metadata JSONB NOT NULL default '{}'; created_at TIMESTAMPTZ NOT NULL default current_timestamp |
+| transaction_templates (later) | id PK; user_id FK users; category_id; type; name VARCHAR(80); amount NUMERIC(14,2) CHECK(amount>0); title; is_delete; version; created_at; updated_at |
+| export_jobs (later, 009) | id PK; owner_user_id FK users; requested_by FK users; request_mode personal/admin; immutable filters/format; status; artifact locator; expires_at; created_at/updated_at |
+| drive_connections (later, 012) | id PK; user_id UNIQUE FK users; encrypted_refresh_token; provider_account_label; revoked_at nullable; created_at/updated_at |
+| backup_schedules (later, 012) | id PK; owner_user_id FK users; authorized_by FK users; request_mode personal/admin; schedule/timezone; enabled/paused state; version; created_at/updated_at |
+| backup_jobs (later, 012) | id PK; owner_user_id FK users; requested_by FK users; request_mode personal/admin; schedule_id nullable; scheduled_for; status; attempt; provider_file_id/checksum/error_code nullable; started_at/completed_at; UNIQUE(schedule_id,scheduled_for) for scheduled runs |
 
-NOT NULL applies to required functional fields; specify exact nullability/defaults in migrations. For future tables schema is provisional pending their issue's design gate.
-Transactions enforce FOREIGN KEY(category_id,user_id,type) REFERENCES categories(id,user_id,type).
-Templates need the equivalent FK. Trimmed non-empty names/titles enforced with CHECK(length(btrim(...))>0).
-Archived category check is enforced by the service inside the write transaction; lock selected category during creation to prevent archive races.
-Users/categories use restricted deletion; no cascade erasing financial history.
+Future job tables need full nullability/status definitions in their feature issues. Common flag/version definitions above apply to users, categories, transactions and templates.
+CHECK(length(btrim(name/title))>0) where applicable. Amount/title limits remain in requirements.md.
+Transactions enforce FOREIGN KEY(category_id,user_id,type) REFERENCES categories(id,user_id,type); templates use the same constraint.
+Roles describe application authority, not database superuser privileges. Admin edits retain selected owner's user_id; created_by/updated_by attribute actual actor.
+Email and per-owner/type category-name uniqueness includes deleted rows to avoid ambiguous recovery; restore an existing row instead of recreating its identity.
+Foreign keys restrict physical deletion; no cascading erase of financial/audit history.
 
 ## Indexes
-- categories: UNIQUE(user_id,type,lower(name)) — includes archived names; unarchive instead of creating an ambiguous duplicate.
-- transactions: (user_id,transaction_date DESC,id DESC) WHERE deleted_at IS NULL.
-- transactions: (user_id,category_id,transaction_date) WHERE deleted_at IS NULL.
-- refresh_sessions: (user_id,family_id); expires_at for cleanup.
+- categories: UNIQUE(user_id,type,lower(name)), including deleted rows.
+- transactions: (user_id,transaction_date DESC,id DESC) WHERE is_delete=false for normal lists/totals.
+- transactions: (user_id,category_id,transaction_date) WHERE is_delete=false for category reports.
+- transactions: (user_id,updated_at DESC,id DESC) WHERE is_delete=true for Trash.
+- refresh_sessions: (user_id,family_id) and expires_at for cleanup.
 - admin_access_events: (actor_user_id,created_at DESC) and (target_user_id,created_at DESC).
-- users: existing unique normalized-email index supports stable email,id selector ordering; evaluate search performance before adding another index.
-Evaluate additional report indexes with EXPLAIN on realistic data. No index on title/amount until a demonstrated query need.
+- jobs: owner/status and runnable status/time indexes, defined in 009/012.
+Do not add a standalone low-selectivity boolean index. Measure EXPLAIN on representative owner-scoped queries; no title/amount index without a demonstrated query.
 
-## Mutation rules
-Create uses client_request_id and hash of canonical create fields. Repeated identical requests return original record; changed payload with same key returns 409. Keep key after deletion; replay of a deleted result returns 409, never silently creates another record.
-Update uses WHERE id=$id AND user_id=$user AND version=$expected AND deleted_at IS NULL; increment version. On personal mutation routes, missing/foreign IDs return 404 for regular users and admins alike; owned stale versions return 409.
-Delete uses the same version guard, sets deleted_at and increments version.
-Every list/report excludes deleted_at IS NOT NULL. Soft-deleted records remain private and subject to a future documented retention/purge policy.
+## Authorization and concurrency
+Service creates explicit scope {actor_user_id,owner_user_id,mode}. Personal owner=actor; admin owner=validated path target.
+All scoped reads/writes include owner ID, even for admins. A related record from another target yields 404.
+Before mutation, lock involved account rows in UUID order with FOR UPDATE, recheck actor active/current admin role as needed and target account state, then mutate resource under required version.
+Account delete/restore/role change follows the same locking protocol. Do not hold these locks while calling Google or rendering files.
+Domain rules allow a regular owner or current admin; repository scope cannot come straight from a request body.
 
-## Reporting queries
-Use transaction_date >= start AND transaction_date <= end, always with an explicit authorized owner user_id and deleted_at filters. Owner = actor on personal routes; owner = validated selected target on admin GET routes. Never use an OR is_admin clause to bypass the owner predicate.
-Totals: COALESCE(SUM(amount) FILTER (WHERE type='income'),0) and corresponding expense sum.
-Group by transaction_date for daily data, date_trunc('week',transaction_date::timestamp)::date for Monday buckets, and date_trunc('month',...) for months.
-Filter dates before grouping; boundary buckets are partial. Difference is computed, never stored.
-Daily summary returns only dates with records; today's zero summary is returned separately.
-Order same-date transactions by created_at DESC,id DESC; cursor contains both values when listing within a day.
+## Create, update, delete and restore
+Create inserts is_delete=false, version=1. Transactions record actual actor in created_by and updated_by.
+Hash canonical create fields and enforce UNIQUE(owner,client_request_id). Same request replays original result; changed fields or replay against a deleted result returns 409. Retain idempotency key after deletion.
+Editing an active transaction uses WHERE id=$id AND user_id=$owner AND version=$expected AND is_delete=false; increments version and updated_by/updated_at.
+Soft delete uses the same predicate, SET is_delete=true, version=version+1, updated_by=$actor, updated_at=now(). No DELETE FROM business tables.
+Restore requires is_delete=true and the expected version; sets false and increments version. Validate target account and category active/type/ownership before restoring.
+Owned but stale/already-deleted/already-restored lifecycle attempts return 409. Truly missing or wrong-owner rows return 404.
+Users/categories/templates also use flag+version; attribution for their admin mutations is in admin_access_events.
+Ordinary PATCH/POST DTOs reject isDelete; delete/restore routes are the only lifecycle writers.
 
-## Migration and test plan
-Create users (including role) → categories → transactions → sessions → admin_access_events; seed default categories separately per user during registration.
-For an existing users table, add the role column with user as the default/backfill and the enum check in a forward migration. Do not auto-promote any account. Test against populated fixtures; rollouts do not change any transaction owner.
-Integration tests: invalid amounts, wrong category type/owner, duplicate request IDs, stale versions, archived category race, soft-delete exclusion, leap day, week/month boundaries, empty aggregates.
-Test migration up on empty database and forward upgrade with fixtures. Down migrations only against disposable databases until data-loss consequences are approved.
-No production SQL is included in this draft.
+## Category/account behavior
+Category soft deletion hides it from selectors without deleting transactions or changing their sums. Historical joins keep same-owner category labels even if category is_delete=true.
+New/edit/restored transactions or templates must use an active compatible category; restore the category first or choose another active category during an edit. Existing historical records remain readable and deletable.
+User soft deletion sets the account flag and revokes sessions in the same transaction, pauses schedules and blocks queued jobs at execution. Child flags do not change.
+Only an admin can restore a deleted account, because deleted users cannot authenticate. Restore does not resurrect revoked sessions or resume schedules automatically.
+A trusted operator bootstrap/recovery command remains available; there is no automatic role promotion.
 
-## Role and scope invariants
-users.role describes application permissions, not a PostgreSQL superuser role. It never changes ownership of transactions/categories.
-The runtime database role may read users.role but cannot update it. Grant user-insert privileges only for required registration columns (role supplied by database default), and profile-update privileges only for allowed columns. Use a separate privileged operator connection for explicit role changes.
-Select actor role before resolving any target user. The admin directory projects id,email,timezone,currency only; it never loads password_hash/session/provider columns.
-Admin financial reads reuse owner-filtered sqlc queries after service authorization. Category filters and transaction IDs must match the same target; mismatch returns 404. Missing target scope is a validation error, never an all-user query.
-Admin cursors bind actor ID, target ID (null only for directory), endpoint and filters; reject reuse across targets. Personal cursors similarly bind the actor's own scope.
-Admin read access is not a bypass around category composite FKs, version checks, idempotency ownership or soft deletion.
+## Reads, reports and exports
+Active transaction detail/list: WHERE user_id=$owner AND is_delete=false. Trash uses the same owner predicate with is_delete=true and updated_at DESC,id DESC.
+Reports/exports always filter active transactions regardless of Trash UI state. Use inclusive transaction_date >= start AND <= end.
+SUM income/expense separately with COALESCE(...,0); difference is computed. Filter dates before Monday-week/month grouping; boundary groups are partial.
+Daily history returns only populated dates; today's summary is computed separately and may be zero.
+Do not add a deleted-category predicate to the transaction join that would erase historical amounts.
+Cursors bind actor, owner, mode, endpoint, date/category/type filters and deletion state.
 
-## Audit and future jobs
-admin_access_events is append-only to the runtime role: insert only; no application update/delete/read endpoint. Operational audit access/retention is managed separately by the server operator. Proposed retention is 90 days, to be confirmed before release.
-target_user_id is null for directory reads, unauthorized callers (authorization precedes lookup), or unresolved targets; use a resolved target FK only when valid. resource_id is optional transaction UUID without a FK so not-found lookups can be recorded safely.
-Store no titles, amounts, search strings, email lists, request bodies, credentials or response payloads. Success auditing must persist before data is returned; denied attempts are best-effort if persistence is unavailable.
-Future export_jobs contains owner_user_id fixed to the requester; jobs and downloads always use that owner. Admin viewing introduces no second export owner.
-Personal backup formats exclude roles, sessions, admin audit events and provider credentials. Restore binds all imported financial rows to the authenticated backup owner, validates category ownership and cannot promote roles; reject privileged fields. Restore ownership remapping needs the later backup design.
-Additional integration fixtures: two regular users plus an admin with distinct records. Verify default/invalid roles, runtime-role update denial, per-target aggregates, current-role demotion, append-only audit grants and no financial changes after admin reads.
+## Audit and roles
+Admin access events now cover read/create/update/delete/restore, exports/jobs, account and role operations. resource_type/action/outcome use a service whitelist defined with the contract; safe_metadata may contain versions/changed-field names and old/new role, never finance payloads/secrets.
+Admin writes and success audit inserts commit atomically. Reads persist success auditing before returning. Failed authorized attempts log denial/conflict where possible without masking the primary error.
+Runtime can insert and read audit records for the protected admin log service, but cannot update/delete them. It is not the migration owner.
+Registration SQL excludes role and uses the default. Personal profile SQL only updates allowed fields. Admin account/role SQL is invoked exclusively after current-role service authorization and audit setup; update is now permitted through protected admin operations.
+Role updates revoke target refresh sessions. Locking/rechecks prevent a transaction authorized before concurrent demotion from committing after a contradictory role change without serialization.
+
+## Jobs, backups and restoration
+Persist owner and requester separately. Admin role does not make requester the financial owner.
+Owner can access own jobs; any current admin can manage jobs under their verified target route, including jobs created by another admin.
+Workers revalidate requester/owner and request_mode. Admin jobs require requester still admin. Invalid jobs are canceled/paused before execution; IDs/filters never change on retries.
+Backup data includes isDelete and row relationships; reports exclude deleted rows but backups preserve them for recovery.
+Exclude roles/passwords/session/provider secrets and audit records from personal-data backups. Imports validate strict schemas, reject privilege fields and remap only into the authorized owner, preserving deletion flags.
+Snapshot restore may preserve an active historical transaction referencing a deleted same-owner category; validate its owner/type foreign key without silently dropping the transaction or reactivating the category. Individual transaction restore and new edits still require an active category.
+Version/restore conflict policy and provider retention are finalized in Issue 012.
+
+## Migration and verification
+Fresh install: users → categories → transactions → sessions → admin_access_events; later templates/jobs as their issues land.
+If upgrading an existing timestamp-deletion schema, add is_delete=false then backfill true where deleted_at IS NOT NULL; keep the old column only during a staged rollout and retire it after verification. Never reset deleted rows to active.
+For the earlier category archive design, map archived_at IS NOT NULL to is_delete=true when replacing archive semantics. This repository has no deployed schema yet; use the fresh schema unless inspection proves otherwise.
+Backfill actor attribution on legacy transactions with known owner only where historical actor information is absent, and document that limitation.
+Migrations preserve all rows/owner IDs. Tests verify defaults, true/false backfill, constraints, role escalation denial, A/B/C admin CRUD, stale versions, delete/restore races, report/Trash behavior, category history and atomic admin audits.
+Run migration down only on disposable fixtures until data implications are reviewed. No production SQL has been executed by this documentation update.

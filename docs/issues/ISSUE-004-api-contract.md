@@ -1,33 +1,31 @@
-# ISSUE-004: OpenAPI contract and generation
+# ISSUE-004: Owner/admin API and soft-delete contract
 
 Status: Backlog
+Updated: 14 September 2026 (v0.3)
 Repository: monelog-api
 Dependencies: 003
 Remote issue: Not created
-Plan: ../plans/PLAN-004.md
+Requirements: FR-01, FR-15, FR-16, FR-17
+Plan: [PLAN-004](../plans/PLAN-004.md)
+Policy: [Access control and soft deletion](../access-control.md)
 
 ## Goal
-Turn api.md into a validated canonical contract.
+Produce complete OpenAPI schemas and generated interfaces for owner/admin operations and boolean deletion.
 
 ## Acceptance criteria
-- [ ] Core endpoints, all error envelopes, examples, security and concurrency headers validate
-- [ ] generated interfaces compile.
+- [ ] Every core personal and mapped admin operation in api.md is an explicit validated OpenAPI path/method.
+- [ ] Supported admin POST/PATCH/DELETE/restore operations require current admin permission and selected owner.
+- [ ] isDelete is a required boolean response field and strictly boolean list/detail query parameter; no generic lifecycle write field.
+- [ ] Versions, 204 delete, restore responses, active/Trash filters and error envelopes validate.
+- [ ] Generated interfaces compile and regeneration is deterministic.
 
-- [ ] OpenAPI defines GET /admin/users and selected-user metadata/category/transaction/day/report routes with a current-role requirement.
-- [ ] Admin responses contain scope metadata; contract specifies 401/403/404/400/405/503 and scope-bound cursors.
-- [ ] Role and owner fields are not writable through public personal routes; no cross-user mutation/export/Drive/template contract is exposed.
-
-## Scope exclusions
-Do not implement transaction handlers in this issue.
-
-## Access-control scope (14 September 2026)
-FR-01/FR-15/FR-16: preserve personal routes as actor-owned and define separate read-only admin routes. Bearer authentication alone does not prove the required current role.
-See [access-control.md](../access-control.md).
+## Scope and affected areas
+api/openapi.yaml; oapi-codegen configuration; internal/api generated interfaces; contract validation.
+No domain handler implementation or unimplemented routes presented as running.
 
 ## Verification
-Validate every example; generated code compilation; contract lint; no unexpected diff after regeneration.
-
-Additional authorization verification: Validate personal/admin response examples, read-only role schema, route coverage, required target parameter, unknown override rejection and error schemas; generated interface compiles.
+JSON examples; required boolean and invalid string/null flag; owner/role/lifecycle overrides; admin mutation operations; missing/stale version schema; generation compile/drift.
 
 ## Definition of done
-Acceptance tests pass; relevant regressions pass; diff reviewed; documentation/contract updated; actual verification results recorded. No status change before implementation.
+Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
+Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.

@@ -1,41 +1,45 @@
-# PLAN-011: Transaction templates
+# PLAN-011: Owner/admin templates with soft delete
 
-Status: Draft — refine against actual repository and review before coding.
-Issue: ../issues/ISSUE-011-templates.md
-Repository: monelog-api + monelog-app; prerequisites: 010.
+Status: Draft — refine against actual repository before implementation.
+Updated: 14 September 2026 (v0.3)
+Issue: [ISSUE-011](../issues/ISSUE-011-templates.md)
+Repository: monelog-api + monelog-app
+Prerequisites: 010
+Requirements: FR-01, FR-10, FR-15, FR-17
 
 ## Before implementation
-Read linked issue and requirements/architecture/database/API. Verify prerequisite issues are Done. Inspect actual tree and existing changes; proposed paths are not verified existing paths. Resolve any product/security choices relevant to this issue.
+Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
+Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
+Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
 
 ## Implementation sequence
-1. Confirm single preset versus whole-day template assumption before implementation.
-2. Add template migration and full API contract.
-3. Implement owner-scoped template CRUD.
-4. Add save-template and apply-template UI with selected date behavior.
-5. Handle archived category by requiring replacement before save.
-
-## Access-control implementation (14 September 2026)
-1. Bind every template operation to actor ID, including the category FK and the new transaction created after explicit Save.
-2. Keep template controls inside My Data; selecting a user for viewing never supplies owner identity to template requests.
-3. Test both ordinary and admin actors are denied on another owner's template IDs.
-
-Policy: [access-control.md](../access-control.md). FR-01/FR-15: templates are personal convenience data; another user's visible transactions do not grant access to their templates.
+1. Confirm single-transaction template versus day-bundle proposal before coding affected behavior.
+2. Add template schema with boolean flag/version/composite category ownership and full personal/admin contract.
+3. Implement scoped CRUD/Trash/Restore and validate active category on creation/edit/restore/apply.
+4. Add template-management/apply UI in both My Data and Admin Management, with immutable owner context.
+5. Test soft-deleted state and target switching cannot create a transaction for an unintended user.
 
 ## Affected areas
-Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
-Frontend: src views/components/services/stores/router and focused tests; native platform files only for mobile issue.
-Narrow these areas to exact file paths during repository inspection; do not edit all listed areas automatically.
+Template migration/queries/handlers/service; API contract; Vue template and transaction-form integration.
+These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
 
 ## Validation
-Applying twice creates no records; edited preset save; category mismatch/archive; cross-user access.
-Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
-Run configured frontend unit/E2E commands and npm run build; establish exact script names from package.json.
-Authorization validation: Add admin C requesting/applying B template, target tampering on save/apply and hidden template controls in Admin View.
+Own CRUD and admin C managing B; A denied; isDelete false/true/restore; version race; apply twice creates no records; explicit Save; category lifecycle; owner switching.
+Run go test ./..., go vet ./... and the configured PostgreSQL/HTTP integration suite where relevant. Verify generated-code drift for changed SQL/OpenAPI sources.
+Run the configured frontend unit/component/E2E commands and npm run build; inspect package.json for exact names. Device builds/checks are required by the mobile issue.
+Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
 
-Record actual results; unavailable infrastructure is a stated blocker, not a pass.
+## Authorization and lifecycle review
+Trace actor, selected owner, action, version and isDelete state through every affected boundary.
+Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
+For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
+Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
+Apply only the checks relevant to this issue's actual scope.
 
-## Risks and recovery
-No recurring auto-created transactions or day bundles unless scope revised. Preserve user changes. Keep PR focused. Use disposable database fixtures; if schema changes, test forward migration and document recovery before rollout. Roll back application through a reviewed prior build, never by erasing shared data. Incompatible/data-changing migrations require a separate recovery plan.
+## Scope and recovery
+No recurring automatic creation or whole-day bundles unless the requirement is revised.
+Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
+After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
 
 ## Review checkpoint
-Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
+Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.

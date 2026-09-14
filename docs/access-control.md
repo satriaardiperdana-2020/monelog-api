@@ -1,79 +1,98 @@
-# Access control
-Version 0.2 • 14 September 2026
-User instruction: regular users see only their own income/expenses; an admin may select any user and view that user's data.
-FR-01 and FR-15 are confirmed requirements. Read-only admin scope and the technical controls below are the implementation interpretation.
+# Access control and soft deletion
+Version 0.3 • 14 September 2026
+Confirmed: admin can perform all application operations on any user's data. A regular user can CRUD only their own data.
+This replaces the earlier restriction on admin modifications.
 
 ## Permission matrix
-| Capability | Regular user | Admin in My Data | Admin viewing selected user |
-| --- | --- | --- | --- |
-| View transactions, daily totals, category labels and reports | Own only | Own only | Selected user only |
-| List/search registered users | Denied | Admin View directory only | Minimal directory permitted |
-| Create/edit/delete transactions or categories | Own only | Own only | Denied |
-| Change profile/timezone | Own only | Own only | Denied |
-| Excel/PDF export creation, status or download | Own only | Own only | Denied |
-| Template read/create/apply/update | Own only | Own only | Denied |
-| Connect Drive, schedule backup or restore | Own only | Own only | Denied |
-| Assign roles through app/API | Denied | Denied | Denied |
-| Read passwords, session secrets or provider credentials | Denied | Denied | Denied |
+| Operation | Regular user | Admin |
+| --- | --- | --- |
+| View/create/edit income and expenses | Own only | Any selected owner |
+| Delete/restore income and expenses | Own only, soft delete | Any selected owner, soft delete |
+| Category CRUD/restore | Own only | Any selected owner |
+| Reports and Excel/PDF exports, including job status/download | Own only | Any selected owner |
+| Template CRUD/restore/apply | Own only | Any selected owner |
+| Drive settings, backup jobs and restore | Own only | Any selected owner, with valid provider authorization |
+| Profile update/self-account deletion | Own only | Any user |
+| List/create/manage accounts and assign user/admin roles | Public registration cannot assign admin | Allowed through protected admin operations |
+| View business records in Trash | Own only | Any selected owner |
+| View admin audit records | Not exposed | Allowed through the admin audit endpoint |
 
-Admins may choose any existing account, including another admin or themselves. Admin View stays read-only even when selecting self; use My Data for own actions.
-No aggregate across all users is included. Exports/sharing of another user's data are outside this viewing request.
+All business operations use validation, optimistic concurrency and retained-row deletion. Passwords/tokens/provider secrets are never returned as ordinary application data; reset/disconnect flows operate on credentials without exposing them.
+Admins can choose any existing account, including other admins or themselves. My Data remains a convenient self scope. Cross-user management uses explicit admin routes.
 
-## Policy
-- Actor is the authenticated account. Target is the selected financial owner. Never mutate JWT sub or impersonate the target.
-- Every ordinary route uses actor ownership, even for an admin. Do not add an optional user_id override.
-- Only /admin/users/{user_id}/... GET routes can use another owner, after checking the actor's current role in PostgreSQL. /admin/users is a minimal directory exception, containing no financial data.
-- Require explicit target selection; every financial query retains owner filtering. Record IDs, category IDs and cursors must belong to that same scope.
-- Registration defaults to user; reject client-supplied roles. A trusted deployment operator provisions an admin explicitly through cmd/admin; there is no first-user auto-promotion or public role editor.
-- Role changes revoke refresh sessions. The next admin request after committed demotion is denied even with an unexpired JWT. Do not authorize from cached frontend state or a stale JWT role claim.
-- Missing authentication → 401; non-admin admin-route attempt → 403 before target lookup; missing/mismatched target resource → 404; tampered/mismatched cursor → 400; unsupported admin write method → 405 after auth/role guard.
-- No active data returns for soft-deleted transactions, even to admins. Owner/category constraints remain enforced.
-- Personal jobs and backup/restore data never inherit a selected admin target. Imports cannot assign roles or trust source owner IDs.
+## Actor and owner
+actor_user_id is the authenticated account and never changes when selecting another user.
+owner_user_id is the financial data owner: actor on personal routes; explicit target on authorized admin routes.
+New admin-created records retain the selected user's ownership. created_by/updated_by and admin audit events identify the acting admin.
+All financial queries and writes retain owner predicates; do not make is_admin remove scoping. Record IDs, categories, form context, cursors and jobs must match the selected owner.
 
-## Screen behavior
-Regular users see only My Data and cannot open the admin selector.
-Admins open Admin View, search/select one account, then see its dated records and reports with email and read-only label always visible. Use selected account timezone for presets.
-Initial selection is empty. Switch A → B: clear A immediately, reset cursors/category filters, abort old requests and ignore late responses through a request generation check.
-Keep selected target and returned data in memory, keyed by actor/mode/target/filters. Send no financial request when target is empty.
-Logout, role denial and switching back to My Data discard selected-user state. Reauthentication must not restore another user's cached records.
-Hide transaction/category mutations, exports/sharing, templates and backup/settings actions in Admin View. UI controls supplement backend enforcement.
+## Authorization
+- Authenticate and load current actor account state on every protected request. Deleted actors get 401 even with an unexpired JWT.
+- Every admin read/write checks the current database role. A regular user gets 403 before target lookup.
+- Public registration assigns role=user. Personal profile/body parameters cannot supply role or owner overrides.
+- Admin account creation and role updates are allowed on protected /admin/users operations. Initial admin bootstrap is an explicit operator action, never automatic first-user promotion.
+- Role change or account soft deletion revokes refresh sessions. The next admin request after committed demotion is denied. Authorization already granted to an in-flight request may finish; mutations serialize their account/role checks with changes as described in database.md.
+- Target owner and related resource mismatches return 404. Missing/malformed scope gets 400, never a global financial operation.
+- Ordinary routes always use the actor's own scope, including for admins. To manage B, admin C calls B's admin route.
+- Regular users cannot access another user's Trash, exports, templates or backups. Admins can perform these operations for a selected target.
+- Normal writes require an active target account. Admins can inspect a deleted target's retained data and restore the account before further financial changes.
+
+## isDelete contract
+| Layer | Name | Values |
+| --- | --- | --- |
+| JSON response field | isDelete | boolean false / true |
+| Go field | IsDelete | bool |
+| PostgreSQL column | is_delete | BOOLEAN NOT NULL DEFAULT FALSE |
+
+Applies to users, categories, transactions and templates. Sessions/connections keep their token revocation lifecycle, while job status/expiry is separate.
+Create → false. Delete → true. Restore → false. No physical row deletion from these application endpoints.
+Normal list/detail requires false. Trash list/detail explicitly selects isDelete=true. A boolean filter never changes authorization. Reports and report exports always use active transactions.
+Delete/restore use required row version, owner predicate and expected lifecycle state. A stale version or duplicate lifecycle operation returns 409; a missing or foreign record returns 404.
+Deleted categories stay available as historical labels, but new/restored/edited transactions and templates require an active compatible category.
+Users can restore their own financial data while their account is active. Restoring a deleted account requires an admin because that account cannot log in.
+
+## Admin Management UI
+User search and selection start empty. Clearly display owner identity with fully enabled management actions appropriate to the feature's delivery stage.
+Bind form/dialog owner at creation. Before switching, save or discard unsaved input; never redirect an open form's payload to the newly selected account.
+Clear old data and cursors on switch, cancel reads and ignore old response generations. In-flight writes/jobs keep their original owner; their completion cannot mutate the new screen.
+Provide Trash/Restore per selected owner and account-management/role controls for admins. Owner UI offers the same financial CRUD for self.
+Use separate actor/mode/owner/filter/version state keys; discard state on logout, role denial or account deletion. All authenticated responses use Cache-Control: no-store.
+
+## Exports, templates and backups
+Personal operations set owner=actor. Admin operations set owner=the verified target; persist both requester and owner plus request_mode.
+Regular users can access only jobs/data with their own owner ID. Current admins can manage any target's jobs via that target's route, irrespective of the original requester.
+Workers revalidate requester/owner activity and, for admin requests, current admin role at execution. Cancel unauthorized queued jobs; retries never change owner.
+Recurring schedules retain owner, authorizing actor and mode. Invalid actor/role or deleted owner pauses them; resume requires renewed authorization.
+Google operations additionally need a valid OAuth connection for the target's Drive account. App admin status does not supply provider credentials or consent.
+Backup formats preserve isDelete flags but exclude roles, password/session/provider secrets and audit records. Restore validates/remaps all rows to the authorized target and cannot grant roles. Role changes use the dedicated admin endpoint.
 
 ## Audit
-Persist actor, resolved target if any, action, optional resource UUID, outcome, request ID and UTC time. Never log transaction titles/amounts, emails/search text, tokens or full payloads.
-Directory reads have null target. Non-admin attempts are denied before target resolution and recorded with null target where audit storage is available.
-Successful admin reads require persisted audit records before responding; otherwise return 503 without data. The operator can inspect audit records; no new app audit UI is included.
-All authenticated API responses use Cache-Control: no-store, including errors.
+Log actor, target, action, resource UUID, outcome, request ID, UTC time and safe changed-field names/version metadata.
+Successful admin writes commit the data mutation and its audit event in one database transaction. Audit failure rolls back writes; successful reads persist an event before responding.
+Audit events are append-only; admins may inspect them, not rewrite history as part of business CRUD. Record role-change old/new values without secret payloads.
+External jobs atomically persist authorization, job and audit before provider calls. Retry and external failure use explicit job states, not a claim of database rollback of remote work.
+Do not log finance titles/amounts, passwords, tokens or full response bodies.
 
-## Required acceptance tests
-Use regular users A/B and admin C with deliberately different income, expense, category and date fixtures.
-
-| Case | Expected |
+## Required acceptance matrix
+| Test | Expected |
 | --- | --- |
-| A lists own data/reports | Only A's active records and exact totals |
-| A submits B's UUID on personal GET/PATCH/DELETE | 404, B unchanged |
-| A adds user_id/role override | 400, no broader access |
-| A calls any admin endpoint | 403 before target existence lookup |
-| Anonymous caller hits admin endpoint | 401 |
-| C uses My Data | Only C's records |
-| C selects A, then B | Only selected owner's records/totals; no mixed aggregates |
-| C requests B's transaction/category inside A's admin URL | 404 |
-| Cursor from A reused for B | 400 |
-| C attempts target mutation on admin route | 405; no records altered |
-| C attempts B's mutation/export/download via personal routes | 404 or 400 for forbidden owner override; B unchanged |
-| Register/PATCH profile with role=admin | 400; role remains user |
-| Operator demotes C while old JWT remains valid | Next admin request 403 |
-| C switches target while old request is delayed | Late old response discarded; no stale data flashes |
-| Logout/login as A after viewing B | No B data in browser/native state |
-| Admin success with unavailable audit store | 503 without selected-user data |
-| Target has no data / only soft-deleted records | Zero totals and empty lists |
-| Target timezone differs from admin timezone | Presets use target dates; stored date fields do not shift |
-| Admin financial reads | Records and owner IDs unchanged; minimal audit event present |
-| Personal backup import contains role/session fields | Rejected; no privilege escalation |
+| A performs CRUD/restore on own data | Succeeds with correct totals/lifecycle |
+| A uses B resource IDs, Trash filters, export/template/backup paths | 404 on personal resources; 403 on admin routes |
+| C creates/edits/deletes/restores B records via admin route | Succeeds; owner B retained, actor C audited |
+| C uses B ID inside A admin route | 404; neither owner modified |
+| C submits old version | 409, no lost update |
+| Delete followed by normal list/report/export | Row retained with true, excluded from active results/totals |
+| Trash/restore | True rows visible only in authorized Trash; restore false and totals include once |
+| Delete/edit/restore race | At most one expected-version operation wins; other request conflicts |
+| Create/edit payload supplies isDelete or arbitrary owner | 400; lifecycle/ownership cannot be bypassed |
+| C changes A role through protected operation | Succeeds and audited; public/profile role mutation denied |
+| C demoted or actor account deleted | Next protected/admin request denied as appropriate |
+| Target changes while form/write is open | No write sent to the wrong owner |
+| Admin export/template/backup for B | Succeeds with target-scoped authorization; A cannot use it |
+| Queued admin job after requester demotion | Canceled/paused, no provider call |
+| Audit insert fails during admin write | Database mutation rolled back |
+| Deleted category with active transactions | Historical amounts/labels retained; category unavailable for selection |
+| Account soft delete | Sessions revoked, jobs paused, child rows retained |
+| Malicious backup role/owner fields | Rejected; target ownership and role protections retained |
 
-Automate middleware/service and PostgreSQL tests during backend tasks; then browser E2E and Android/iOS checks. Documentation review itself does not prove runtime authorization.
-
-## Delivery
-Issues 002–004 define role schema, policy and contract; 005–007 retain scoped domain operations; [ISSUE-013](issues/ISSUE-013-admin-viewing.md) implements admin reads.
-Only after backend Issues 001–007 and 013 pass, implement the selector/read-only UI in Issue 008, then mobile parity in Issue 010.
-Issues 009/011/012 explicitly keep personal exports/templates/backups owner-scoped.
-Reference: [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html), checked 14 September 2026. Its request-by-request authorization and default-denial guidance supports the server checks; Monelog's permission matrix is the product-specific design.
+Delivery: 002–004 schema/auth/contract; 005–007 core CRUD and reports; 013 full admin backend; 008 UI; 009 exports; 010 mobile; 011 templates; 012 backups.

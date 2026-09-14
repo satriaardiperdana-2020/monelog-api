@@ -1,33 +1,31 @@
-# ISSUE-009: Excel and PDF report exports
+# ISSUE-009: Owner/admin Excel and PDF exports
 
 Status: Backlog
+Updated: 14 September 2026 (v0.3)
 Repository: monelog-api + monelog-app
 Dependencies: 008
 Remote issue: Not created
-Plan: ../plans/PLAN-009.md
+Requirements: FR-01, FR-08, FR-15, FR-16, FR-17
+Plan: [PLAN-009](../plans/PLAN-009.md)
+Policy: [Access control and soft deletion](../access-control.md)
 
 ## Goal
-Export all matching filtered records consistently with reports.
+Export all matching active transactions for an owner or an admin's selected owner with accurate job authorization.
 
 ## Acceptance criteria
-- [ ] Both formats match report totals and filters
-- [ ] files private
-- [ ] expired/foreign downloads rejected.
+- [ ] Both XLSX/PDF match selected-owner active report totals/filters and include all matching pages.
+- [ ] Admin can request/manage/download any selected owner's exports; regular users only their own.
+- [ ] Jobs persist immutable owner_user_id, requested_by, request_mode and filters; queued jobs revalidate authority.
+- [ ] Deleted transactions are excluded, while category deletion preserves historical labels.
+- [ ] Expired/unready/out-of-scope downloads and canceled/demoted-requester jobs are handled correctly.
 
-- [ ] Export owner always equals the authenticated requester for both roles; workers and download checks use that stored owner.
-- [ ] An admin's selected-user view cannot submit another owner or fetch that user's export job; export/share UI is absent in Admin View.
-
-## Scope exclusions
-Not a full backup or import mechanism.
-
-## Access-control scope (14 September 2026)
-FR-01/FR-15: viewing another user's report grants no cross-user export/download permission. Admins may export their own records through My Data.
-See [access-control.md](../access-control.md).
+## Scope and affected areas
+Export jobs/migrations/worker; report service; file generators; download handlers; web export UI.
+Export is a report artifact, not a data backup/import format. Report export never includes Trash.
 
 ## Verification
-Over-page-size export; report parity; spreadsheet formula-injection safety; PDF layout/long title check; job failure/retry; expiry and foreign access.
-
-Additional authorization verification: Add owner override rejection, C attempting B's job status/download, UI target switching before export, worker owner tampering fixtures and owner-only totals.
+More-than-one-page export; exact report parity; true rows excluded; formula injection; long-title PDF layout; A denied/B own/C admin download; stale role; target switching; job retry/expiry.
 
 ## Definition of done
-Acceptance tests pass; relevant regressions pass; diff reviewed; documentation/contract updated; actual verification results recorded. No status change before implementation.
+Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
+Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.

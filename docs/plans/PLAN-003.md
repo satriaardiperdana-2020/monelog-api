@@ -1,42 +1,45 @@
-# PLAN-003: Authentication, roles and profile
+# PLAN-003: Authentication, account state and role authorization
 
-Status: Draft — refine against actual repository and review before coding.
-Issue: ../issues/ISSUE-003-authentication.md
-Repository: monelog-api; prerequisites: 002.
+Status: Draft — refine against actual repository before implementation.
+Updated: 14 September 2026 (v0.3)
+Issue: [ISSUE-003](../issues/ISSUE-003-authentication.md)
+Repository: monelog-api
+Prerequisites: 002
+Requirements: FR-01, FR-15, FR-16, FR-17
 
 ## Before implementation
-Read linked issue and requirements/architecture/database/API. Verify prerequisite issues are Done. Inspect actual tree and existing changes; proposed paths are not verified existing paths. Resolve any product/security choices relevant to this issue.
+Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
+Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
+Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
 
 ## Implementation sequence
-1. Finalize password policy, hash choice, session TTL and JWT validation settings.
-2. Implement registration with default role=user and category seeding in one DB transaction; reject role overrides.
-3. Implement access JWT plus hashed rotating refresh sessions.
-4. Implement browser cookie/CSRF/origin handling and native token transport.
-5. Add profile timezone validation and login rate limiting.
-
-## Access-control implementation (14 September 2026)
-1. Assign user server-side at registration and expose current role only as output in GET /me.
-2. Implement current-role admin guard and separate actor identity from any later read target; deny on role lookup failure.
-3. Add cmd/admin with a separate privileged connection for explicit role changes, operational auditing and refresh-session revocation.
-4. Test all guard cases with A/B/C fixtures; do not authorize a data read just because a client sent an admin role.
-
-Policy: [access-control.md](../access-control.md). FR-01/FR-15/FR-16: role assignment through trusted server operation only. No public role editor, automatic first-admin registration or impersonation; actual admin data routes arrive in 013.
+1. Finalize password/session policy, JWT validation and browser/native refresh transport.
+2. Register with role=user, is_delete=false and category seeding; reject disallowed fields.
+3. Implement rotating hashed refresh sessions, reuse detection and logout.
+4. Load current actor state for protected requests; implement current-role guard for all supported admin methods.
+5. Implement versioned self profile/account deletion with session revocation and account-locking rules.
+6. Document explicit cmd/admin bootstrap/recovery and test unexpired-token denial after account deletion/demotion.
 
 ## Affected areas
-Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
-
-Narrow these areas to exact file paths during repository inspection; do not edit all listed areas automatically.
+cmd/admin bootstrap; internal/middleware; auth/profile handlers/services; user/session queries.
+These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
 
 ## Validation
-Wrong password; duplicate email; expired JWT; invalid issuer/audience; refresh replay/race; logout; CSRF failure; user isolation.
-Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
+Invalid credentials/JWT; issuer/audience/expiry; refresh replay/race; CSRF/origin; registration role injection; deleted account; self-delete version conflict; bootstrap; demotion with old JWT.
+Run go test ./..., go vet ./... and the configured PostgreSQL/HTTP integration suite where relevant. Verify generated-code drift for changed SQL/OpenAPI sources.
+Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
 
-Authorization validation: Add role escalation attempts, forged/stale role claim, denied admin route before target lookup, operator promotion/demotion, refresh revocation and unexpired JWT after demotion.
+## Authorization and lifecycle review
+Trace actor, selected owner, action, version and isDelete state through every affected boundary.
+Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
+For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
+Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
+Apply only the checks relevant to this issue's actual scope.
 
-Record actual results; unavailable infrastructure is a stated blocker, not a pass.
-
-## Risks and recovery
-No Google login or provider backup credentials. Preserve user changes. Keep PR focused. Use disposable database fixtures; if schema changes, test forward migration and document recovery before rollout. Roll back application through a reviewed prior build, never by erasing shared data. Incompatible/data-changing migrations require a separate recovery plan.
+## Scope and recovery
+No raw password/session/provider secret exposure. Full target account/role management endpoints are completed in 013.
+Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
+After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
 
 ## Review checkpoint
-Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
+Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.

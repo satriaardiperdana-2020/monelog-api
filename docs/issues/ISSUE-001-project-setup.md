@@ -1,33 +1,30 @@
 # ISSUE-001: Backend project setup
 
 Status: Backlog
+Updated: 14 September 2026 (v0.3)
 Repository: monelog-api
 Dependencies: None
 Remote issue: Not created
-Plan: ../plans/PLAN-001.md
+Requirements: FR-01, FR-15, FR-16, FR-17
+Plan: [PLAN-001](../plans/PLAN-001.md)
+Policy: [Access control and soft deletion](../access-control.md)
 
 ## Goal
-Create a reproducible Go/Echo service skeleton without finance features.
+Create a reproducible Go/Echo service skeleton with clear authentication/service/repository boundaries.
 
 ## Acceptance criteria
-- [ ] Service starts from documented commands
-- [ ] live/readiness checks differ correctly
-- [ ] missing required configuration fails clearly
-- [ ] no secrets tracked.
+- [ ] Service starts using documented commands and shuts down gracefully.
+- [ ] Live and readiness checks differ correctly, including unavailable PostgreSQL.
+- [ ] Missing required config fails clearly; examples contain no production credentials.
+- [ ] README links the full admin and boolean deletion specification; no automatic first-user admin.
 
-- [ ] Project documentation references the user/admin access model and planned admin route boundary without exposing role-setting configuration to public clients.
-
-## Scope exclusions
-No auth, migrations, finance logic, deployment or remote repo changes.
-
-## Access-control scope (14 September 2026)
-FR-01/FR-15 groundwork only: keep an explicit place for authentication and authorization in middleware/service. Implement roles in 003 and admin viewing in 013.
-See [access-control.md](../access-control.md).
+## Scope and affected areas
+cmd/api; internal/config/handlers/middleware/service/repository; README and CI.
+No finance/auth implementation, migrations or deployment in this setup task.
 
 ## Verification
-Config validation tests; HTTP live test; readiness with unavailable DB; startup/shutdown smoke test.
-
-Additional authorization verification: Review config examples and startup docs: no public admin toggle, automatic first-user promotion or seeded production admin credentials.
+Configuration errors; liveness; readiness with unavailable DB; graceful shutdown. Confirm role/owner authority is not configured from public client input.
 
 ## Definition of done
-Acceptance tests pass; relevant regressions pass; diff reviewed; documentation/contract updated; actual verification results recorded. No status change before implementation.
+Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
+Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.

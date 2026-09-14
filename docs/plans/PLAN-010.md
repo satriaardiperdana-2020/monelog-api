@@ -1,42 +1,45 @@
-# PLAN-010: Android and iOS packaging
+# PLAN-010: Android/iOS owner and admin management
 
-Status: Draft — refine against actual repository and review before coding.
-Issue: ../issues/ISSUE-010-mobile-packaging.md
-Repository: monelog-app; prerequisites: 009.
+Status: Draft — refine against actual repository before implementation.
+Updated: 14 September 2026 (v0.3)
+Issue: [ISSUE-010](../issues/ISSUE-010-mobile-packaging.md)
+Repository: monelog-app
+Prerequisites: 009
+Requirements: FR-01, FR-09, FR-15, FR-17
 
 ## Before implementation
-Read linked issue and requirements/architecture/database/API. Verify prerequisite issues are Done. Inspect actual tree and existing changes; proposed paths are not verified existing paths. Resolve any product/security choices relevant to this issue.
+Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
+Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
+Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
 
 ## Implementation sequence
-1. Check official Capacitor/toolchain requirements and available macOS signing environment.
-2. Add platform projects/config with HTTPS API and allowed origins.
-3. Implement vetted secure token storage and platform-specific export handoff.
-4. Verify keyboard/date input, navigation/back, safe areas and session expiry.
-5. Document signing/release steps and secrets exclusion.
-
-## Access-control implementation (14 September 2026)
-1. Carry role-aware navigation and explicit admin routes from the tested web implementation without storing target identity in token storage.
-2. Verify back navigation, restart and resume clear or reauthorize selected-user view; show no financial data until that check succeeds.
-3. Exclude admin responses from persistent caches and native share/export paths; test late responses on each platform.
-4. Run A/B/C switching and role-demotion flows on Android and iOS as release gates.
-
-Policy: [access-control.md](../access-control.md). FR-01/FR-15: reuse the tested Vue admin viewer with server enforcement; packaging does not create more admin permissions.
+1. Check official current Capacitor/toolchain requirements and available macOS/Xcode signing setup.
+2. Add platform configuration, HTTPS API connectivity and vetted secure refresh storage.
+3. Port existing role-aware CRUD/Trash/admin selectors with fixed form owner context.
+4. Implement scoped export file opening/sharing for own or authorized selected-user exports.
+5. Verify keyboard/date inputs, safe areas, back navigation, restart/resume/session denial and offline explanation.
+6. Record actual Android/iOS device or simulator results and signing/release instructions.
 
 ## Affected areas
-
-Frontend: src views/components/services/stores/router and focused tests; native platform files only for mobile issue.
-Narrow these areas to exact file paths during repository inspection; do not edit all listed areas automatically.
+Capacitor and native platform projects; auth/API/download adapters; shared Vue views; device smoke/E2E checks.
+These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
 
 ## Validation
-Android/iOS login, save, report and download; restart refresh; offline message; device accessibility smoke test.
+A/B/C login and positive admin CRUD; delete/restore on device; stale form target; late response; app resume/restart; account deletion/demotion; scoped native export/share; accessibility.
+Run the configured frontend unit/component/E2E commands and npm run build; inspect package.json for exact names. Device builds/checks are required by the mobile issue.
+Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
 
-Run configured frontend unit/E2E commands and npm run build; establish exact script names from package.json.
-Authorization validation: Add real-device/simulator A/B/C selector, fast switch with delayed response, app restart, logout/relogin, deep-link role denial and native export/share ownership checks.
+## Authorization and lifecycle review
+Trace actor, selected owner, action, version and isDelete state through every affected boundary.
+Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
+For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
+Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
+Apply only the checks relevant to this issue's actual scope.
 
-Record actual results; unavailable infrastructure is a stated blocker, not a pass.
-
-## Risks and recovery
-No guaranteed app store approval or offline sync; missing signing authority is a blocker. Preserve user changes. Keep PR focused. Use disposable database fixtures; if schema changes, test forward migration and document recovery before rollout. Roll back application through a reviewed prior build, never by erasing shared data. Incompatible/data-changing migrations require a separate recovery plan.
+## Scope and recovery
+No guaranteed app-store approval or offline synchronization. Missing platform/signing infrastructure is a stated implementation blocker.
+Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
+After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
 
 ## Review checkpoint
-Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
+Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.

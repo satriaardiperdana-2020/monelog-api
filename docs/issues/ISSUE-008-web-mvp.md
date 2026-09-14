@@ -1,34 +1,32 @@
-# ISSUE-008: Responsive Vue browser MVP
+# ISSUE-008: Vue owner and admin management UI
 
 Status: Backlog
+Updated: 14 September 2026 (v0.3)
 Repository: monelog-app
-Dependencies: 013 (which depends on backend 007)
+Dependencies: 013
 Remote issue: Not created
-Plan: ../plans/PLAN-008.md
+Requirements: FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-07, FR-11, FR-15, FR-17
+Plan: [PLAN-008](../plans/PLAN-008.md)
+Policy: [Access control and soft deletion](../access-control.md)
 
 ## Goal
-Build Indonesian-facing core flows from screenshots using Vue JavaScript.
+Build responsive Indonesian-facing personal finance and full admin management flows using Vue 3 + JavaScript.
 
 ## Acceptance criteria
-- [ ] Login, Home, day detail, add/edit/delete, categories, settings and reports work on narrow/wide screens
-- [ ] failures preserve form input.
+- [ ] Own login/Home/day/detail/category/transaction/settings/reports work on mobile-width and desktop.
+- [ ] Admin can search/select a user and use enabled create/edit/delete/restore actions plus account/role management.
+- [ ] Active and Trash screens use false/true correctly; reports remain active-only.
+- [ ] Forms and confirmations show fixed owner identity; unsaved edits require save/discard before selection change.
+- [ ] Late responses or submitted operations never apply to a newly selected owner; logout/denial clears state.
+- [ ] Failed requests preserve appropriate inputs and display clear validation/conflict feedback.
 
-- [ ] Ordinary users see only personal screens; admin routes/selector are unavailable to them.
-- [ ] Admins can search/select any one account and see its read-only transactions, daily totals and reports with target identity always visible.
-- [ ] Switching targets clears old records/cursors/filters and discards delayed responses from the prior target.
-- [ ] Admin View hides mutation, export/share, template and backup/settings actions; logout/role denial clears selected-user state.
-
-## Scope exclusions
-No Capacitor packaging, offline queue, calculator or graph.
-
-## Access-control scope (14 September 2026)
-FR-01/FR-15: implement only after backend Issue 013. The UI uses the same session and distinct admin GET routes; selected-user state never overrides personal owner identity.
-See [access-control.md](../access-control.md).
+## Scope and affected areas
+src/views/components/services/stores/router/utils; focused unit/component/E2E tests.
+No Capacitor packaging, offline write queue, calculator or graph in browser MVP.
 
 ## Verification
-Unit money/date-format tests; component validation; E2E login/create/edit/delete/report; session expiry; 360px and desktop layouts.
-
-Additional authorization verification: Add E2E ordinary-user direct admin navigation, admin select A/B, delayed A response after switching to B, target timezone presets, logout/login as A, role demotion, read-only controls and 360px selector layout.
+Login/refresh; owner CRUD; positive admin CRUD/roles; A direct admin denial; active versus Trash; delete/restore totals; delayed responses; unsaved form target switch; logout/relogin; 360px/desktop accessibility.
 
 ## Definition of done
-Acceptance tests pass; relevant regressions pass; diff reviewed; documentation/contract updated; actual verification results recorded. No status change before implementation.
+Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
+Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.

@@ -1,47 +1,47 @@
-# PLAN-013: Admin user selection and read-only finance APIs
+# PLAN-013: Full admin user and data management
 
-Status: Draft — refine against repository before implementation.
+Status: Draft — refine against actual repository before implementation.
+Updated: 14 September 2026 (v0.3)
 Issue: [ISSUE-013](../issues/ISSUE-013-admin-viewing.md)
 Repository: monelog-api
-Prerequisites: 007, transitively 002–006
-Blocks: 008
-Policy: [access-control.md](../access-control.md)
+Prerequisites: 007
+Requirements: FR-01, FR-15, FR-16, FR-17
 
 ## Before implementation
-Read requirements, architecture, database, API and the full access matrix. Verify roles/audit schema from 002, current-role guard/operator provisioning from 003 and generated contract from 004.
-Inspect implemented domain services from 005–007 and current repository instructions. Preserve existing changes; resolve missing prerequisites before coding.
-The user has confirmed regular-user ownership and admin visibility. This task interprets admin visibility as read-only selected-user finance access.
+Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
+Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
+Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
 
 ## Implementation sequence
-1. Add explicit admin GET route group guarded by authentication and a current database role check; keep JWT sub as actor. Add guarded method fallback returning 405.
-2. Implement paginated normalized-email directory search using minimal DTOs. Resolve one target by UUID; no target means no financial query.
-3. Construct service-level read scope {actor_user_id,target_user_id,mode:admin_read}; never allow raw target input to bypass role checks. Personal and write methods retain actor ownership.
-4. Reuse scoped category, transaction, daily and report queries. Enforce target consistency for related IDs and bind cursors to actor/target/endpoint/filters.
-5. Add scope metadata, safe errors and no-store headers. Return target timezone/currency through the metadata endpoint; retain existing date/money calculations.
-6. Persist minimal allowed admin-read audit events before writing responses. Record authenticated denied/not-found attempts where possible; return 503 without data if required audit or role lookup fails.
-7. Implement the A/B/C matrix, including a role demotion with an old JWT, target swapping, report totals and method/write rejection. Verify finance data and owner IDs are unchanged.
-8. Record contract diff and test evidence; update issue status only after actual implementation passes. Hand stable API to Issue 008.
+1. Reuse current actor/role guards on all admin methods and implement explicit target scope.
+2. Add directory and account create/profile/role/delete/restore handlers, using versions, locks and session revocation.
+3. Implement admin category/transaction read/create/update/delete/restore and active/Trash endpoints through scoped domain services.
+4. Wire selected-owner daily/report reads and scope metadata; validate related IDs and cursors.
+5. Add admin audit listing; atomically audit all mutations and persist successful read events before response.
+6. Provide shared owner/admin job policy for later export/template/backup features, without prematurely implementing them.
+7. Run positive and negative A/B/C matrix and hand stable backend to frontend Issue 008.
 
-## Files to inspect and refine
-- internal/middleware: authentication/current-role guard and method fallback.
-- internal/handlers: admin directory/finance HTTP adapters.
-- internal/service: explicit authorized read scope.
-- db/queries and internal/repository: owner-filtered reads, user directory and audit insert.
-- api/openapi.yaml and generated interfaces.
-- tests/integration: PostgreSQL/HTTP authorization and report fixtures.
-
-Use the repository's actual filenames and query generator setup; these are planned areas, not a claim of existing code.
+## Affected areas
+Admin handlers; middleware/current role; authorization service; user/category/transaction/report/audit queries; OpenAPI; real PostgreSQL/HTTP suite.
+These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
 
 ## Validation
-Use A/B regular accounts and C admin, each with distinct records/categories/timezones. Run all cases in access-control.md, including scope/role/cursor tampering and outage behavior.
-Run go test ./..., go vet ./... and the configured real-PostgreSQL integration commands. Use a concurrent test for role revocation/next request and audit/response ordering.
-Compare target totals to the owner's personal report under identical dates; test empty/soft-deleted records and verify no ledger values/versions change from admin reads.
-Compilation and documentation checks alone do not count as security verification.
+A/B denial versus C positive full CRUD; C-created record owner B; role promotion/demotion; user boolean deletion/restoration; active/Trash; version races; category mismatch; audit rollback; selected-user totals; expired/deleted actor.
+Run go test ./..., go vet ./... and the configured PostgreSQL/HTTP integration suite where relevant. Verify generated-code drift for changed SQL/OpenAPI sources.
+Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
 
-## Risks and recovery
-Wrong target propagation, stale role decisions, permissive fallback routes and delayed frontend responses can expose data. Keep all queries scoped, use read-only service capabilities and fail closed on role/audit errors.
-Existing owner-only endpoints remain unchanged in authority. Revert an application rollout through a reviewed prior build if needed; do not delete financial rows or role history.
-No production rollout, frontend implementation or user-role mutation is performed by this planning update.
+## Authorization and lifecycle review
+Trace actor, selected owner, action, version and isDelete state through every affected boundary.
+Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
+For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
+Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
+Apply only the checks relevant to this issue's actual scope.
+
+## Scope and recovery
+No automatic production role change during planning, no physical business-row deletion, and no raw credential responses. Existing filename retains its historical slug for link compatibility.
+Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
+After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
 
 ## Review checkpoint
-Present actual files, refined sequence and test commands before implementation. Follow the user's current authorization for subsequent actions.
+Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.
+Complete backend management before frontend Issue 008; retain this task's historical filename for existing links.

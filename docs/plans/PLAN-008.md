@@ -1,45 +1,46 @@
-# PLAN-008: Responsive Vue browser MVP
+# PLAN-008: Vue owner and admin management UI
 
-Status: Draft — refine against actual repository and review before coding.
-Issue: ../issues/ISSUE-008-web-mvp.md
-Repository: monelog-app; prerequisites: 013 (backend Issues 001–007 and 013 complete).
+Status: Draft — refine against actual repository before implementation.
+Updated: 14 September 2026 (v0.3)
+Issue: [ISSUE-008](../issues/ISSUE-008-web-mvp.md)
+Repository: monelog-app
+Prerequisites: 013
+Requirements: FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-07, FR-11, FR-15, FR-17
 
 ## Before implementation
-Read linked issue and requirements/architecture/database/API. Verify prerequisite issues are Done. Inspect actual tree and existing changes; proposed paths are not verified existing paths. Resolve any product/security choices relevant to this issue.
+Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
+Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
+Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
 
 ## Implementation sequence
-1. Initialize Vue 3 JavaScript project with pinned compatible dependencies.
-2. Add router, API wrapper, in-memory access auth and browser refresh flow.
-3. Build main tabs and day-detail navigation.
-4. Build validated entry/edit form and delete confirmation.
-5. Add reports presets/custom filters and drilldown lists.
-6. Add loading/empty/error/offline explanation and accessibility checks.
-
-## Access-control implementation (14 September 2026)
-1. Wait for backend 001–007 and 013, then use GET /me current role for navigation rendering and handle server 403.
-2. Build an initially empty Admin View with paginated email search and one-user selector; fetch metadata and finance via explicit admin routes.
-3. Display the selected email/read-only label and apply that user's timezone to date presets.
-4. Use separate read-only components or capabilities so Add/Edit/Delete/export/share/template/backup controls cannot run in Admin View.
-5. Key pending requests/state by actor/mode/target/filters; clear immediately on changes, abort requests and ignore stale generations.
-6. Verify role denial/logout and switch back to My Data discard selected-user data without changing JWT sub.
-
-Policy: [access-control.md](../access-control.md). FR-01/FR-15: implement only after backend Issue 013. The UI uses the same session and distinct admin GET routes; selected-user state never overrides personal owner identity.
+1. Initialize pinned Vue JavaScript/router/state/API setup and in-memory access authentication.
+2. Build personal main tabs, transaction/category CRUD, reports and version-aware error flows.
+3. Add Trash/detail/restore UI using strict isDelete queries and lifecycle endpoints.
+4. Render Admin Management using current /me role; build user directory/create/role/account lifecycle controls.
+5. Reuse forms with immutable owner context and explicit admin endpoints; keep management actions enabled.
+6. Handle save/discard, cancel stale reads, scope/generation-check responses and clear data on role/session changes.
+7. Verify accessibility, narrow/wide layouts and A/B/C end-to-end flows.
 
 ## Affected areas
-
-Frontend: src views/components/services/stores/router and focused tests; native platform files only for mobile issue.
-Narrow these areas to exact file paths during repository inspection; do not edit all listed areas automatically.
+src/views/components/services/stores/router/utils; focused unit/component/E2E tests.
+These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
 
 ## Validation
-Unit money/date-format tests; component validation; E2E login/create/edit/delete/report; session expiry; 360px and desktop layouts.
+Login/refresh; owner CRUD; positive admin CRUD/roles; A direct admin denial; active versus Trash; delete/restore totals; delayed responses; unsaved form target switch; logout/relogin; 360px/desktop accessibility.
+Run the configured frontend unit/component/E2E commands and npm run build; inspect package.json for exact names. Device builds/checks are required by the mobile issue.
+Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
 
-Run configured frontend unit/E2E commands and npm run build; establish exact script names from package.json.
-Authorization validation: Add E2E ordinary-user direct admin navigation, admin select A/B, delayed A response after switching to B, target timezone presets, logout/login as A, role demotion, read-only controls and 360px selector layout.
+## Authorization and lifecycle review
+Trace actor, selected owner, action, version and isDelete state through every affected boundary.
+Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
+For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
+Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
+Apply only the checks relevant to this issue's actual scope.
 
-Record actual results; unavailable infrastructure is a stated blocker, not a pass.
-
-## Risks and recovery
-No Capacitor packaging, offline queue, calculator or graph. Preserve user changes. Keep PR focused. Use disposable database fixtures; if schema changes, test forward migration and document recovery before rollout. Roll back application through a reviewed prior build, never by erasing shared data. Incompatible/data-changing migrations require a separate recovery plan.
+## Scope and recovery
+No Capacitor packaging, offline write queue, calculator or graph in browser MVP.
+Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
+After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
 
 ## Review checkpoint
-Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
+Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.

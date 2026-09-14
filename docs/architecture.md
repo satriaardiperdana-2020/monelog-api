@@ -1,71 +1,82 @@
 # Architecture
-Draft v0.2, 14 September 2026. Proposed design, not a deployed system. Versions will be selected and pinned during ISSUE-001 after checking official compatibility/security documentation.
+Draft v0.3 • 14 September 2026
+Planning only; versions will be checked against official compatibility documentation and pinned during setup.
 
-## Components
-- monelog-app: Vue 3, JavaScript, router, small shared state layer and HTTP client. Same UI source for browser and Capacitor Android/iOS.
-- monelog-api: Go + Echo HTTP service, PostgreSQL, sqlc queries, OpenAPI contract with oapi-codegen.
-- Separate worker command later for exports/backups; no Redis or microservices needed for MVP.
-- Browser deployment should proxy /api on the same origin. Native clients use the HTTPS API directly.
-- Server is authoritative in MVP; mobile packaging does not imply offline synchronization.
+## Components and boundaries
+monelog-api uses Go, Echo, PostgreSQL, sqlc and OpenAPI/oapi-codegen.
+monelog-app uses Vue 3 + JavaScript for the browser and Capacitor Android/iOS. Backend completes before frontend work.
+Use one API and later a worker process for export/backup jobs. Redis and microservices are unnecessary for the MVP design.
+Browser deployment should proxy /api on the same origin; native clients call the HTTPS API directly. Server remains authoritative; mobile packaging does not imply offline synchronization.
 
-## Request boundaries
-Middleware authenticates and adds user identity → handler validates transport input → service enforces business rules → repository executes sqlc queries.
-Personal handlers never accept owner identity from request bodies or query parameters; their reads and writes use the authenticated actor's user ID.
-Explicit /admin/users/{user_id}/... GET handlers authenticate the actor, check the current database role is admin, resolve the target user, and create a read-only scope for that one target.
-Financial repository queries always require an explicit owner ID. Personal scope uses actor_user_id; authorized admin read scope uses target_user_id. Write methods only accept the actor's own scope. Never remove the owner filter because the caller is an admin.
-Database constraints are the final safety net, including composite category ownership/type relationships.
-Use transactions for multi-write operations. Propagate request context/timeouts. Return sanitized errors with request IDs.
+Middleware authenticates the actor and current account state → handler validates input → service authorizes action and owner → repository executes explicitly scoped queries.
+Personal scope: actor=owner. Admin scope: actor remains the signed-in admin; owner comes from the validated target path. Admin scope permits create/read/update/delete/restore and later export/template/backup operations.
+The same domain rules apply to both scopes. Keep owner predicates, category/type constraints and optimistic versions on every mutation. Never authorize solely from frontend controls or JWT role claims.
 
-## Proposed backend directories
+## Proposed directories
 | Path | Responsibility |
 | --- | --- |
-| cmd/api/main.go | Composition and HTTP startup |
-| cmd/worker/main.go | Later scheduled jobs |
-| cmd/admin/main.go | Planned operator-only role provisioning command; not an HTTP endpoint |
-| internal/config | Typed configuration and validation |
-| internal/handlers | HTTP adapters |
-| internal/middleware | Authentication, current-role guard for admin routes, logging, recovery, rate limits |
-| internal/service | Finance and authorization rules |
-| internal/repository | Handwritten query adapter |
-| internal/repository/sqlc | Generated database code |
-| internal/api | Generated OpenAPI types/interfaces |
-| db/migrations | Versioned SQL schema |
-| db/queries | sqlc source queries |
-| api/openapi.yaml | Canonical machine-readable API contract |
-| tests/integration | Real PostgreSQL tests |
-| docs | This planning pack |
+| cmd/api/main.go | HTTP composition/startup/shutdown |
+| cmd/worker/main.go | Later background jobs |
+| cmd/admin/main.go | Initial admin bootstrap/recovery for a trusted server operator |
+| internal/config | Typed validated configuration |
+| internal/handlers | Personal and admin HTTP adapters |
+| internal/middleware | Authentication, current account/role checks, safe logging, recovery, throttling |
+| internal/service | Action authorization, scope, financial rules and job lifecycle |
+| internal/repository | Handwritten repository boundary |
+| internal/repository/sqlc | Generated SQL queries |
+| internal/api | Generated OpenAPI code |
+| db/migrations, db/queries | Versioned schema and sqlc source |
+| api/openapi.yaml | Canonical machine-readable contract |
+| tests/integration | Real PostgreSQL/HTTP tests |
+| docs | Canonical planning pack |
 
-Frontend: src/views, src/components, src/services, src/stores, src/router, src/utils; tests alongside modules or under tests/.
-Use service and repository interfaces only where useful for tests; avoid layers that merely rename methods.
+Frontend directories: src/views, components, services, stores, router and utils, with focused tests. Admin Management reuses validated transaction forms with an explicit owner context.
 
-## Authentication proposal
-Short-lived JWT access tokens; random rotating refresh tokens stored hashed server-side in revocable sessions.
-Browser: access token in memory; refresh cookie HttpOnly/Secure with suitable SameSite policy, scoped path, origin checks and CSRF protection.
-Native: refresh token in OS-backed secure storage through a separately vetted plugin, not localStorage; bearer access token in memory.
-Refresh reuse revokes the session family. JWT validation pins algorithm, issuer, audience and expiry. Logout revokes refresh sessions; existing access tokens may remain valid until their short expiry.
-Never place Google OAuth credentials or refresh tokens in the client bundle. Encrypt provider credentials at rest using a managed external key.
+## Authentication and roles
+Short-lived access JWTs and random rotating refresh secrets hashed in revocable sessions.
+Browser: in-memory access token; HttpOnly/Secure refresh cookie with appropriate SameSite, CSRF and origin checks.
+Native: vetted OS-backed secure refresh storage; access token in memory. Never localStorage for refresh secrets.
+Validate JWT algorithm, issuer, audience and expiry; sub is always the actor.
+Public registration defaults to user and rejects role/owner overrides. Admin account creation/role updates use protected endpoints and current-role checks. GET /me returns current role for UI.
+Bootstrap first admin through an explicit operator command; no hardcoded account or first-user auto-promotion.
+Current account is_delete=true denies all protected requests, including requests with old access JWTs. Role changes/account deletion revoke refresh sessions; committed demotion blocks new admin requests.
 
-## Consistency
-Money: NUMERIC(14,2) in PostgreSQL, exact decimal or integer minor-unit representation in Go; JSON money strings.
-Transactions use version for optimistic locking; duplicate create protection uses client_request_id per user.
-Reports and exports share filtering and aggregation logic but receive separately authorized owner scope. Admin report viewing never grants access to another user's export jobs. Cursor pagination uses stable ordering and binds actor, target, route family and filters.
-No cached balance column. Start with indexed aggregation; optimize only after measuring.
+## Transactions, authorization and audit
+Read requests check current actor state/role before target lookup. All business mutations open a DB transaction, lock involved actor/target account rows in stable UUID order, recheck authorization and target activity, then validate/update the resource and persist audit before commit.
+Account/role changes participate in the same locking rules; concurrent committed deletion/demotion cannot be bypassed by a stale mutation check.
+Use named methods such as CreateTransaction(scope), SoftDeleteTransaction(scope,version), RestoreTransaction(scope,version); no generic client-controlled owner or role assignment.
+Admin actions log actor versus owner, operation, safe resource/version metadata and outcome. Admin mutation plus audit insert is atomic; audit failure rolls back. Admin reads require audit persistence before responding.
+Audit records are append-only. Admins can inspect logs through a protected endpoint; raw credentials/financial payloads are not returned or logged.
 
-## Deployment and operations
-Separate development/staging/production configuration and databases; migration job before new app rollout, tested rollback/forward recovery.
-Use database backups with retention and regular restore tests independently of personal Drive exports.
-Structured logs redact titles, tokens, passwords, provider credentials and financial payloads. Health/live and health/ready endpoints.
-CI runs formatting, vet/lint, tests, regeneration drift check, frontend tests/build and dependency scanning.
-Commit generated sqlc/OpenAPI code; regenerate deterministically and review the source plus generated diff.
-Do not commit .env, signing keys, database dumps or mobile provisioning assets.
-iOS build/sign/test needs a suitable macOS/Xcode environment and signing credentials; confirm availability in mobile milestone.
+## Soft deletion
+API field isDelete maps to Go IsDelete and SQL is_delete BOOLEAN NOT NULL DEFAULT FALSE.
+Users/categories/transactions/templates use the flag; it replaces the earlier transaction timestamp deletion signal and category archive proposal.
+Create defaults false. Delete sets true and updates version/audit time. Restore sets false after ownership, version and related-category checks.
+Active queries explicitly filter transactions.is_delete=false. Trash queries explicitly request true; owner/admin authorization remains identical.
+A deleted category is hidden from selectors but historical category labels remain available through scoped joins. Do not filter historical transactions out because a joined category is deleted.
+Deleted user disables login/jobs without cascading child-row flags; admin may inspect retained data and restore the account. No application hard delete for these entities.
 
-## User/admin authorization
-Implement [access-control.md](access-control.md) through centralized middleware and service policy. JWT sub always identifies the acting account. Read the current role from PostgreSQL on every admin request; neither a role claim nor frontend state is authoritative.
-GET /me returns the current role for UI rendering. Registration sets role=user server-side; unknown role fields are rejected. Normal profile endpoints only update the actor's timezone.
-An operator command provisions/revokes an admin role for one explicit existing account through a separate privileged deployment connection; it is unavailable to the HTTP database role. Record operator identity, account, old/new role and time in an operational audit log. Revoke that account's refresh sessions on role changes.
-Admin viewing does not impersonate users and cannot reach other users' mutations, credentials, exports, templates or Drive resources. Database errors or unknown roles fail closed.
-Each successful admin directory/profile/financial read writes a minimal admin_access_events record before responding; audit persistence failure returns 503 without financial data. Failed authenticated admin-route attempts are recorded when the audit store is available.
-All authenticated API responses, including errors, use Cache-Control: no-store. Browser/native state keys include actor, mode, target and filters; clear data and cancel/invalidate requests on selection change, mode change, logout or role denial. Do not persist selected-user financial responses in localStorage, service-worker caches or offline storage.
-Admin data loading uses selected-user timezone/currency; preserve date-only transactions as stored.
-An authorization decision already made for an in-flight request may complete; every subsequent request after a committed demotion must see the current role.
+## Jobs and provider operations
+Persist owner_user_id, requested_by, request_mode and immutable filters in export/backup jobs.
+A regular user operates only their own owner scope; a current admin can manage any selected owner's jobs and downloads.
+Before execution, recheck owner/requester account state and admin role when request_mode=admin. Canceled or unauthorized jobs make no provider call.
+Recurring schedules retain owner, authorizing actor and mode; paused schedules need explicit authorized resume.
+External calls follow committed job+audit creation; keep them outside DB locks and track remote success/failure/retries explicitly.
+Drive operations require the selected owner's valid provider connection/consent. Admin permissions allow management but do not manufacture OAuth authorization.
+Backup/restore preserves isDelete flags, validates selected-owner remapping and excludes auth roles/credentials/audit histories. Data restore cannot promote a user; dedicated admin role operations can.
+
+## Consistency and clients
+Money: NUMERIC(14,2), exact Go decimals/minor units, JSON decimal strings. No floating point or stored balance column.
+Record version guards edits/deletes/restores. Create idempotency is scoped by authorized owner and client_request_id; record actual actor separately.
+Reports/exports share aggregation and owner/active-row filters.
+Bind cursors and cache/request keys to actor, mode, owner, endpoint, filters and deletion state.
+All authenticated responses use Cache-Control: no-store. Do not persist other users' data in offline caches.
+Admin UI labels the selected owner and enables management. Save/discard before switching an unsaved form; submitted operations stay bound to the original target. Discard late responses after target/session changes.
+
+## Operations and validation
+Separate development/staging/production, migration rollout and reviewed recovery plans.
+Database disaster-recovery backups and restore drills are separate from personal Drive backups.
+Structured logs redact finance payloads, passwords, tokens and provider secrets; health/live and health/ready disclose no configuration.
+CI: formatting, vet/lint, meaningful tests, generated-code drift, frontend build and dependency checks.
+Commit sqlc/OpenAPI generated code; exclude .env, signing keys, dumps and provisioning secrets.
+Validate current toolchain requirements and macOS/Xcode/signing availability in the mobile milestone.

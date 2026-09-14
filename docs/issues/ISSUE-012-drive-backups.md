@@ -1,35 +1,31 @@
-# ISSUE-012: Scheduled Google Drive backups and restore validation
+# ISSUE-012: Owner/admin Drive backup and validated restore
 
 Status: Backlog
+Updated: 14 September 2026 (v0.3)
 Repository: monelog-api + monelog-app
 Dependencies: 011
 Remote issue: Not created
-Plan: ../plans/PLAN-012.md
+Requirements: FR-01, FR-12, FR-15, FR-16, FR-17
+Plan: [PLAN-012](../plans/PLAN-012.md)
+Policy: [Access control and soft deletion](../access-control.md)
 
 ## Goal
-Provide opt-in per-user scheduled backups with a verified recovery path.
+Allow owners and admins to manage authorized per-user Drive backups and restore retained data while preserving boolean deletion and owner boundaries.
 
 ## Acceptance criteria
-- [ ] User can connect/disconnect
-- [ ] scheduler retries without duplicate jobs
-- [ ] only owner's data exported
-- [ ] recovery drill validates counts and totals.
+- [ ] Own/admin connection/schedule/job/download/restore operations use selected owner and valid provider authorization.
+- [ ] Jobs/schedules persist owner, authorizing actor and mode; revoked authority or deleted accounts cancel/pause execution.
+- [ ] Backup data preserves true and false business rows, excludes roles/credentials/audit records and contains checksums/schema version.
+- [ ] Restore validates target ownership/category relationships and preserves flags, including active historical transactions linked to deleted categories; imported fields cannot elevate role.
+- [ ] Actor/target audit and explicit external job states support safe retries and a real recovery drill.
 
-- [ ] Drive connection, schedules, jobs and restore are bound to the signed-in owner for both roles; admin selection cannot change them.
-- [ ] Personal backup payloads exclude roles, session/audit/provider secrets; restore rejects privileged fields and cannot promote an account.
-- [ ] Restored records and category relationships are validated/remapped to the authorized backup owner.
-
-## Scope exclusions
-No unattended overwrite of production data; destructive restore needs explicit confirmation.
-
-## Access-control scope (14 September 2026)
-FR-01/FR-15: admin finance viewing grants no permission over another user's Drive tokens, backup files, schedules or restoration. Operational database recovery is separate.
-See [access-control.md](../access-control.md).
+## Scope and affected areas
+Drive OAuth/service/worker; connection/schedule/job migrations; backup/restore schema; scoped API; UI settings; isolated restore tests.
+No unattended overwrite of production data, plaintext credentials in backups, or claim that app admin role authorizes a Google account without provider consent.
 
 ## Verification
-Expired/revoked credentials; duplicate scheduler runs; cross-user isolation; corrupt backup; restore count/total parity; timezone schedule edge.
-
-Additional authorization verification: Add C attempting B Drive/job/restore paths, selected-target payload tampering, malicious imported role/session/owner IDs and per-owner restored totals.
+Own/admin positive operations and A/B denial; expired/revoked OAuth; requester demotion; deleted owner; duplicate runs; target payload tampering; corrupted backup; malicious role/owner fields; flag/count/active-total parity.
 
 ## Definition of done
-Acceptance tests pass; relevant regressions pass; diff reviewed; documentation/contract updated; actual verification results recorded. No status change before implementation.
+Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
+Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.

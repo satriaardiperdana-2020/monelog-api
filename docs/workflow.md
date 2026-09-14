@@ -1,45 +1,46 @@
-# Step-by-step issue workflow
-Planning describes HOW an issue will be implemented. An issue describes WHAT must be achieved and acceptance criteria. A prompt tells an agent which artifacts and boundaries to follow. Planning is not coding.
+# Step-by-step development workflow
+Requirements describe what the app does. An issue defines one deliverable and acceptance criteria. Its plan describes implementation steps and verification. A prompt selects the task and instructions.
 
-1. Read requirements and access-control.md. User-only ownership and admin viewing are confirmed; review remaining flagged product choices.
-2. Place docs in monelog-api; commit only after reviewing the files. Never include secrets or screenshot financial details unnecessarily.
-3. Keep docs/issues.md as the index; one docs/issues/ISSUE-NNN-name.md per task. Do not add a duplicate issue.md.
-4. Optionally create one GitHub Issue from each local issue. Add its URL/number to the index; retain ISSUE-NNN as the portable ID. These portable task files have no linked GitHub Issues; do not reuse historical issue numbers.
-5. Work in dependency order: 001–007, then 013, then 008–012. Open ISSUE-001 and PLAN-001 first; finish the admin backend before monelog-app.
-6. Ask the agent to inspect the actual repository and refine the plan only. This pack's plans are pre-repository drafts.
-7. Review affected files, dependencies, migration/data risks, acceptance tests and exclusions. Approve the plan before code.
-8. Create a task branch such as feature/ISSUE-001-project-setup. Do not reset an existing repository.
-9. Implement only that issue. Update docs if approved design changes.
-10. Run issue-specific tests and relevant regression tests; record actual commands/results, not assumed passes.
-11. Review diff for security, finance correctness, generated-code drift and scope. Open PR when explicitly requested.
-12. Merge after checks/review; mark local issue and index Done together; close the linked GitHub issue if used.
-13. Continue to the next unblocked issue. Never mark a task Done merely because its plan exists.
+1. Read requirements.md and access-control.md: owner-only CRUD, full admin management and isDelete deletion are confirmed.
+2. Keep docs canonical in monelog-api. Review repository instructions and existing changes before editing.
+3. Use docs/issues.md plus one ISSUE-NNN file and PLAN-NNN per task. Preserve stable IDs across GitHub/Bitbucket.
+4. If creating GitHub Issues later, link each actual URL to its task file/index; no current portable task has been mapped to a remote issue.
+5. Work backend 001–007 → 013, then frontend 008 → 009–012 in dependency order.
+6. Inspect the actual repository and refine the chosen plan to exact files, commands and remaining decisions before implementation.
+7. Implement the selected issue under the user's current authorization. Keep branch/commit/PR actions within that authorization.
+8. Trace actor, owner and requested operation across handler, service, query, response, cache and job payload.
+9. For each affected entity, implement is_delete=false defaults, true soft deletion and false restoration with version checks. No physical business-row delete.
+10. Run meaningful issue tests, including positive admin operations and regular-user cross-owner denials. Record real commands/results; blocked infrastructure is not a pass.
+11. Review the diff for owner predicates, role checks, deletion filters, category history, job target and audit atomicity. Validate contract/generated-code consistency.
+12. Complete review/merge as authorized; update the issue and index together when acceptance criteria pass.
+13. Proceed to the next unblocked task. A documentation update does not mark implementation Done.
 
 ## Planning prompt
-Read docs/requirements.md, docs/access-control.md, docs/architecture.md, docs/database.md, docs/api.md,
-docs/issues/ISSUE-001-project-setup.md and docs/plans/PLAN-001.md.
-Inspect the repository without reading secret files. Refine PLAN-001 with actual paths,
-steps, test commands, risks and exclusions. Do not implement code or modify remote systems.
-Stop after presenting the plan for review.
+Read docs/requirements.md, docs/access-control.md, docs/architecture.md,
+docs/database.md, docs/api.md, docs/issues/ISSUE-001-project-setup.md
+and docs/plans/PLAN-001.md. Inspect the repository without reading secret files.
+Refine this issue's plan to actual paths, implementation steps, test commands
+and unresolved decisions. This request is planning only.
 
 ## Implementation prompt
-Implement only ISSUE-001 using the reviewed PLAN-001.
-Preserve existing user changes and do not read .env or secret files.
-Run relevant tests, report real results and summarize the diff.
-Do not commit, push or open a PR unless I explicitly request it.
+Implement the selected issue using its reviewed plan and current access-control rules.
+A regular user CRUDs only their own data; an admin may manage any explicitly selected owner.
+Use API isDelete / Go IsDelete / SQL is_delete; delete retains rows and restore reactivates them.
+Preserve unrelated user changes, do not read secret files, run relevant tests and report actual results.
+Follow my current instructions for commit, push and PR actions.
 
 ## Review prompt
-Review the diff against ISSUE-001 acceptance criteria and PLAN-001.
-Prioritize correctness, the user/admin access matrix, selected-user read scope, owner-only writes, decimal precision, migrations and missing tests.
-Report findings with file references and severity. Do not change code.
+Review the diff against the selected issue and plan.
+Check owner isolation and successful admin CRUD, account/role changes, exact-money totals,
+boolean soft deletion and restore races, correct selected-user jobs, audit atomicity and missing tests.
+Report findings with file references and severity. This request is review only.
 
-Replace 001 and the filenames with the selected issue. For frontend issues work in monelog-app and reference the pinned backend API contract.
-If using Jira later, map the same local stable ID to a Jira key. Choose one status owner (initially local docs) and mirror status deliberately; do not claim automatic synchronization.
+Replace ISSUE-001 and PLAN-001 with the task being worked. Frontend work uses monelog-app and a pinned backend API/permission specification.
+Later Jira/Bitbucket mapping retains the same portable ID. Choose one status owner and mirror deliberately; no automatic synchronization is claimed.
 
-## Authorization work for every issue
-Identify actor_user_id and financial owner before touching a query, cache key or job payload.
-On personal routes owner equals actor. On admin GET routes owner equals the explicit target only after the current-role guard. Never extend admin viewing into other users' mutations or personal exports/templates/backups.
-Add acceptance tests for regular users A/B and admin C where the issue touches data. Test valid admin views as well as denial cases; an unconditional cross-user denial would now fail FR-15.
-Review routes, SQL owner predicates, DTOs, pagination, async responses, workers and mobile caches together. Attach real test results to the task; keep Backlog until implementation.
-Run backend 001–007 → 013 before frontend 008. Implement the selector against that tested API and reject responses whose scope no longer matches the current selection.
-The docs are the canonical specification in monelog-api; frontend work uses a pinned backend documentation/contract commit.
+## Authorization checklist for implementation
+Personal owner=actor. Admin owner=verified target, with an active current admin and supported action. Admin writes are authorized; do not retain obsolete blanket cross-user write denials.
+Every query and mutation keeps a single financial owner. New admin-created data belongs to the target, with actor attribution.
+Lifecycle status is a boolean, not physical erasure. Active totals use transactions.is_delete=false and do not disappear when a historical category is deleted.
+Forms, pending writes, exports, templates, schedules and restore jobs bind immutable target context. Never switch an in-flight operation to a newly selected owner.
+Use A/B regular accounts and C admin for both allowed and denied paths; include Trash, restore, stale versions, job reauthorization, deleted accounts and audit failure.
