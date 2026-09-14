@@ -14,6 +14,13 @@ Read linked issue and requirements/architecture/database/API. Verify prerequisit
 4. Add save-template and apply-template UI with selected date behavior.
 5. Handle archived category by requiring replacement before save.
 
+## Access-control implementation (14 September 2026)
+1. Bind every template operation to actor ID, including the category FK and the new transaction created after explicit Save.
+2. Keep template controls inside My Data; selecting a user for viewing never supplies owner identity to template requests.
+3. Test both ordinary and admin actors are denied on another owner's template IDs.
+
+Policy: [access-control.md](../access-control.md). FR-01/FR-15: templates are personal convenience data; another user's visible transactions do not grant access to their templates.
+
 ## Affected areas
 Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
 Frontend: src views/components/services/stores/router and focused tests; native platform files only for mobile issue.
@@ -23,6 +30,8 @@ Narrow these areas to exact file paths during repository inspection; do not edit
 Applying twice creates no records; edited preset save; category mismatch/archive; cross-user access.
 Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
 Run configured frontend unit/E2E commands and npm run build; establish exact script names from package.json.
+Authorization validation: Add admin C requesting/applying B template, target tampering on save/apply and hidden template controls in Admin View.
+
 Record actual results; unavailable infrastructure is a stated blocker, not a pass.
 
 ## Risks and recovery
@@ -30,4 +39,3 @@ No recurring auto-created transactions or day bundles unless scope revised. Pres
 
 ## Review checkpoint
 Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
-

@@ -14,6 +14,11 @@ Read linked issue and requirements/architecture/database/API. Verify prerequisit
 4. Add example configuration with placeholders and local PostgreSQL setup instructions.
 5. Add CI formatting/test/lint checks and README startup steps.
 
+## Access-control implementation (14 September 2026)
+1. Reference ../access-control.md and reserve middleware/service boundaries for actor and selected-owner scope; do not implement finance or role assignment in project setup.
+
+Policy: [access-control.md](../access-control.md). FR-01/FR-15 groundwork only: keep an explicit place for authentication and authorization in middleware/service. Implement roles in 003 and admin viewing in 013.
+
 ## Affected areas
 Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
 
@@ -23,6 +28,8 @@ Narrow these areas to exact file paths during repository inspection; do not edit
 Config validation tests; HTTP live test; readiness with unavailable DB; startup/shutdown smoke test.
 Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
 
+Authorization validation: Review config examples and startup docs: no public admin toggle, automatic first-user promotion or seeded production admin credentials.
+
 Record actual results; unavailable infrastructure is a stated blocker, not a pass.
 
 ## Risks and recovery
@@ -30,4 +37,3 @@ No auth, migrations, finance logic, deployment or remote repo changes. Preserve 
 
 ## Review checkpoint
 Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
-

@@ -13,6 +13,13 @@ Read linked issue and requirements/architecture/database/API. Verify prerequisit
 3. Enforce type immutability, trimmed names and archived-name uniqueness.
 4. Test safe read semantics for categories used by historical transactions.
 
+## Access-control implementation (14 September 2026)
+1. Keep all create/rename/archive paths tied to actor ID for both roles.
+2. Make category read projection and pagination reusable for the future authorized admin target adapter; include no credentials.
+3. Test foreign-category and type/owner mismatches without adding an admin write exception.
+
+Policy: [access-control.md](../access-control.md). FR-01/FR-15: admin category display/filtering is read-only through Issue 013; category management remains actor-owned.
+
 ## Affected areas
 Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
 
@@ -22,6 +29,8 @@ Narrow these areas to exact file paths during repository inspection; do not edit
 CRUD authorization matrix; duplicate case-insensitive name; archived category visibility; invalid type.
 Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
 
+Authorization validation: A cannot read/change B categories on personal paths; admin C cannot change B categories; same-target category query returns only target labels, including archived-history rules.
+
 Record actual results; unavailable infrastructure is a stated blocker, not a pass.
 
 ## Risks and recovery
@@ -29,4 +38,3 @@ No hard category deletion or shared global category editor. Preserve user change
 
 ## Review checkpoint
 Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
-

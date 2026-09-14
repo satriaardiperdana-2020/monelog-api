@@ -15,6 +15,14 @@ Read linked issue and requirements/architecture/database/API. Verify prerequisit
 5. Build versioned data backup with checksums, validate archive and restore into disposable isolated DB.
 6. Document operational recovery separately from personal backups.
 
+## Access-control implementation (14 September 2026)
+1. Use actor-owned authorization for connection/schedule/manual backup/restore, and bind scheduled jobs to the stored owner and its own Drive connection.
+2. Exclude roles, refresh sessions, admin audit events and provider credentials from personal backup schemas.
+3. Validate imported fields and category mappings; reject privilege fields and never trust source owner IDs as authority.
+4. Test admin C cannot read B credentials, redirect jobs to another Drive account or restore B data through the viewing permission.
+
+Policy: [access-control.md](../access-control.md). FR-01/FR-15: admin finance viewing grants no permission over another user's Drive tokens, backup files, schedules or restoration. Operational database recovery is separate.
+
 ## Affected areas
 Backend: cmd as needed, internal handlers/service/repository, db queries/migrations, API contract and integration tests.
 Frontend: src views/components/services/stores/router and focused tests; native platform files only for mobile issue.
@@ -24,6 +32,8 @@ Narrow these areas to exact file paths during repository inspection; do not edit
 Expired/revoked credentials; duplicate scheduler runs; cross-user isolation; corrupt backup; restore count/total parity; timezone schedule edge.
 Run go test ./... and go vet ./... plus configured PostgreSQL integration suite; add race tests where concurrency is involved.
 Run configured frontend unit/E2E commands and npm run build; establish exact script names from package.json.
+Authorization validation: Add C attempting B Drive/job/restore paths, selected-target payload tampering, malicious imported role/session/owner IDs and per-owner restored totals.
+
 Record actual results; unavailable infrastructure is a stated blocker, not a pass.
 
 ## Risks and recovery
@@ -31,4 +41,3 @@ No unattended overwrite of production data; destructive restore needs explicit c
 
 ## Review checkpoint
 Present refined sequence, exact file scope, unresolved decisions and test commands. Wait for implementation approval. After coding, compare each acceptance criterion with concrete test evidence.
-
