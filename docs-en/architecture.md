@@ -12,6 +12,42 @@ Middleware authenticates the actor and current account state → handler validat
 Personal scope: actor=owner. Admin scope: actor remains the signed-in admin; owner comes from the validated target path. Admin scope permits create/read/update/delete/restore and later export/template/backup operations.
 The same domain rules apply to both scopes. Keep owner predicates, category/type constraints and optimistic versions on every mutation. Never authorize solely from frontend controls or JWT role claims.
 
+## Project structure
+
+The planned canonical structure for monelog-api is:
+
+```
+monelog-api/
+├── cmd/
+│   ├── api/
+│   │   └── main.go              # HTTP composition and server
+│   ├── worker/
+│   │   └── main.go              # Later export/backup jobs
+│   └── admin/
+│       └── main.go              # Admin bootstrap/recovery
+├── internal/
+│   ├── api/                     # Generated OpenAPI code
+│   ├── config/                  # Typed, validated configuration
+│   ├── handlers/                # Personal and admin HTTP adapters
+│   ├── middleware/              # Auth, role checks, safe logging, recovery
+│   ├── service/                 # Business rules, scope, authorization, jobs
+│   └── repository/
+│       ├── postgresql/          # Handwritten PostgreSQL connection/pool
+│       └── sqlc/                # Generated SQL queries
+├── db/
+│   ├── migrations/              # Versioned schema migrations
+│   └── queries/                 # sqlc query sources
+├── api/
+│   └── openapi.yaml             # Canonical API contract
+├── tests/
+│   └── integration/             # PostgreSQL/HTTP tests
+├── docs/                        # Canonical documentation
+├── go.mod
+└── go.sum
+```
+
+Business logic belongs in internal/service; internal/handlers should only translate HTTP requests to service calls. If implementation uses script/sqlc or different directory names, update the plan and documentation after the structure decision is made.
+
 ## Proposed directories
 | Path | Responsibility |
 | --- | --- |
@@ -23,6 +59,7 @@ The same domain rules apply to both scopes. Keep owner predicates, category/type
 | internal/middleware | Authentication, current account/role checks, safe logging, recovery, throttling |
 | internal/service | Action authorization, scope, financial rules and job lifecycle |
 | internal/repository | Handwritten repository boundary |
+| internal/repository/postgresql | PostgreSQL connection and pool |
 | internal/repository/sqlc | Generated SQL queries |
 | internal/api | Generated OpenAPI code |
 | db/migrations, db/queries | Versioned schema and sqlc source |
