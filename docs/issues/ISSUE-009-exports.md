@@ -1,31 +1,41 @@
-# ISSUE-009: Owner/admin Excel and PDF exports
+# ISSUE-009: Ekspor Excel dan PDF pemilik/admin
 
 Status: Backlog
-Updated: 14 September 2026 (v0.3)
-Repository: monelog-api + monelog-app
-Dependencies: 008
-Remote issue: Not created
-Requirements: FR-01, FR-08, FR-15, FR-16, FR-17
+Diperbarui: 14 September 2026 (v0.3)
+Repositori: monelog-api + monelog-app
+Dependensi: 008
+Remote issue: Belum dibuat
+Persyaratan: FR-01, FR-08, FR-15, FR-16, FR-17
 Plan: [PLAN-009](../plans/PLAN-009.md)
-Policy: [Access control and soft deletion](../access-control.md)
+Kebijakan: [Kontrol akses dan penghapusan lunak](../access-control.md)
 
-## Goal
-Export all matching active transactions for an owner or an admin's selected owner with accurate job authorization.
+## Tujuan
 
-## Acceptance criteria
-- [ ] Both XLSX/PDF match selected-owner active report totals/filters and include all matching pages.
-- [ ] Admin can request/manage/download any selected owner's exports; regular users only their own.
-- [ ] Jobs persist immutable owner_user_id, requested_by, request_mode and filters; queued jobs revalidate authority.
-- [ ] Deleted transactions are excluded, while category deletion preserves historical labels.
-- [ ] Expired/unready/out-of-scope downloads and canceled/demoted-requester jobs are handled correctly.
+Mengekspor seluruh transaksi aktif yang cocok untuk owner atau target admin dengan otorisasi job yang tepat.
 
-## Scope and affected areas
-Export jobs/migrations/worker; report service; file generators; download handlers; web export UI.
-Export is a report artifact, not a data backup/import format. Report export never includes Trash.
+## Kriteria penerimaan
 
-## Verification
-More-than-one-page export; exact report parity; true rows excluded; formula injection; long-title PDF layout; A denied/B own/C admin download; stale role; target switching; job retry/expiry.
+- [ ] Kriteria fungsional issue tercapai dengan bukti pengujian nyata.
+- [ ] Pengguna biasa hanya dapat memakai scope sendiri; admin dapat memakai target yang dipilih dan tetap mempertahankan owner/actor.
+- [ ] isDelete, version, Trash/restore, dan validasi scope mengikuti kontrak bersama.
+- [ ] Kegagalan otorisasi, versi lama, dan resource lintas owner menghasilkan status yang tepat.
+- [ ] Audit, kode hasil generate, dokumentasi, dan implementasi tetap konsisten.
 
-## Definition of done
-Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
-Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.
+## Ruang lingkup dan area terdampak
+
+Migrasi/worker export_jobs; service report; generator file; handler download; UI ekspor web.
+Area di atas adalah rencana; persempit menjadi file nyata saat inspeksi repositori. Jangan mengedit modul yang tidak terkait.
+
+## Verifikasi
+
+Ekspor multi-halaman; parity report; baris true dikeluarkan; formula injection; judul PDF panjang; akses A/B/C; role lama; target berubah; retry/expiry job.
+Jalankan perintah yang dikonfigurasi untuk proyek (misalnya go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah frontend yang relevan). Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
+
+## Batasan dan pemulihan
+
+Ekspor adalah artefak laporan, bukan format backup/import; Trash tidak pernah diekspor.
+Pertahankan perubahan pengguna. Uji migrasi pada fixture yang boleh dibuang dan gunakan recovery maju yang telah direview; jangan menghapus baris bersama.
+
+## Definisi selesai
+
+Semua kriteria penerimaan memiliki bukti nyata; kontrak/skema/dokumentasi dan kode hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.

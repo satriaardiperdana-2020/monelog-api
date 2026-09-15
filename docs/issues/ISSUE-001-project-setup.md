@@ -1,30 +1,41 @@
-# ISSUE-001: Backend project setup
+# ISSUE-001: Setup proyek backend
 
 Status: Backlog
-Updated: 14 September 2026 (v0.3)
-Repository: monelog-api
-Dependencies: None
-Remote issue: Not created
-Requirements: FR-01, FR-15, FR-16, FR-17
+Diperbarui: 14 September 2026 (v0.3)
+Repositori: monelog-api
+Dependensi: Tidak ada
+Remote issue: Belum dibuat
+Persyaratan: FR-01, FR-15, FR-16, FR-17
 Plan: [PLAN-001](../plans/PLAN-001.md)
-Policy: [Access control and soft deletion](../access-control.md)
+Kebijakan: [Kontrol akses dan penghapusan lunak](../access-control.md)
 
-## Goal
-Create a reproducible Go/Echo service skeleton with clear authentication/service/repository boundaries.
+## Tujuan
 
-## Acceptance criteria
-- [ ] Service starts using documented commands and shuts down gracefully.
-- [ ] Live and readiness checks differ correctly, including unavailable PostgreSQL.
-- [ ] Missing required config fails clearly; examples contain no production credentials.
-- [ ] README links the full admin and boolean deletion specification; no automatic first-user admin.
+Membangun fondasi layanan Go yang dapat direproduksi dengan batas konfigurasi, handler, middleware, service, repository, health, dan shutdown yang jelas.
 
-## Scope and affected areas
-cmd/api; internal/config/handlers/middleware/service/repository; README and CI.
-No finance/auth implementation, migrations or deployment in this setup task.
+## Kriteria penerimaan
 
-## Verification
-Configuration errors; liveness; readiness with unavailable DB; graceful shutdown. Confirm role/owner authority is not configured from public client input.
+- [ ] Kriteria fungsional issue tercapai dengan bukti pengujian nyata.
+- [ ] Pengguna biasa hanya dapat memakai scope sendiri; admin dapat memakai target yang dipilih dan tetap mempertahankan owner/actor.
+- [ ] isDelete, version, Trash/restore, dan validasi scope mengikuti kontrak bersama.
+- [ ] Kegagalan otorisasi, versi lama, dan resource lintas owner menghasilkan status yang tepat.
+- [ ] Audit, kode hasil generate, dokumentasi, dan implementasi tetap konsisten.
 
-## Definition of done
-Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
-Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.
+## Ruang lingkup dan area terdampak
+
+cmd/api; internal/config, handlers, middleware, service, repository; README dan CI.
+Area di atas adalah rencana; persempit menjadi file nyata saat inspeksi repositori. Jangan mengedit modul yang tidak terkait.
+
+## Verifikasi
+
+Kesalahan konfigurasi; liveness; readiness saat DB tidak tersedia; graceful shutdown; input client publik tidak dapat mengatur role/owner.
+Jalankan perintah yang dikonfigurasi untuk proyek (misalnya go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah frontend yang relevan). Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
+
+## Batasan dan pemulihan
+
+Tidak ada implementasi finance/auth, migrasi, atau deployment pada tugas setup.
+Pertahankan perubahan pengguna. Uji migrasi pada fixture yang boleh dibuang dan gunakan recovery maju yang telah direview; jangan menghapus baris bersama.
+
+## Definisi selesai
+
+Semua kriteria penerimaan memiliki bukti nyata; kontrak/skema/dokumentasi dan kode hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.

@@ -1,89 +1,98 @@
-# Requirements
-Draft v0.3 • 14 September 2026
-Product: Monelog. Documentation: English. Proposed UI: Indonesian.
-Repositories: monelog-api (Go backend), monelog-app (Vue 3 + JavaScript; browser and Capacitor Android/iOS).
-Confirmed correction: admins have full application permissions over any user's data; regular users can CRUD only their own data. Deletion uses the boolean isDelete.
+# Persyaratan
 
-## Evidence and scope
-Screenshots show Home, day detail, Add Transaction and Reports. The launcher screenshot adds no functional requirements.
-Home shows today's totals, Add, older daily summaries and Home/Reports/Settings tabs.
-Day detail shows dated transactions, totals and template/share-looking controls; exact secondary-control behavior is unconfirmed.
-Entry shows date, income/expense type, category, amount, title, Cancel/Save and template/calculator shortcuts.
-Reports show last 7/30 days or a custom range, totals/difference, category rankings and weekly/monthly/category/transaction drilldowns.
-Settings, authentication and admin screens are not shown. Their flows below are design decisions supporting the user's requirements.
+Draf v0.3 • 14 September 2026
+Produk: Monelog. Dokumentasi: Bahasa Indonesia. UI yang diusulkan: Bahasa Indonesia.
+Repositori: monelog-api (backend Go), monelog-app (Vue 3 + JavaScript; browser dan Capacitor Android/iOS).
+Koreksi yang dikonfirmasi: admin memiliki izin aplikasi penuh atas data pengguna mana pun; pengguna biasa hanya dapat melakukan CRUD atas datanya sendiri. Penghapusan menggunakan boolean isDelete.
 
-## Functional requirements
-| ID | Requirement | Delivery / source |
+## Bukti dan ruang lingkup
+
+Tangkapan layar menampilkan Home, detail hari, Add Transaction, dan Reports. Tangkapan layar launcher tidak menambah persyaratan fungsional.
+Home menampilkan total hari ini, Add, ringkasan hari sebelumnya, serta tab Home/Reports/Settings.
+Detail hari menampilkan transaksi bertanggal, total, serta kontrol yang tampak seperti templat/berbagi; perilaku kontrol sekunder belum dikonfirmasi.
+Entry menampilkan tanggal, tipe pemasukan/pengeluaran, kategori, jumlah positif, judul, Cancel/Save, serta pintasan templat/kalkulator.
+Reports menampilkan 7/30 hari terakhir atau rentang kustom, total/selisih, peringkat kategori, dan rincian mingguan/bulanan/kategori/transaksi.
+Layar Settings, autentikasi, dan admin tidak ditampilkan. Alurnya di bawah adalah keputusan desain untuk mendukung persyaratan pengguna.
+
+## Persyaratan fungsional
+
+| ID | Persyaratan | Pengiriman / sumber |
 | --- | --- | --- |
-| FR-01 | Authenticated regular users can create, read, update, soft-delete and restore only their own data | MVP, confirmed |
-| FR-02 | Income/expense entry with date, category, positive amount and title | MVP, screenshot |
-| FR-03 | Edit/delete with confirmation, and restore through Trash | MVP; deletion/restore use FR-17 |
-| FR-04 | Today's totals, paginated daily history and day details | MVP, screenshot |
-| FR-05 | Category create/read/update/delete/restore per transaction type | MVP; deletion replaces the earlier archive proposal |
-| FR-06 | Last 7 days, last 30 days and custom inclusive report dates | MVP, screenshot annotation |
-| FR-07 | Income, expense, difference and weekly/monthly/category/transaction reports | MVP, screenshot |
-| FR-08 | Export selected owner's filtered records to Excel/PDF | Release 1 |
-| FR-09 | Responsive browser UI and Android/iOS packaging | Confirmed |
-| FR-10 | Reusable transaction templates, with an editable unsaved form when applied | Later; exact template behavior remains proposed |
-| FR-11 | Profile timezone, IDR display and category settings | MVP proposal |
-| FR-12 | Scheduled Google Drive backups and validated restore for the selected authorized owner | Later |
-| FR-13 | Offline entry and synchronization | Deferred |
-| FR-14 | Graphs, calculator and native sharing | Deferred; exact control behavior unconfirmed |
-| FR-15 | Admin can manage any user's accounts, roles, categories, income/expenses, reports, exports, templates and backups | Confirmed; each capability ships with its feature milestone |
-| FR-16 | Backend authorization, current account/role checks and audit of admin actions | MVP technical controls |
-| FR-17 | Soft deletion uses isDelete=false for active and isDelete=true for deleted records; retained rows can be restored | Confirmed |
+| FR-01 | Pengguna biasa terautentikasi dapat membuat, membaca, memperbarui, menghapus lunak, dan memulihkan hanya datanya sendiri | MVP, dikonfirmasi |
+| FR-02 | Entri pemasukan/pengeluaran dengan tanggal, kategori, jumlah positif, dan judul | MVP, tangkapan layar |
+| FR-03 | Edit/delete dengan konfirmasi dan restore melalui Trash | MVP; delete/restore memakai FR-17 |
+| FR-04 | Total hari ini, riwayat harian berpaginasi, dan detail hari | MVP, tangkapan layar |
+| FR-05 | Buat/baca/perbarui/hapus/pulihkan kategori per tipe transaksi | MVP; delete menggantikan usulan archive sebelumnya |
+| FR-06 | Laporan 7 hari, 30 hari, dan rentang kustom inklusif | MVP, anotasi tangkapan layar |
+| FR-07 | Laporan pemasukan, pengeluaran, selisih, mingguan/bulanan/kategori/transaksi | MVP, tangkapan layar |
+| FR-08 | Ekspor catatan terfilter milik pemilik terpilih ke Excel/PDF | Rilis 1 |
+| FR-09 | UI browser responsif dan paket Android/iOS | Dikonfirmasi |
+| FR-10 | Templat transaksi yang dapat digunakan ulang, dengan form dapat diedit dan belum tersimpan saat diterapkan | Tahap berikutnya; detail masih diusulkan |
+| FR-11 | Zona waktu profil, tampilan IDR, dan pengaturan kategori | Usulan MVP |
+| FR-12 | Backup Google Drive terjadwal dan restore tervalidasi untuk pemilik terotorisasi yang dipilih | Tahap berikutnya |
+| FR-13 | Entri dan sinkronisasi offline | Ditunda |
+| FR-14 | Grafik, kalkulator, dan berbagi native | Ditunda; perilaku kontrol belum dikonfirmasi |
+| FR-15 | Admin dapat mengelola akun, peran, kategori, pemasukan/pengeluaran, laporan, ekspor, templat, dan backup pengguna mana pun | Dikonfirmasi; setiap kemampuan dikirim bersama milestone fiturnya |
+| FR-16 | Otorisasi backend, pemeriksaan akun/peran aktif, dan audit tindakan admin | Kontrol teknis MVP |
+| FR-17 | Penghapusan lunak memakai isDelete=false untuk aktif dan true untuk terhapus; baris yang dipertahankan dapat dipulihkan | Dikonfirmasi |
 
-## Permissions
-See [access-control.md](access-control.md). My Data is scoped to the authenticated account. Admin Management selects an explicit owner and supports reads and writes for that owner.
-Admin CRUD is permitted. No role-based restriction blocks an admin from editing/deleting another user's records, generating/downloading their exports or managing their templates/backups.
-Owner identity is derived from authorization, never trusted from a submitted body. Normal users cannot select other owners or change roles.
-Admins can create users, change their profile/role, soft-delete and restore accounts through protected admin operations. Public registration always creates a regular user.
-Permissions do not bypass required fields, category ownership/type, version checks or provider OAuth authorization.
+## Izin
 
-## Business rules
-- IDR only in MVP. Store two decimal places exactly; never binary floating point. API money is a decimal string.
-- Income/expense amounts are positive; difference = income minus expense, not an account balance.
-- Amount range 0.01–999999999999.99. Title is trimmed, required, 1–200 characters.
-- Category belongs to the transaction owner and matches its type. Admin-created records belong to the selected user, while actor attribution records the admin.
-- transaction_date is a calendar date; audit timestamps are UTC. Default timezone Asia/Jakarta, configurable.
-- Date presets use the financial owner's timezone, including in Admin Management. Seven days includes today plus six earlier dates; 30 days includes today plus 29.
-- Week starts Monday. Custom endpoints include both dates. Filter before grouping so boundary week/month buckets contain only selected dates.
-- Future transaction dates are rejected in MVP (proposal). Empty/future report ranges may return zero.
-- New users, categories, transactions and templates start with isDelete=false. Only delete/restore operations change it; ordinary create/edit payloads cannot bypass lifecycle rules.
-- Normal lists, daily totals, reports and exports include active transactions only. Trash explicitly requests isDelete=true; it never changes report totals.
-- Soft-deleting a category removes it from selection but preserves historical transaction amounts and category labels. Existing records can be read/deleted; edits/restores require an active compatible category.
-- Category names remain unique per owner/type across active/deleted rows; restore rather than duplicate a deleted name.
-- Soft-deleting a user disables authentication and jobs and revokes sessions; related rows remain retained. Restore does not recover old sessions or automatically resume paused backup schedules.
-- Templates use the same boolean deletion and category ownership rules.
-- No physical deletion of business rows through ordinary app operations, including admin Delete.
-- No wallets/transfers/account balances in MVP. An ATM withdrawal is not automatically a transfer; recording both withdrawal and later spending as expenses double-counts spending.
+Lihat access-control.md. My Data dibatasi pada akun terautentikasi. Admin Management memilih pemilik eksplisit dan mendukung pembacaan maupun penulisan untuk pemilik tersebut.
+CRUD admin diizinkan. Tidak ada pembatasan berbasis peran yang mencegah admin mengedit/menghapus catatan pengguna lain, membuat/mengunduh ekspor mereka, atau mengelola templat/backup mereka.
+Identitas pemilik diturunkan dari otorisasi, bukan dipercaya dari body yang dikirim. Pengguna biasa tidak dapat memilih pemilik lain atau mengubah peran.
+Admin dapat membuat pengguna, mengubah profil/peran, menghapus lunak, dan memulihkan akun melalui operasi admin yang dilindungi. Registrasi publik selalu membuat pengguna biasa.
+Izin tidak melewati field wajib, kepemilikan/tipe kategori, pemeriksaan versi, atau otorisasi OAuth provider.
 
-## Screen flows
-Regular user: login → My Data → personal CRUD, reports, Trash/Restore and later exports/templates/backups.
-Admin: login → My Data or Admin Management → searchable user selector → selected user's CRUD, reports, Trash/Restore and later features.
-The selected user's email/identity remains visible beside management actions; forms, dialogs, pending requests and jobs are bound to that selection.
-Switching users clears stale data/filters and discards delayed responses. If an unsaved form is open, require save/discard before switching. A request already sent keeps its original target; its late result never updates a new target's screen.
-Admins also have user create/update/role/delete/restore controls. Login session identity stays the actor throughout.
+## Aturan bisnis
 
-## Acceptance examples
-- Income 1000000.00 and expense 43500.00 give difference 956500.00.
-- Expenses 500000.00 + 43500.00 + 226000.00 give daily expense 769500.00.
-- Empty day/report returns zero totals and empty lists.
-- Failed Save preserves input; duplicate submission does not create duplicate transactions.
-- Regular A cannot access/change B's data or call admin routes, even knowing UUIDs.
-- Admin C can create/edit/delete/restore records for A and B through their respective scoped routes; selected-user reports reflect each change.
-- Delete sets isDelete=true and increments version without removing the row. Active detail returns 404; Trash shows it. Restore sets false and reintroduces the amount exactly once.
-- Admin target A with record/category belonging to B returns 404 rather than silently switching owner.
-- Account deletion blocks even unexpired access tokens. Demotion blocks the next admin operation after the role change commits.
-- Cross-user export/template/backup operations succeed for a current admin and fail for a regular user.
+- MVP hanya memakai IDR. Simpan tepat dua angka desimal; jangan gunakan floating point biner. Uang API adalah string desimal.
+- Jumlah pemasukan/pengeluaran positif; selisih = pemasukan dikurangi pengeluaran, bukan saldo akun.
+- Rentang jumlah 0.01–999999999999.99. Judul di-trim, wajib, panjang 1–200 karakter.
+- Kategori milik pemilik transaksi dan cocok dengan tipenya. Catatan yang dibuat admin menjadi milik pengguna terpilih, sedangkan atribusi mencatat admin.
+- transaction_date adalah tanggal kalender; timestamp audit UTC. Zona waktu default Asia/Jakarta dan dapat dikonfigurasi.
+- Preset tanggal memakai zona waktu pemilik keuangan, termasuk di Admin Management. Tujuh hari berarti hari ini dan enam hari sebelumnya; 30 hari berarti hari ini dan 29 hari sebelumnya.
+- Minggu dimulai Senin. Endpoint kustom mencakup kedua tanggal. Filter dilakukan sebelum pengelompokan agar bucket minggu/bulan batas hanya memuat tanggal terpilih.
+- Tanggal transaksi masa depan ditolak pada MVP (usulan). Rentang laporan kosong/masa depan dapat mengembalikan nol.
+- Pengguna, kategori, transaksi, dan templat baru dimulai dengan isDelete=false. Hanya operasi delete/restore yang mengubahnya; payload create/edit biasa tidak dapat melewati aturan siklus hidup.
+- List normal, total harian, laporan, dan ekspor hanya memuat transaksi aktif. Trash secara eksplisit meminta isDelete=true; hal itu tidak mengubah total laporan.
+- Penghapusan lunak kategori mengeluarkannya dari pilihan tetapi mempertahankan jumlah transaksi dan label kategori historis. Catatan lama dapat dibaca/dihapus; edit/restore memerlukan kategori aktif yang cocok.
+- Nama kategori unik per pemilik/tipe di seluruh baris aktif/terhapus; pulihkan, jangan buat ulang nama yang telah dihapus.
+- Penghapusan lunak pengguna menonaktifkan autentikasi/job dan mencabut sesi; baris terkait tetap dipertahankan. Restore tidak memulihkan sesi lama atau otomatis melanjutkan jadwal backup yang dijeda.
+- Templat menggunakan aturan penghapusan boolean dan kepemilikan kategori yang sama.
+- Tidak ada penghapusan fisik baris bisnis melalui operasi aplikasi biasa, termasuk Delete admin.
+- MVP tidak memiliki dompet/transfer/saldo akun. Penarikan ATM bukan transfer otomatis; mencatat penarikan dan belanja berikutnya sebagai pengeluaran akan menghitung ganda.
 
-## Quality and release gates
-HTTPS, secret-safe logs, password hashing, rotating refresh sessions, rate-limited login and backend permission checks.
-Accessible forms, readable mobile layouts, labels rather than color alone, loading/empty/error/Trash states.
-Proposed p95 list/summary target: below 500 ms at 20 concurrent users and 100k transactions per owner on agreed staging infrastructure.
-Test the access matrix, actual PostgreSQL constraints/migrations, money/date rules, boolean deletion/restore, job authorization, browser flows and device builds.
-MVP requires internet; preserve unsaved inputs and explain connection failures.
+## Alur layar
 
-## Remaining decisions
-Public self-registration versus admin-created accounts; mandatory titles/future dates; single-template versus day bundle; exact settings, sharing, graphs/calculator, online-first and IDR-only proposals.
-The full admin permissions and boolean soft-deletion rules above are confirmed and supersede earlier interpretations.
+Pengguna biasa: login → My Data → CRUD personal, laporan, Trash/Restore, lalu ekspor/templat/backup.
+Admin: login → My Data atau Admin Management → pemilih pengguna yang dapat dicari → CRUD, laporan, Trash/Restore, dan fitur lanjutan milik pengguna terpilih.
+Email/identitas pengguna terpilih tetap terlihat di dekat aksi pengelolaan; form, dialog, request tertunda, dan job terikat pada pilihan tersebut.
+Pergantian pengguna menghapus data/filter lama dan membuang respons terlambat. Jika form belum disimpan terbuka, minta save/discard sebelum berpindah. Request yang telah dikirim tetap memakai target awal; hasil terlambat tidak boleh memperbarui layar target baru.
+Admin juga memiliki kontrol create/update/role/delete/restore pengguna. Identitas sesi login tetap menjadi aktor sepanjang waktu.
+
+## Contoh penerimaan
+
+- Pemasukan 1000000.00 dan pengeluaran 43500.00 menghasilkan selisih 956500.00.
+- Pengeluaran 500000.00 + 43500.00 + 226000.00 menghasilkan pengeluaran harian 769500.00.
+- Hari/laporan kosong mengembalikan total nol dan daftar kosong.
+- Save yang gagal mempertahankan input; pengiriman ganda tidak membuat transaksi ganda.
+- Pengguna biasa A tidak dapat mengakses/mengubah data B atau memanggil route admin, meskipun mengetahui UUID.
+- Admin C dapat membuat/mengedit/menghapus/memulihkan catatan A dan B melalui route berscope masing-masing; laporan pengguna terpilih mengikuti setiap perubahan.
+- Delete mengatur isDelete=true dan menaikkan versi tanpa menghapus baris. Detail aktif mengembalikan 404; Trash menampilkannya. Restore mengatur false dan memasukkan kembali jumlah tepat satu kali.
+- Admin menargetkan A dengan catatan/kategori milik B mendapat 404, bukan pergantian pemilik diam-diam.
+- Penghapusan akun memblokir token akses yang belum kedaluwarsa. Demotion memblokir operasi admin berikutnya setelah perubahan peran tersimpan.
+- Operasi ekspor/templat/backup lintas pengguna berhasil untuk admin aktif dan gagal untuk pengguna biasa.
+
+## Gerbang kualitas dan rilis
+
+HTTPS, log yang aman dari rahasia, hashing password, sesi refresh berotasi, login yang dibatasi laju, dan pemeriksaan izin backend.
+Form yang mudah diakses, layout mobile yang terbaca, label yang tidak hanya mengandalkan warna, serta state loading/kosong/error/Trash.
+Target p95 list/summary yang diusulkan: di bawah 500 ms pada 20 pengguna bersamaan dan 100 ribu transaksi per pemilik di infrastruktur staging yang disepakati.
+Uji matriks akses, constraint/migrasi PostgreSQL nyata, aturan uang/tanggal, delete/restore boolean, otorisasi job, alur browser, dan build perangkat.
+MVP memerlukan internet; pertahankan input yang belum disimpan dan jelaskan kegagalan koneksi.
+
+## Keputusan yang tersisa
+
+Registrasi mandiri publik versus akun buatan admin; judul wajib/tanggal masa depan; satu templat versus bundle harian; detail settings, berbagi, grafik/kalkulator, online-first, dan usulan IDR-only.
+Izin admin penuh dan aturan penghapusan lunak boolean di atas telah dikonfirmasi dan menggantikan interpretasi sebelumnya.

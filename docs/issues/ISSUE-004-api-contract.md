@@ -1,31 +1,41 @@
-# ISSUE-004: Owner/admin API and soft-delete contract
+# ISSUE-004: Kontrak API pemilik/admin dan penghapusan lunak
 
 Status: Backlog
-Updated: 14 September 2026 (v0.3)
-Repository: monelog-api
-Dependencies: 003
-Remote issue: Not created
-Requirements: FR-01, FR-15, FR-16, FR-17
+Diperbarui: 14 September 2026 (v0.3)
+Repositori: monelog-api
+Dependensi: 003
+Remote issue: Belum dibuat
+Persyaratan: FR-01, FR-15, FR-16, FR-17
 Plan: [PLAN-004](../plans/PLAN-004.md)
-Policy: [Access control and soft deletion](../access-control.md)
+Kebijakan: [Kontrol akses dan penghapusan lunak](../access-control.md)
 
-## Goal
-Produce complete OpenAPI schemas and generated interfaces for owner/admin operations and boolean deletion.
+## Tujuan
 
-## Acceptance criteria
-- [ ] Every core personal and mapped admin operation in api.md is an explicit validated OpenAPI path/method.
-- [ ] Supported admin POST/PATCH/DELETE/restore operations require current admin permission and selected owner.
-- [ ] isDelete is a required boolean response field and strictly boolean list/detail query parameter; no generic lifecycle write field.
-- [ ] Versions, 204 delete, restore responses, active/Trash filters and error envelopes validate.
-- [ ] Generated interfaces compile and regeneration is deterministic.
+Menghasilkan skema OpenAPI lengkap dan interface untuk operasi pemilik/admin serta penghapusan boolean.
 
-## Scope and affected areas
-api/openapi.yaml; oapi-codegen configuration; internal/api generated interfaces; contract validation.
-No domain handler implementation or unimplemented routes presented as running.
+## Kriteria penerimaan
 
-## Verification
-JSON examples; required boolean and invalid string/null flag; owner/role/lifecycle overrides; admin mutation operations; missing/stale version schema; generation compile/drift.
+- [ ] Kriteria fungsional issue tercapai dengan bukti pengujian nyata.
+- [ ] Pengguna biasa hanya dapat memakai scope sendiri; admin dapat memakai target yang dipilih dan tetap mempertahankan owner/actor.
+- [ ] isDelete, version, Trash/restore, dan validasi scope mengikuti kontrak bersama.
+- [ ] Kegagalan otorisasi, versi lama, dan resource lintas owner menghasilkan status yang tepat.
+- [ ] Audit, kode hasil generate, dokumentasi, dan implementasi tetap konsisten.
 
-## Definition of done
-Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
-Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.
+## Ruang lingkup dan area terdampak
+
+api/openapi.yaml; konfigurasi oapi-codegen; internal/api hasil generate; validasi kontrak.
+Area di atas adalah rencana; persempit menjadi file nyata saat inspeksi repositori. Jangan mengedit modul yang tidak terkait.
+
+## Verifikasi
+
+Contoh JSON; boolean wajib dan penolakan string/null; override owner/role/lifecycle; operasi mutasi admin; version hilang/lama; kompilasi dan drift generate.
+Jalankan perintah yang dikonfigurasi untuk proyek (misalnya go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah frontend yang relevan). Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
+
+## Batasan dan pemulihan
+
+Jangan menyajikan handler domain atau route yang belum diimplementasikan sebagai route aktif.
+Pertahankan perubahan pengguna. Uji migrasi pada fixture yang boleh dibuang dan gunakan recovery maju yang telah direview; jangan menghapus baris bersama.
+
+## Definisi selesai
+
+Semua kriteria penerimaan memiliki bukti nyata; kontrak/skema/dokumentasi dan kode hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.

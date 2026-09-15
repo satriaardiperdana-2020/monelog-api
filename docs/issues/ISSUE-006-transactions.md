@@ -1,32 +1,41 @@
-# ISSUE-006: Transaction CRUD, soft delete and daily summaries
+# ISSUE-006: CRUD transaksi, penghapusan lunak, dan ringkasan harian
 
 Status: Backlog
-Updated: 14 September 2026 (v0.3)
-Repository: monelog-api
-Dependencies: 005
-Remote issue: Not created
-Requirements: FR-01, FR-02, FR-03, FR-04, FR-15, FR-17
+Diperbarui: 14 September 2026 (v0.3)
+Repositori: monelog-api
+Dependensi: 005
+Remote issue: Belum dibuat
+Persyaratan: FR-01, FR-02, FR-03, FR-04, FR-15, FR-17
 Plan: [PLAN-006](../plans/PLAN-006.md)
-Policy: [Access control and soft deletion](../access-control.md)
+Kebijakan: [Kontrol akses dan penghapusan lunak](../access-control.md)
 
-## Goal
-Implement exact-money transaction operations and daily history with active/Trash separation and restoration.
+## Tujuan
 
-## Acceptance criteria
-- [ ] Create defaults false; ordinary edits cannot set isDelete or change ownership.
-- [ ] Owner CRUD and service-authorized admin CRUD retain correct owner with actor attribution.
-- [ ] Delete sets true; restore sets false; each successful transition increments version and preserves row/idempotency identity.
-- [ ] Active lists/day totals exclude true rows; authorized Trash lists/details expose them.
-- [ ] Stale edit/delete/restore races return 409; foreign resource/category returns 404.
-- [ ] Example day totals 769500.00 and recalculates correctly after delete/restore.
+Mengimplementasikan operasi transaksi dengan uang eksak dan riwayat harian terpisah antara aktif/Trash.
 
-## Scope and affected areas
-Transaction handlers/services; scoped queries/sqlc; daily aggregation; integration tests.
-No wallets, transfers, recurring automatic transactions or offline synchronization.
+## Kriteria penerimaan
 
-## Verification
-Duplicate/conflicting create replay; positive scoped admin CRUD; owner/actor distinction; true/false flag; wrong scope; stale versions; concurrent edit/delete/restore; category state; empty day; money/date/cursor boundaries.
+- [ ] Kriteria fungsional issue tercapai dengan bukti pengujian nyata.
+- [ ] Pengguna biasa hanya dapat memakai scope sendiri; admin dapat memakai target yang dipilih dan tetap mempertahankan owner/actor.
+- [ ] isDelete, version, Trash/restore, dan validasi scope mengikuti kontrak bersama.
+- [ ] Kegagalan otorisasi, versi lama, dan resource lintas owner menghasilkan status yang tepat.
+- [ ] Audit, kode hasil generate, dokumentasi, dan implementasi tetap konsisten.
 
-## Definition of done
-Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
-Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.
+## Ruang lingkup dan area terdampak
+
+Handler/service transaksi; query berscope/sqlc; agregasi harian; pengujian integrasi.
+Area di atas adalah rencana; persempit menjadi file nyata saat inspeksi repositori. Jangan mengedit modul yang tidak terkait.
+
+## Verifikasi
+
+Replay create duplikat/konflik; CRUD admin berscope; perbedaan owner/actor; flag true/false; scope salah; version lama; race edit/delete/restore; state kategori; hari kosong; batas uang/tanggal/cursor.
+Jalankan perintah yang dikonfigurasi untuk proyek (misalnya go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah frontend yang relevan). Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
+
+## Batasan dan pemulihan
+
+Tidak ada wallet, transfer, transaksi otomatis berulang, atau sinkronisasi offline.
+Pertahankan perubahan pengguna. Uji migrasi pada fixture yang boleh dibuang dan gunakan recovery maju yang telah direview; jangan menghapus baris bersama.
+
+## Definisi selesai
+
+Semua kriteria penerimaan memiliki bukti nyata; kontrak/skema/dokumentasi dan kode hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.

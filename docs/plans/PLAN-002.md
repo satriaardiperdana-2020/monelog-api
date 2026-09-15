@@ -1,45 +1,47 @@
-# PLAN-002: Database migrations and sqlc foundation
+# PLAN-002: Migrasi basis data dan fondasi sqlc
 
-Status: Draft — refine against actual repository before implementation.
-Updated: 14 September 2026 (v0.3)
+Status: Draf — sesuaikan dengan repositori sebelum implementasi.
+Diperbarui: 14 September 2026 (v0.3)
 Issue: [ISSUE-002](../issues/ISSUE-002-database-foundation.md)
-Repository: monelog-api
-Prerequisites: 001
-Requirements: FR-01, FR-15, FR-16, FR-17
+Repositori: monelog-api
+Prasyarat: 001
+Persyaratan: FR-01, FR-15, FR-16, FR-17
 
-## Before implementation
-Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
-Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
-Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
+## Sebelum implementasi
 
-## Implementation sequence
-1. Inspect for existing schema; use the fresh design if none, otherwise add a forward migration preserving prior deleted/archived status.
-2. Create users, categories, transactions, sessions and admin_access_events in FK order.
-3. Add false defaults, version constraints, actor attribution, composite category ownership and active/Trash indexes.
-4. Generate scoped create/read/update/delete/restore queries, including authorization account-row locking and audit insert.
-5. Set runtime privileges separately from migration ownership; audit insert/read allowed, audit update/delete denied.
-6. Test A/B/C fixtures, bool defaults, constraints and generation drift on real PostgreSQL.
+Baca requirements.md, access-control.md, architecture.md, database.md, api.md, dan issue terkait.
+Periksa instruksi, kode, dependensi, serta perubahan pengguna; pastikan tugas prasyarat selesai. Gunakan nama file dan perintah nyata saat refinement.
+Kebijakan terkonfirmasi: pengguna biasa hanya CRUD data sendiri; admin dapat mengelola target mana pun yang dipilih. isDelete=false berarti aktif; true berarti soft delete.
 
-## Affected areas
-db/migrations; db/queries; sqlc configuration; internal/repository/sqlc; PostgreSQL integration fixtures.
-These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
+## Urutan implementasi
 
-## Validation
-Fresh migration; applicable legacy backfill; boolean NOT NULL/default; wrong owner/type/amount; duplicate request key; active versus Trash queries; runtime audit grants; deterministic regeneration.
-Run go test ./..., go vet ./... and the configured PostgreSQL/HTTP integration suite where relevant. Verify generated-code drift for changed SQL/OpenAPI sources.
-Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
+1. Inspeksi skema; gunakan desain baru atau migrasi maju yang mempertahankan status lama.
+2. Buat users, categories, transactions, sessions, dan admin_access_events sesuai urutan FK.
+3. Tambahkan default false, constraint versi, atribusi actor, kepemilikan kategori, dan index aktif/Trash.
+4. Generate query create/read/update/delete/restore berscope dengan lock akun dan insert audit.
+5. Pisahkan privilege runtime dari kepemilikan migrasi dan uji fixture A/B/C di PostgreSQL.
 
-## Authorization and lifecycle review
-Trace actor, selected owner, action, version and isDelete state through every affected boundary.
-Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
-For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
-Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
-Apply only the checks relevant to this issue's actual scope.
+## Area terdampak
 
-## Scope and recovery
-No destructive migration on shared data or automatic promotion of existing accounts.
-Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
-After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
+Tentukan file nyata selama inspeksi repository dan jangan mengedit modul yang tidak terkait. Area utama disesuaikan dengan tujuan issue: handler, service, repository/query, kontrak API, UI, worker, migrasi, dan pengujian terkait.
 
-## Review checkpoint
-Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.
+## Validasi
+
+Migrasi baru/legacy; default/constraint; owner/type/amount salah; idempotensi; query aktif/Trash; grant audit; drift generate.
+Jalankan go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah unit/component/E2E frontend yang benar-benar dikonfigurasi sesuai area. Periksa drift kode SQL/OpenAPI hasil generate dan catat perintah/hasil nyata. Jangan menyatakan otorisasi atau lifecycle runtime benar hanya dari review dokumentasi.
+
+## Review otorisasi dan siklus hidup
+
+Telusuri actor, owner terpilih, aksi, version, dan isDelete di setiap batas yang terdampak.
+Operasi personal memakai actor sebagai owner; operasi admin memakai target terotorisasi. Pertahankan scope kategori/resource/cursor/job.
+Untuk write admin, validasi dan audit harus sukses bersama transaksi data. Untuk job eksternal, simpan otorisasi/job/audit sebelum provider dan validasi ulang saat eksekusi.
+Total finansial aktif mengecualikan baris true. Trash/restore mempertahankan batas owner. Jangan menyimpulkan penghapusan fisik atau perubahan role dari data impor.
+
+## Batasan dan recovery
+
+Pertahankan perubahan pengguna. Uji perubahan skema pada fixture yang boleh dibuang dan gunakan recovery maju yang direview; jangan menghapus baris bersama.
+Sesudah implementasi, bandingkan setiap kriteria penerimaan dengan bukti dan perbarui status issue/index sesuai workflow pengguna.
+
+## Titik review
+
+Sajikan ruang lingkup file, langkah, keputusan yang belum selesai, dan pengujian yang telah diperjelas sebelum coding, kecuali implementasi telah diotorisasi pengguna.

@@ -1,32 +1,33 @@
-# Roadmap
-Draft v0.3 • 14 September 2026
-Backend first in monelog-api, then Vue JavaScript frontend in monelog-app.
-Estimates are draft ranges for one developer, not deadlines. Full admin permissions and boolean soft deletion are confirmed.
+# Peta jalan
 
-| Milestone | Issues | Estimate | Exit gate |
+Draf v0.3 • 14 September 2026
+Backend dikerjakan lebih dahulu di monelog-api, lalu frontend Vue JavaScript di monelog-app.
+Estimasi adalah rentang draf untuk satu pengembang, bukan tenggat. Hak admin penuh dan penghapusan lunak boolean telah dikonfirmasi.
+
+| Milestone | Issue | Estimasi | Gerbang selesai |
 | --- | --- | --- | --- |
-| Foundation | 001–002 | 3–5 working days | Reproducible service; role, boolean flag, actor attribution and audit schema |
-| Auth and contract | 003–004 | 4–7 days | Current account/role authorization, lifecycle rules and validated owner/admin API |
-| Finance backend | 005–007 | 6–9 days | Own CRUD/Trash/Restore and correct active-only daily/report totals |
-| Admin backend | 013 after 007 | 4–7 days | Full selected-user CRUD, account/role management, audit and A/B/C matrix |
-| Browser MVP | 008 after 013 | 6–9 days | Owner and admin management forms, selection safety and Trash/Restore |
-| Exports | 009 | 3–5 days | Owner/admin XLSX/PDF, target-scoped jobs and download authorization |
-| Mobile | 010 | 3–6 days plus signing/review time | Android/iOS role-aware CRUD and deletion/restore parity |
-| Templates | 011 | 2–4 days | Own/admin template CRUD, boolean deletion and scoped apply |
-| Backups | 012 | 4–7 days | Own/admin schedules/jobs, provider authorization and flagged-data restore drill |
+| Fondasi | 001–002 | 3–5 hari kerja | Layanan dapat direproduksi; skema peran, flag boolean, atribusi aktor, dan audit |
+| Autentikasi dan kontrak | 003–004 | 4–7 hari | Otorisasi akun/peran aktif, aturan siklus hidup, dan API pemilik/admin tervalidasi |
+| Backend keuangan | 005–007 | 6–9 hari | CRUD/Trash/Restore milik sendiri dan total harian/laporan aktif yang benar |
+| Backend admin | 013 setelah 007 | 4–7 hari | CRUD pengguna terpilih, pengelolaan akun/peran, audit, dan matriks A/B/C |
+| MVP browser | 008 setelah 013 | 6–9 hari | Form pengelolaan pemilik/admin, keamanan pemilihan, dan Trash/Restore |
+| Ekspor | 009 | 3–5 hari | XLSX/PDF pemilik/admin, job berdasarkan target, dan otorisasi unduhan |
+| Mobile | 010 | 3–6 hari ditambah waktu signing/review | CRUD dan siklus hidup penghapusan Android/iOS berbasis peran |
+| Templat | 011 | 2–4 hari | CRUD templat pemilik/admin, penghapusan boolean, dan penerapan berdasarkan scope |
+| Pencadangan | 012 | 4–7 hari | Jadwal/job pemilik/admin, otorisasi provider, dan uji pemulihan data berflag |
 
-Stable issue IDs and execution order: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 013 → 008 → 009 → 010 → 011 → 012.
-013 keeps its historical admin-viewing filename but now means full admin management. Do not renumber existing tasks.
+Urutan ID dan pelaksanaan: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 013 → 008 → 009 → 010 → 011 → 012.
+013 mempertahankan nama file historis admin-viewing, tetapi kini berarti pengelolaan admin penuh. Jangan mengubah nomor tugas yang sudah ada.
 
-## Backend gate
-Issues 001–007 and 013 pass before starting frontend work.
-Verify regular-user isolation; positive admin create/edit/delete/restore; selected-owner attribution; role management; deleted-account blocking; true/false defaults and migrated flags; versions/races; active-only aggregates; Trash and category history; atomic admin writes/audits.
-The generated contract must document supported admin mutations and exact isDelete JSON spelling.
-No feature is complete merely because its plan exists.
+## Gerbang backend
 
-## Frontend and later gates
-Check owner identity on forms/confirmations, save/discard on target change, late response cleanup, visible admin actions and correct Trash totals.
-Exports/templates/backups have both personal and admin operation paths when each feature ships. Revalidate requester/owner/role for queued jobs and downloads.
-Backups preserve deletion flags while excluding roles/credentials; confirm restore conflicts, OAuth flow, schedule and retention before Issue 012.
-Release additionally requires operational database backup/restore verification, environment review and actual browser/device tests.
-Offline sync, wallets/transfers, graphs, calculator, budgets, bank feeds and Launlog integration remain unestimated later scope. Revisit tombstones and conflict rules before offline synchronization.
+Issue 001–007 dan 013 harus selesai sebelum frontend dimulai. Verifikasi isolasi pengguna biasa; CRUD admin positif; atribusi pemilik terpilih; pengelolaan peran; pemblokiran akun terhapus; default dan migrasi flag true/false; versi/race; agregat aktif; Trash dan riwayat kategori; serta write/audit admin atomik.
+Kontrak hasil generate harus mendokumentasikan mutasi admin yang didukung dan ejaan JSON `isDelete` yang tepat. Fitur tidak dianggap selesai hanya karena rencananya sudah ada.
+
+## Gerbang frontend dan tahap berikutnya
+
+Periksa identitas pemilik pada form/konfirmasi, simpan/buang saat target berubah, pembersihan respons terlambat, aksi admin yang terlihat, dan total Trash yang benar.
+Ekspor/templat/pencadangan harus memiliki jalur personal dan admin saat fiturnya dirilis. Validasi ulang requester/pemilik/peran untuk job dan unduhan yang mengantre.
+Pencadangan mempertahankan flag penghapusan tetapi mengecualikan peran/kredensial; kebijakan konflik restore, OAuth, jadwal, dan retensi harus dikonfirmasi sebelum Issue 012.
+Rilis juga membutuhkan verifikasi backup/restore operasional, review lingkungan, serta pengujian browser/perangkat nyata.
+Sinkronisasi offline, dompet/transfer, grafik, kalkulator, anggaran, feed bank, dan integrasi Launlog tetap menjadi ruang lingkup lanjutan yang belum diestimasi. Tinjau kembali tombstone dan aturan konflik sebelum sinkronisasi offline.

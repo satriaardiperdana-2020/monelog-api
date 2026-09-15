@@ -1,31 +1,41 @@
-# ISSUE-005: Category CRUD, Trash and restore
+# ISSUE-005: CRUD kategori, Trash, dan restore
 
 Status: Backlog
-Updated: 14 September 2026 (v0.3)
-Repository: monelog-api
-Dependencies: 004
-Remote issue: Not created
-Requirements: FR-01, FR-05, FR-15, FR-17
+Diperbarui: 14 September 2026 (v0.3)
+Repositori: monelog-api
+Dependensi: 004
+Remote issue: Belum dibuat
+Persyaratan: FR-01, FR-05, FR-15, FR-17
 Plan: [PLAN-005](../plans/PLAN-005.md)
-Policy: [Access control and soft deletion](../access-control.md)
+Kebijakan: [Kontrol akses dan penghapusan lunak](../access-control.md)
 
-## Goal
-Implement scoped category management using boolean deletion while preserving historical transaction labels.
+## Tujuan
 
-## Acceptance criteria
-- [ ] Regular users CRUD/restore only their own categories; scoped services support admin management through 013.
-- [ ] Delete sets true, restore sets false, and versioned operations retain the row.
-- [ ] Deleted categories disappear from active selectors but historical transaction totals/labels remain.
-- [ ] Type remains immutable and names unique per owner/type across active/deleted rows.
-- [ ] New/edit/restored transactions/templates cannot select a deleted or wrong-owner category.
+Mengimplementasikan pengelolaan kategori berscope dengan penghapusan boolean sambil mempertahankan label transaksi historis.
 
-## Scope and affected areas
-Category handlers/service; db category queries; internal/repository; active selectors and historical label integration tests.
-No physical category deletion or resurrecting history by recreating a deleted name.
+## Kriteria penerimaan
 
-## Verification
-CRUD ownership; wrong type; duplicate name/case; soft-delete row retained; Trash; restore; stale version; category delete with existing transaction; concurrent selection/category deletion.
+- [ ] Kriteria fungsional issue tercapai dengan bukti pengujian nyata.
+- [ ] Pengguna biasa hanya dapat memakai scope sendiri; admin dapat memakai target yang dipilih dan tetap mempertahankan owner/actor.
+- [ ] isDelete, version, Trash/restore, dan validasi scope mengikuti kontrak bersama.
+- [ ] Kegagalan otorisasi, versi lama, dan resource lintas owner menghasilkan status yang tepat.
+- [ ] Audit, kode hasil generate, dokumentasi, dan implementasi tetap konsisten.
 
-## Definition of done
-Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
-Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.
+## Ruang lingkup dan area terdampak
+
+Handler/service kategori; query DB kategori; repository; selector aktif dan pengujian label historis.
+Area di atas adalah rencana; persempit menjadi file nyata saat inspeksi repositori. Jangan mengedit modul yang tidak terkait.
+
+## Verifikasi
+
+Ownership CRUD; tipe salah; nama duplikat/case; baris soft delete; Trash; restore; version lama; delete kategori dengan transaksi; race pemilihan/delete.
+Jalankan perintah yang dikonfigurasi untuk proyek (misalnya go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah frontend yang relevan). Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
+
+## Batasan dan pemulihan
+
+Tidak ada penghapusan fisik kategori atau pembuatan ulang nama yang menghidupkan sejarah.
+Pertahankan perubahan pengguna. Uji migrasi pada fixture yang boleh dibuang dan gunakan recovery maju yang telah direview; jangan menghapus baris bersama.
+
+## Definisi selesai
+
+Semua kriteria penerimaan memiliki bukti nyata; kontrak/skema/dokumentasi dan kode hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.

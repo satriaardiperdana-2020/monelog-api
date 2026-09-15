@@ -1,34 +1,41 @@
-# ISSUE-013: Full admin user and data management
+# ISSUE-013: Pengelolaan penuh user dan data oleh admin
 
 Status: Backlog
-Updated: 14 September 2026 (v0.3)
-Repository: monelog-api
-Dependencies: 007
-Remote issue: Not created
-Requirements: FR-01, FR-15, FR-16, FR-17
+Diperbarui: 14 September 2026 (v0.3)
+Repositori: monelog-api
+Dependensi: 007
+Remote issue: Belum dibuat
+Persyaratan: FR-01, FR-15, FR-16, FR-17
 Plan: [PLAN-013](../plans/PLAN-013.md)
-Policy: [Access control and soft deletion](../access-control.md)
+Kebijakan: [Kontrol akses dan penghapusan lunak](../access-control.md)
 
-## Goal
-Allow current admins to perform all supported application operations on any selected user's data, including CRUD and soft-delete restoration.
+## Tujuan
 
-## Acceptance criteria
-- [ ] Non-admin admin-route attempts return 403 before target lookup; current admins can perform supported reads and mutations.
-- [ ] User directory/create/profile/role/delete/restore and audit listing work under admin authorization.
-- [ ] Selected-owner category/transaction CRUD, Trash/restore, daily totals and reports work, preserving owner and actor attribution.
-- [ ] Wrong-target related IDs/cursors are rejected; record lifecycle uses isDelete booleans and version guards.
-- [ ] Admin writes and audit events commit atomically; failed audit rolls back mutations.
-- [ ] Role/account changes serialize with data mutations and invalidate relevant sessions/authority.
-- [ ] Contracts and shared policy authorize cross-user exports/templates/backups, implemented in their later feature issues.
+Mengizinkan admin aktif menjalankan seluruh operasi aplikasi yang didukung pada data pengguna terpilih, termasuk CRUD dan pemulihan soft delete.
 
-## Scope and affected areas
-Admin handlers; middleware/current role; authorization service; user/category/transaction/report/audit queries; OpenAPI; real PostgreSQL/HTTP suite.
-No automatic production role change during planning, no physical business-row deletion, and no raw credential responses. Existing filename retains its historical slug for link compatibility.
+## Kriteria penerimaan
 
-## Verification
-A/B denial versus C positive full CRUD; C-created record owner B; role promotion/demotion; user boolean deletion/restoration; active/Trash; version races; category mismatch; audit rollback; selected-user totals; expired/deleted actor.
+- [ ] Kriteria fungsional issue tercapai dengan bukti pengujian nyata.
+- [ ] Pengguna biasa hanya dapat memakai scope sendiri; admin dapat memakai target yang dipilih dan tetap mempertahankan owner/actor.
+- [ ] isDelete, version, Trash/restore, dan validasi scope mengikuti kontrak bersama.
+- [ ] Kegagalan otorisasi, versi lama, dan resource lintas owner menghasilkan status yang tepat.
+- [ ] Audit, kode hasil generate, dokumentasi, dan implementasi tetap konsisten.
 
-## Definition of done
-Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
-Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.
-This task blocks Issue 008 and runs after 007 despite its stable ID/filename.
+## Ruang lingkup dan area terdampak
+
+Handler admin; middleware/peran; service otorisasi; query user/category/transaction/report/audit; OpenAPI; suite PostgreSQL/HTTP.
+Area di atas adalah rencana; persempit menjadi file nyata saat inspeksi repositori. Jangan mengedit modul yang tidak terkait.
+
+## Verifikasi
+
+A/B ditolak dan C berhasil; record C menjadi milik B; promosi/demotion; delete/restore akun; active/Trash; version race; mismatch kategori; rollback audit; total target; actor kedaluwarsa/terhapus.
+Jalankan perintah yang dikonfigurasi untuk proyek (misalnya go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah frontend yang relevan). Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
+
+## Batasan dan pemulihan
+
+Tidak ada perubahan role produksi otomatis, penghapusan baris bisnis fisik, atau respons kredensial mentah. Nama file historis dipertahankan agar tautan tetap berfungsi.
+Pertahankan perubahan pengguna. Uji migrasi pada fixture yang boleh dibuang dan gunakan recovery maju yang telah direview; jangan menghapus baris bersama.
+
+## Definisi selesai
+
+Semua kriteria penerimaan memiliki bukti nyata; kontrak/skema/dokumentasi dan kode hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.

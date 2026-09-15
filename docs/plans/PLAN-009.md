@@ -1,46 +1,47 @@
-# PLAN-009: Owner/admin Excel and PDF exports
+# PLAN-009: Ekspor Excel/PDF pemilik/admin
 
-Status: Draft — refine against actual repository before implementation.
-Updated: 14 September 2026 (v0.3)
+Status: Draf — sesuaikan dengan repositori sebelum implementasi.
+Diperbarui: 14 September 2026 (v0.3)
 Issue: [ISSUE-009](../issues/ISSUE-009-exports.md)
-Repository: monelog-api + monelog-app
-Prerequisites: 008
-Requirements: FR-01, FR-08, FR-15, FR-16, FR-17
+Repositori: monelog-api + monelog-app
+Prasyarat: 008
+Persyaratan: FR-01, FR-08, FR-15, FR-16, FR-17
 
-## Before implementation
-Read requirements.md, access-control.md, architecture.md, database.md, api.md and the linked issue.
-Check existing code/instructions and user changes; confirm prerequisite tasks are complete. Use actual repository filenames and commands during refinement.
-Confirmed policy: regular users CRUD only their own data; admin can manage any selected user's data. isDelete=false means active; true means soft-deleted.
+## Sebelum implementasi
 
-## Implementation sequence
-1. Add export_jobs schema and personal/admin route parity with separate actor and owner.
-2. Atomically create job+admin audit as needed; recheck requester/owner/role before worker execution.
-3. Use a consistent source snapshot and shared active-owner filters to render every matching row.
-4. Generate formula-safe XLSX and readable PDF with totals, dates/currency and selected owner label.
-5. Authorize status/download by actual owner or current admin target; implement retention cleanup and UI progress/retry.
-6. Test target switches cannot change a pending export and audit/provider-independent failure behavior.
+Baca requirements.md, access-control.md, architecture.md, database.md, api.md, dan issue terkait.
+Periksa instruksi, kode, dependensi, serta perubahan pengguna; pastikan tugas prasyarat selesai. Gunakan nama file dan perintah nyata saat refinement.
+Kebijakan terkonfirmasi: pengguna biasa hanya CRUD data sendiri; admin dapat mengelola target mana pun yang dipilih. isDelete=false berarti aktif; true berarti soft delete.
 
-## Affected areas
-Export jobs/migrations/worker; report service; file generators; download handlers; web export UI.
-These are planned areas. Narrow them to exact files during repository inspection; do not edit unrelated modules.
+## Urutan implementasi
 
-## Validation
-More-than-one-page export; exact report parity; true rows excluded; formula injection; long-title PDF layout; A denied/B own/C admin download; stale role; target switching; job retry/expiry.
-Run go test ./..., go vet ./... and the configured PostgreSQL/HTTP integration suite where relevant. Verify generated-code drift for changed SQL/OpenAPI sources.
-Run the configured frontend unit/component/E2E commands and npm run build; inspect package.json for exact names. Device builds/checks are required by the mobile issue.
-Record real commands/results. Do not claim runtime authorization or lifecycle correctness from documentation review alone.
+1. Buat export_jobs serta parity route personal/admin dengan actor dan owner terpisah.
+2. Buat job+audit secara atomik dan cek requester/owner/role sebelum worker.
+3. Gunakan snapshot sumber dan filter owner aktif bersama.
+4. Buat XLSX aman formula dan PDF terbaca dengan total/tanggal/mata uang/label owner.
+5. Otorisasi ulang status/download, retensi, progress, retry, dan pergantian target.
 
-## Authorization and lifecycle review
-Trace actor, selected owner, action, version and isDelete state through every affected boundary.
-Personal operations use actor ownership; admin operations use authorized target ownership. Keep category/resource/cursor/job scope consistent.
-For admin writes, validation and audit must succeed with the data transaction. For external jobs, record authorization/job/audit before provider work and revalidate at execution.
-Active financial totals exclude true transactions. Trash/restore retain owner constraints. Never infer physical deletion or role changes from imported financial data.
-Apply only the checks relevant to this issue's actual scope.
+## Area terdampak
 
-## Scope and recovery
-Export is a report artifact, not a data backup/import format. Report export never includes Trash.
-Preserve user changes. Test schema changes against disposable fixtures and use reviewed forward recovery before rollout; do not erase shared rows.
-After implementation, compare every acceptance criterion with evidence, then update issue/index status under the user's current workflow authorization.
+Tentukan file nyata selama inspeksi repository dan jangan mengedit modul yang tidak terkait. Area utama disesuaikan dengan tujuan issue: handler, service, repository/query, kontrak API, UI, worker, migrasi, dan pengujian terkait.
 
-## Review checkpoint
-Present the refined file scope, steps, unresolved decisions and tests before coding, unless the user has already authorized implementation.
+## Validasi
+
+Multi-halaman; parity report; formula injection; PDF judul panjang; A/B/C; role lama; target; retry/expiry.
+Jalankan go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah unit/component/E2E frontend yang benar-benar dikonfigurasi sesuai area. Periksa drift kode SQL/OpenAPI hasil generate dan catat perintah/hasil nyata. Jangan menyatakan otorisasi atau lifecycle runtime benar hanya dari review dokumentasi.
+
+## Review otorisasi dan siklus hidup
+
+Telusuri actor, owner terpilih, aksi, version, dan isDelete di setiap batas yang terdampak.
+Operasi personal memakai actor sebagai owner; operasi admin memakai target terotorisasi. Pertahankan scope kategori/resource/cursor/job.
+Untuk write admin, validasi dan audit harus sukses bersama transaksi data. Untuk job eksternal, simpan otorisasi/job/audit sebelum provider dan validasi ulang saat eksekusi.
+Total finansial aktif mengecualikan baris true. Trash/restore mempertahankan batas owner. Jangan menyimpulkan penghapusan fisik atau perubahan role dari data impor.
+
+## Batasan dan recovery
+
+Pertahankan perubahan pengguna. Uji perubahan skema pada fixture yang boleh dibuang dan gunakan recovery maju yang direview; jangan menghapus baris bersama.
+Sesudah implementasi, bandingkan setiap kriteria penerimaan dengan bukti dan perbarui status issue/index sesuai workflow pengguna.
+
+## Titik review
+
+Sajikan ruang lingkup file, langkah, keputusan yang belum selesai, dan pengujian yang telah diperjelas sebelum coding, kecuali implementasi telah diotorisasi pengguna.

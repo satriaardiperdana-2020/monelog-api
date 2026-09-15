@@ -1,32 +1,41 @@
-# ISSUE-008: Vue owner and admin management UI
+# ISSUE-008: UI pengelolaan pemilik/admin Vue
 
 Status: Backlog
-Updated: 14 September 2026 (v0.3)
-Repository: monelog-app
-Dependencies: 013
-Remote issue: Not created
-Requirements: FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-07, FR-11, FR-15, FR-17
+Diperbarui: 14 September 2026 (v0.3)
+Repositori: monelog-api + monelog-app
+Dependensi: 007
+Remote issue: Belum dibuat
+Persyaratan: FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-07, FR-11, FR-15, FR-17
 Plan: [PLAN-008](../plans/PLAN-008.md)
-Policy: [Access control and soft deletion](../access-control.md)
+Kebijakan: [Kontrol akses dan penghapusan lunak](../access-control.md)
 
-## Goal
-Build responsive Indonesian-facing personal finance and full admin management flows using Vue 3 + JavaScript.
+## Tujuan
 
-## Acceptance criteria
-- [ ] Own login/Home/day/detail/category/transaction/settings/reports work on mobile-width and desktop.
-- [ ] Admin can search/select a user and use enabled create/edit/delete/restore actions plus account/role management.
-- [ ] Active and Trash screens use false/true correctly; reports remain active-only.
-- [ ] Forms and confirmations show fixed owner identity; unsaved edits require save/discard before selection change.
-- [ ] Late responses or submitted operations never apply to a newly selected owner; logout/denial clears state.
-- [ ] Failed requests preserve appropriate inputs and display clear validation/conflict feedback.
+Membangun alur keuangan personal dan pengelolaan admin penuh yang responsif dan berbahasa Indonesia menggunakan Vue 3 + JavaScript.
 
-## Scope and affected areas
-src/views/components/services/stores/router/utils; focused unit/component/E2E tests.
-No Capacitor packaging, offline write queue, calculator or graph in browser MVP.
+## Kriteria penerimaan
 
-## Verification
-Login/refresh; owner CRUD; positive admin CRUD/roles; A direct admin denial; active versus Trash; delete/restore totals; delayed responses; unsaved form target switch; logout/relogin; 360px/desktop accessibility.
+- [ ] Kriteria fungsional issue tercapai dengan bukti pengujian nyata.
+- [ ] Pengguna biasa hanya dapat memakai scope sendiri; admin dapat memakai target yang dipilih dan tetap mempertahankan owner/actor.
+- [ ] isDelete, version, Trash/restore, dan validasi scope mengikuti kontrak bersama.
+- [ ] Kegagalan otorisasi, versi lama, dan resource lintas owner menghasilkan status yang tepat.
+- [ ] Audit, kode hasil generate, dokumentasi, dan implementasi tetap konsisten.
 
-## Definition of done
-Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
-Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.
+## Ruang lingkup dan area terdampak
+
+src/views/components/services/stores/router/utils; pengujian unit/component/E2E.
+Area di atas adalah rencana; persempit menjadi file nyata saat inspeksi repositori. Jangan mengedit modul yang tidak terkait.
+
+## Verifikasi
+
+Login/refresh; CRUD pemilik; CRUD/peran admin; active versus Trash; total delete/restore; respons terlambat; perpindahan form belum disimpan; logout/login ulang; aksesibilitas 360px/desktop.
+Jalankan perintah yang dikonfigurasi untuk proyek (misalnya go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah frontend yang relevan). Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
+
+## Batasan dan pemulihan
+
+Tidak ada paket Capacitor, antrean write offline, kalkulator, atau grafik pada MVP browser.
+Pertahankan perubahan pengguna. Uji migrasi pada fixture yang boleh dibuang dan gunakan recovery maju yang telah direview; jangan menghapus baris bersama.
+
+## Definisi selesai
+
+Semua kriteria penerimaan memiliki bukti nyata; kontrak/skema/dokumentasi dan kode hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.

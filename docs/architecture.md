@@ -1,82 +1,91 @@
-# Architecture
-Draft v0.3 • 14 September 2026
-Planning only; versions will be checked against official compatibility documentation and pinned during setup.
+# Arsitektur
 
-## Components and boundaries
-monelog-api uses Go, Echo, PostgreSQL, sqlc and OpenAPI/oapi-codegen.
-monelog-app uses Vue 3 + JavaScript for the browser and Capacitor Android/iOS. Backend completes before frontend work.
-Use one API and later a worker process for export/backup jobs. Redis and microservices are unnecessary for the MVP design.
-Browser deployment should proxy /api on the same origin; native clients call the HTTPS API directly. Server remains authoritative; mobile packaging does not imply offline synchronization.
+Draf v0.3 • 14 September 2026
+Khusus perencanaan; versi akan diverifikasi terhadap dokumentasi kompatibilitas resmi dan dipatok saat setup.
 
-Middleware authenticates the actor and current account state → handler validates input → service authorizes action and owner → repository executes explicitly scoped queries.
-Personal scope: actor=owner. Admin scope: actor remains the signed-in admin; owner comes from the validated target path. Admin scope permits create/read/update/delete/restore and later export/template/backup operations.
-The same domain rules apply to both scopes. Keep owner predicates, category/type constraints and optimistic versions on every mutation. Never authorize solely from frontend controls or JWT role claims.
+## Komponen dan batas
 
-## Proposed directories
-| Path | Responsibility |
+monelog-api menggunakan Go, Echo, PostgreSQL, sqlc, dan OpenAPI/oapi-codegen.
+monelog-app menggunakan Vue 3 + JavaScript untuk browser serta Capacitor Android/iOS. Backend diselesaikan sebelum frontend.
+Gunakan satu API dan proses worker di tahap berikutnya untuk job ekspor/backup. Redis dan microservice tidak diperlukan untuk desain MVP.
+Deployment browser sebaiknya mem-proxy /api pada origin yang sama; client native memanggil API HTTPS langsung. Server tetap menjadi sumber kebenaran; paket mobile tidak berarti sinkronisasi offline.
+
+Middleware mengautentikasi aktor dan state akun saat ini → handler memvalidasi input → service mengotorisasi tindakan/pemilik → repository menjalankan query dengan scope eksplisit.
+Scope personal: actor=owner. Scope admin: actor tetap admin yang login; owner berasal dari path target yang tervalidasi. Scope admin mengizinkan create/read/update/delete/restore serta operasi ekspor/templat/backup di tahap berikutnya.
+Aturan domain yang sama berlaku pada kedua scope. Pertahankan predicate owner, constraint kategori/tipe, dan versi optimistis pada setiap mutasi. Jangan mengandalkan kontrol frontend atau klaim role JWT saja.
+
+## Direktori yang diusulkan
+
+| Path | Tanggung jawab |
 | --- | --- |
-| cmd/api/main.go | HTTP composition/startup/shutdown |
-| cmd/worker/main.go | Later background jobs |
-| cmd/admin/main.go | Initial admin bootstrap/recovery for a trusted server operator |
-| internal/config | Typed validated configuration |
-| internal/handlers | Personal and admin HTTP adapters |
-| internal/middleware | Authentication, current account/role checks, safe logging, recovery, throttling |
-| internal/service | Action authorization, scope, financial rules and job lifecycle |
-| internal/repository | Handwritten repository boundary |
-| internal/repository/sqlc | Generated SQL queries |
-| internal/api | Generated OpenAPI code |
-| db/migrations, db/queries | Versioned schema and sqlc source |
-| api/openapi.yaml | Canonical machine-readable contract |
-| tests/integration | Real PostgreSQL/HTTP tests |
-| docs | Canonical planning pack |
+| cmd/api/main.go | Komposisi, startup, dan shutdown HTTP |
+| cmd/worker/main.go | Job latar belakang tahap berikutnya |
+| cmd/admin/main.go | Bootstrap/pemulihan admin awal untuk operator server tepercaya |
+| internal/config | Konfigurasi bertipe dan tervalidasi |
+| internal/handlers | Adapter HTTP personal dan admin |
+| internal/middleware | Autentikasi, pemeriksaan akun/peran, logging aman, recovery, throttling |
+| internal/service | Otorisasi aksi, scope, aturan keuangan, dan siklus hidup job |
+| internal/repository | Batas repository yang ditulis manual |
+| internal/repository/sqlc | Query SQL hasil generate |
+| internal/api | Kode OpenAPI hasil generate |
+| db/migrations, db/queries | Skema berversi dan sumber sqlc |
+| api/openapi.yaml | Kontrak kanonis yang dapat dibaca mesin |
+| tests/integration | Pengujian PostgreSQL/HTTP nyata |
+| docs | Paket perencanaan kanonis |
 
-Frontend directories: src/views, components, services, stores, router and utils, with focused tests. Admin Management reuses validated transaction forms with an explicit owner context.
+Direktori frontend: src/views, components, services, stores, router, dan utils dengan pengujian terarah. Admin Management memakai ulang form transaksi tervalidasi dengan konteks owner eksplisit.
 
-## Authentication and roles
-Short-lived access JWTs and random rotating refresh secrets hashed in revocable sessions.
-Browser: in-memory access token; HttpOnly/Secure refresh cookie with appropriate SameSite, CSRF and origin checks.
-Native: vetted OS-backed secure refresh storage; access token in memory. Never localStorage for refresh secrets.
-Validate JWT algorithm, issuer, audience and expiry; sub is always the actor.
-Public registration defaults to user and rejects role/owner overrides. Admin account creation/role updates use protected endpoints and current-role checks. GET /me returns current role for UI.
-Bootstrap first admin through an explicit operator command; no hardcoded account or first-user auto-promotion.
-Current account is_delete=true denies all protected requests, including requests with old access JWTs. Role changes/account deletion revoke refresh sessions; committed demotion blocks new admin requests.
+## Autentikasi dan peran
 
-## Transactions, authorization and audit
-Read requests check current actor state/role before target lookup. All business mutations open a DB transaction, lock involved actor/target account rows in stable UUID order, recheck authorization and target activity, then validate/update the resource and persist audit before commit.
-Account/role changes participate in the same locking rules; concurrent committed deletion/demotion cannot be bypassed by a stale mutation check.
-Use named methods such as CreateTransaction(scope), SoftDeleteTransaction(scope,version), RestoreTransaction(scope,version); no generic client-controlled owner or role assignment.
-Admin actions log actor versus owner, operation, safe resource/version metadata and outcome. Admin mutation plus audit insert is atomic; audit failure rolls back. Admin reads require audit persistence before responding.
-Audit records are append-only. Admins can inspect logs through a protected endpoint; raw credentials/financial payloads are not returned or logged.
+Gunakan access JWT berumur pendek dan secret refresh acak berotasi yang di-hash dalam sesi yang dapat dicabut.
+Browser: access token di memori; cookie refresh HttpOnly/Secure dengan SameSite, pemeriksaan CSRF, dan origin yang sesuai.
+Native: penyimpanan refresh aman berbasis OS; access token di memori. Jangan gunakan localStorage untuk secret refresh.
+Validasi algoritma JWT, issuer, audience, dan expiry; sub selalu aktor.
+Registrasi publik default ke user dan menolak override role/owner. Pembuatan akun/perubahan role admin memakai endpoint terlindungi dan pemeriksaan role saat ini. GET /me mengembalikan role untuk UI.
+Bootstrap admin pertama melalui perintah operator eksplisit; tidak ada akun hardcode atau promosi pengguna pertama otomatis.
+Akun dengan is_delete=true menolak semua request terlindungi, termasuk dengan access JWT lama. Perubahan role/penghapusan akun mencabut sesi refresh; demotion yang tersimpan memblokir request admin baru.
 
-## Soft deletion
-API field isDelete maps to Go IsDelete and SQL is_delete BOOLEAN NOT NULL DEFAULT FALSE.
-Users/categories/transactions/templates use the flag; it replaces the earlier transaction timestamp deletion signal and category archive proposal.
-Create defaults false. Delete sets true and updates version/audit time. Restore sets false after ownership, version and related-category checks.
-Active queries explicitly filter transactions.is_delete=false. Trash queries explicitly request true; owner/admin authorization remains identical.
-A deleted category is hidden from selectors but historical category labels remain available through scoped joins. Do not filter historical transactions out because a joined category is deleted.
-Deleted user disables login/jobs without cascading child-row flags; admin may inspect retained data and restore the account. No application hard delete for these entities.
+## Transaksi, otorisasi, dan audit
 
-## Jobs and provider operations
-Persist owner_user_id, requested_by, request_mode and immutable filters in export/backup jobs.
-A regular user operates only their own owner scope; a current admin can manage any selected owner's jobs and downloads.
-Before execution, recheck owner/requester account state and admin role when request_mode=admin. Canceled or unauthorized jobs make no provider call.
-Recurring schedules retain owner, authorizing actor and mode; paused schedules need explicit authorized resume.
-External calls follow committed job+audit creation; keep them outside DB locks and track remote success/failure/retries explicitly.
-Drive operations require the selected owner's valid provider connection/consent. Admin permissions allow management but do not manufacture OAuth authorization.
-Backup/restore preserves isDelete flags, validates selected-owner remapping and excludes auth roles/credentials/audit histories. Data restore cannot promote a user; dedicated admin role operations can.
+Request baca memeriksa state/peran aktor sebelum mencari target. Semua mutasi bisnis membuka transaksi DB, mengunci baris akun aktor/target dalam urutan UUID stabil, memeriksa ulang otorisasi dan aktivitas target, lalu memvalidasi/memperbarui resource dan menyimpan audit sebelum commit.
+Perubahan akun/peran mengikuti aturan lock yang sama; penghapusan/demotion yang tersimpan bersamaan tidak dapat dilewati oleh mutasi dengan pemeriksaan lama.
+Gunakan metode bernama seperti CreateTransaction(scope), SoftDeleteTransaction(scope,version), dan RestoreTransaction(scope,version); jangan memakai assignment owner atau role yang dikendalikan client secara generik.
+Tindakan admin mencatat actor versus owner, operasi, metadata resource/version yang aman, dan hasil. Mutasi admin serta insert audit atomik; kegagalan audit melakukan rollback. Baca admin wajib menyimpan audit sebelum respons.
+Catatan audit hanya append-only. Admin dapat memeriksanya melalui endpoint terlindungi; kredensial mentah/payload keuangan tidak dikembalikan atau dicatat.
 
-## Consistency and clients
-Money: NUMERIC(14,2), exact Go decimals/minor units, JSON decimal strings. No floating point or stored balance column.
-Record version guards edits/deletes/restores. Create idempotency is scoped by authorized owner and client_request_id; record actual actor separately.
-Reports/exports share aggregation and owner/active-row filters.
-Bind cursors and cache/request keys to actor, mode, owner, endpoint, filters and deletion state.
-All authenticated responses use Cache-Control: no-store. Do not persist other users' data in offline caches.
-Admin UI labels the selected owner and enables management. Save/discard before switching an unsaved form; submitted operations stay bound to the original target. Discard late responses after target/session changes.
+## Penghapusan lunak
 
-## Operations and validation
-Separate development/staging/production, migration rollout and reviewed recovery plans.
-Database disaster-recovery backups and restore drills are separate from personal Drive backups.
-Structured logs redact finance payloads, passwords, tokens and provider secrets; health/live and health/ready disclose no configuration.
-CI: formatting, vet/lint, meaningful tests, generated-code drift, frontend build and dependency checks.
-Commit sqlc/OpenAPI generated code; exclude .env, signing keys, dumps and provisioning secrets.
-Validate current toolchain requirements and macOS/Xcode/signing availability in the mobile milestone.
+Field API isDelete dipetakan ke Go IsDelete dan SQL is_delete BOOLEAN NOT NULL DEFAULT FALSE.
+Users/categories/transactions/templates menggunakan flag ini; flag tersebut menggantikan sinyal penghapusan berbasis timestamp dan usulan archive kategori sebelumnya.
+Create default false. Delete mengatur true dan memperbarui versi/waktu audit. Restore mengatur false setelah pemeriksaan ownership, versi, dan kategori terkait.
+Query aktif secara eksplisit memfilter transactions.is_delete=false. Query Trash secara eksplisit meminta true; otorisasi owner/admin tetap sama.
+Kategori terhapus disembunyikan dari selector, tetapi label kategori historis tetap tersedia melalui join berscope. Jangan mengeluarkan transaksi historis hanya karena kategori hasil join terhapus.
+Pengguna terhapus tidak dapat login/job tanpa mengubah flag baris anak; admin dapat memeriksa data yang dipertahankan dan memulihkan akun. Tidak ada hard delete aplikasi untuk entitas ini.
+
+## Job dan operasi provider
+
+Simpan owner_user_id, requested_by, request_mode, dan filter yang tidak dapat diubah pada job ekspor/backup.
+Pengguna biasa hanya beroperasi pada scope owner sendiri; admin aktif dapat mengelola job dan unduhan owner terpilih.
+Sebelum eksekusi, periksa ulang state akun owner/requester dan role admin saat request_mode=admin. Job yang dibatalkan/tidak berwenang tidak memanggil provider.
+Jadwal berulang menyimpan owner, aktor pemberi otorisasi, dan mode; jadwal jeda memerlukan resume yang terotorisasi.
+Panggilan eksternal dilakukan setelah job+audit tersimpan; jalankan di luar lock DB dan catat sukses/gagal/retry remote secara eksplisit.
+Operasi Drive memerlukan koneksi/consent provider valid milik owner terpilih. Izin admin tidak membuat otorisasi OAuth.
+Backup/restore mempertahankan flag isDelete, memvalidasi pemetaan owner terpilih, dan mengecualikan role/kredensial/riwayat audit. Restore tidak dapat mempromosikan user; operasi role admin khusus yang dapat melakukannya.
+
+## Konsistensi dan client
+
+Uang: NUMERIC(14,2), decimal Go eksak/minor unit, string desimal JSON. Jangan gunakan floating point atau kolom saldo tersimpan.
+Versi record menjaga edit/delete/restore. Idempotensi create dibatasi oleh owner terotorisasi dan client_request_id; actor sebenarnya tetap dicatat terpisah.
+Report/ekspor memakai agregasi dan filter owner/baris aktif yang sama.
+Ikat cursor dan key cache/request pada actor, mode, owner, endpoint, filter, dan state penghapusan.
+Semua respons terautentikasi memakai Cache-Control: no-store. Jangan menyimpan data pengguna lain pada cache offline.
+UI admin menampilkan owner terpilih dan mengaktifkan pengelolaan. Simpan/buang sebelum mengganti form yang belum tersimpan; operasi yang telah dikirim tetap terikat target awal. Buang respons terlambat setelah target/sesi berubah.
+
+## Operasi dan validasi
+
+Pisahkan development/staging/production, rollout migrasi, dan rencana recovery yang direview.
+Backup/recovery bencana database dan backup personal Drive adalah dua hal terpisah.
+Log terstruktur menyamarkan payload keuangan, password, token, dan secret provider; health/live dan health/ready tidak membocorkan konfigurasi.
+CI: formatting, vet/lint, pengujian bermakna, drift kode generate, build frontend, dan pemeriksaan dependensi.
+Commit kode sqlc/OpenAPI hasil generate; kecualikan .env, signing key, dump, dan secret provisioning.
+Validasi kebutuhan toolchain saat ini serta ketersediaan macOS/Xcode/signing pada milestone mobile.

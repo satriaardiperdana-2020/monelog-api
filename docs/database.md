@@ -1,96 +1,108 @@
-# Database design
-Draft v0.3 • 14 September 2026
-Logical design; executable migrations/queries arrive in Issue 002. Full admin management is Issue 013.
+# Desain basis data
 
-## Common conventions
-UUID identifiers. created_at/updated_at TIMESTAMPTZ; update timestamps on mutations.
-Soft-deletable entities have is_delete BOOLEAN NOT NULL DEFAULT FALSE and version INTEGER NOT NULL DEFAULT 1 CHECK(version>0).
-JSON exposes isDelete (exact spelling) and Go uses IsDelete. Other JSON fields remain snake_case.
-NULL is not a deletion state. Rows are active only when is_delete=false.
+Draf v0.3 • 14 September 2026
+Desain logis; migrasi/query yang dapat dijalankan dibuat pada Issue 002. Pengelolaan admin penuh adalah Issue 013.
 
-## Tables
-| Table | Main fields and constraints |
+## Konvensi umum
+
+Identifier UUID. created_at/updated_at bertipe TIMESTAMPTZ; timestamp diperbarui pada mutasi.
+Entitas yang dapat dihapus lunak memiliki is_delete BOOLEAN NOT NULL DEFAULT FALSE dan version INTEGER NOT NULL DEFAULT 1 CHECK(version>0).
+JSON mengekspos isDelete (ejaan tepat) dan Go memakai IsDelete. Field JSON lain tetap snake_case.
+NULL bukan state penghapusan. Baris aktif hanya jika is_delete=false.
+
+## Tabel
+
+| Tabel | Field dan constraint utama |
 | --- | --- |
-| users | id PK; email normalized lowercase UNIQUE NOT NULL; password_hash NOT NULL; role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','admin')); timezone NOT NULL default Asia/Jakarta; currency NOT NULL default IDR CHECK(currency='IDR'); is_delete; version; created_at; updated_at |
-| categories | id PK; user_id FK users NOT NULL; type NOT NULL CHECK IN ('income','expense'); name VARCHAR(80) NOT NULL; is_delete; version; created_at; updated_at; UNIQUE(id,user_id,type) |
-| transactions | id PK; user_id FK users NOT NULL; category_id NOT NULL; type NOT NULL CHECK IN ('income','expense'); amount NUMERIC(14,2) NOT NULL CHECK(amount>0); transaction_date DATE NOT NULL; title VARCHAR(200) NOT NULL; client_request_id UUID NOT NULL; request_hash TEXT NOT NULL; created_by/updated_by UUID NOT NULL FK users; is_delete; version; created_at; updated_at; UNIQUE(user_id,client_request_id) |
-| refresh_sessions | id PK; user_id FK users; family_id UUID; token_hash UNIQUE NOT NULL; expires_at NOT NULL; revoked_at nullable; replaced_by nullable self FK; created_at |
-| admin_access_events | id PK; actor_user_id UUID NOT NULL FK users; target_user_id UUID nullable FK users; resource_type TEXT NOT NULL; resource_id UUID nullable; action TEXT NOT NULL; outcome TEXT NOT NULL; request_id TEXT NOT NULL; safe_metadata JSONB NOT NULL default '{}'; created_at TIMESTAMPTZ NOT NULL default current_timestamp |
-| transaction_templates (later) | id PK; user_id FK users; category_id; type; name VARCHAR(80); amount NUMERIC(14,2) CHECK(amount>0); title; is_delete; version; created_at; updated_at |
-| export_jobs (later, 009) | id PK; owner_user_id FK users; requested_by FK users; request_mode personal/admin; immutable filters/format; status; artifact locator; expires_at; created_at/updated_at |
-| drive_connections (later, 012) | id PK; user_id UNIQUE FK users; encrypted_refresh_token; provider_account_label; revoked_at nullable; created_at/updated_at |
-| backup_schedules (later, 012) | id PK; owner_user_id FK users; authorized_by FK users; request_mode personal/admin; schedule/timezone; enabled/paused state; version; created_at/updated_at |
-| backup_jobs (later, 012) | id PK; owner_user_id FK users; requested_by FK users; request_mode personal/admin; schedule_id nullable; scheduled_for; status; attempt; provider_file_id/checksum/error_code nullable; started_at/completed_at; UNIQUE(schedule_id,scheduled_for) for scheduled runs |
+| users | id PK; email dinormalisasi lowercase UNIQUE NOT NULL; password_hash NOT NULL; role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','admin')); timezone default Asia/Jakarta; currency default IDR CHECK(currency='IDR'); is_delete; version; created_at; updated_at |
+| categories | id PK; user_id FK users NOT NULL; type CHECK IN ('income','expense'); name VARCHAR(80) NOT NULL; is_delete; version; created_at; updated_at; UNIQUE(id,user_id,type) |
+| transactions | id PK; user_id FK users NOT NULL; category_id NOT NULL; type CHECK IN ('income','expense'); amount NUMERIC(14,2) CHECK(amount>0); transaction_date DATE; title VARCHAR(200); client_request_id UUID; request_hash TEXT; created_by/updated_by UUID FK users; is_delete; version; created_at; updated_at; UNIQUE(user_id,client_request_id) |
+| refresh_sessions | id PK; user_id FK users; family_id UUID; token_hash UNIQUE; expires_at; revoked_at nullable; replaced_by self FK nullable; created_at |
+| admin_access_events | id PK; actor_user_id FK users; target_user_id FK users nullable; resource_type; resource_id nullable; action; outcome; request_id; safe_metadata JSONB default '{}'; created_at UTC |
+| transaction_templates (nanti) | id PK; user_id; category_id; type; name; amount; title; is_delete; version; created_at; updated_at |
+| export_jobs (nanti, 009) | id PK; owner_user_id; requested_by; request_mode personal/admin; filter/format immutable; status; artifact locator; expires_at; created_at/updated_at |
+| drive_connections (nanti, 012) | id PK; user_id UNIQUE; encrypted_refresh_token; provider_account_label; revoked_at nullable; created_at/updated_at |
+| backup_schedules (nanti, 012) | id PK; owner_user_id; authorized_by; request_mode; schedule/timezone; state enabled/paused; version; created_at/updated_at |
+| backup_jobs (nanti, 012) | id PK; owner_user_id; requested_by; request_mode; schedule_id nullable; scheduled_for; status; attempt; provider_file_id/checksum/error_code nullable; started_at/completed_at; UNIQUE(schedule_id,scheduled_for) untuk run terjadwal |
 
-Future job tables need full nullability/status definitions in their feature issues. Common flag/version definitions above apply to users, categories, transactions and templates.
-CHECK(length(btrim(name/title))>0) where applicable. Amount/title limits remain in requirements.md.
-Transactions enforce FOREIGN KEY(category_id,user_id,type) REFERENCES categories(id,user_id,type); templates use the same constraint.
-Roles describe application authority, not database superuser privileges. Admin edits retain selected owner's user_id; created_by/updated_by attribute actual actor.
-Email and per-owner/type category-name uniqueness includes deleted rows to avoid ambiguous recovery; restore an existing row instead of recreating its identity.
-Foreign keys restrict physical deletion; no cascading erase of financial/audit history.
+Tabel job berikutnya harus mendefinisikan nullability/status secara lengkap pada issue fiturnya. Definisi flag/version di atas berlaku untuk users, categories, transactions, dan templates.
+Gunakan CHECK(length(btrim(name/title))>0) jika berlaku. Batas amount/title tetap di requirements.md.
+Transactions menerapkan FOREIGN KEY(category_id,user_id,type) REFERENCES categories(id,user_id,type); templates memakai constraint yang sama.
+Role menjelaskan kewenangan aplikasi, bukan hak superuser database. Edit admin mempertahankan user_id owner; created_by/updated_by menyimpan actor sebenarnya.
+Keunikan email dan nama kategori per owner/type mencakup baris terhapus agar recovery tidak ambigu; restore baris lama, jangan membuat identitas baru.
+Foreign key membatasi penghapusan fisik; tidak ada cascade erase untuk riwayat keuangan/audit.
 
-## Indexes
-- categories: UNIQUE(user_id,type,lower(name)), including deleted rows.
-- transactions: (user_id,transaction_date DESC,id DESC) WHERE is_delete=false for normal lists/totals.
-- transactions: (user_id,category_id,transaction_date) WHERE is_delete=false for category reports.
-- transactions: (user_id,updated_at DESC,id DESC) WHERE is_delete=true for Trash.
-- refresh_sessions: (user_id,family_id) and expires_at for cleanup.
-- admin_access_events: (actor_user_id,created_at DESC) and (target_user_id,created_at DESC).
-- jobs: owner/status and runnable status/time indexes, defined in 009/012.
-Do not add a standalone low-selectivity boolean index. Measure EXPLAIN on representative owner-scoped queries; no title/amount index without a demonstrated query.
+## Index
 
-## Authorization and concurrency
-Service creates explicit scope {actor_user_id,owner_user_id,mode}. Personal owner=actor; admin owner=validated path target.
-All scoped reads/writes include owner ID, even for admins. A related record from another target yields 404.
-Before mutation, lock involved account rows in UUID order with FOR UPDATE, recheck actor active/current admin role as needed and target account state, then mutate resource under required version.
-Account delete/restore/role change follows the same locking protocol. Do not hold these locks while calling Google or rendering files.
-Domain rules allow a regular owner or current admin; repository scope cannot come straight from a request body.
+- categories: UNIQUE(user_id,type,lower(name)), termasuk baris terhapus.
+- transactions: (user_id,transaction_date DESC,id DESC) WHERE is_delete=false untuk list/total normal.
+- transactions: (user_id,category_id,transaction_date) WHERE is_delete=false untuk laporan kategori.
+- transactions: (user_id,updated_at DESC,id DESC) WHERE is_delete=true untuk Trash.
+- refresh_sessions: (user_id,family_id) dan expires_at untuk cleanup.
+- admin_access_events: (actor_user_id,created_at DESC) dan (target_user_id,created_at DESC).
+- jobs: index owner/status dan status/waktu runnable, didefinisikan pada 009/012.
 
-## Create, update, delete and restore
-Create inserts is_delete=false, version=1. Transactions record actual actor in created_by and updated_by.
-Hash canonical create fields and enforce UNIQUE(owner,client_request_id). Same request replays original result; changed fields or replay against a deleted result returns 409. Retain idempotency key after deletion.
-Editing an active transaction uses WHERE id=$id AND user_id=$owner AND version=$expected AND is_delete=false; increments version and updated_by/updated_at.
-Soft delete uses the same predicate, SET is_delete=true, version=version+1, updated_by=$actor, updated_at=now(). No DELETE FROM business tables.
-Restore requires is_delete=true and the expected version; sets false and increments version. Validate target account and category active/type/ownership before restoring.
-Owned but stale/already-deleted/already-restored lifecycle attempts return 409. Truly missing or wrong-owner rows return 404.
-Users/categories/templates also use flag+version; attribution for their admin mutations is in admin_access_events.
-Ordinary PATCH/POST DTOs reject isDelete; delete/restore routes are the only lifecycle writers.
+Jangan menambah index boolean dengan selektivitas rendah secara mandiri. Ukur EXPLAIN pada query dengan scope owner yang mewakili; jangan membuat index title/amount tanpa query nyata.
 
-## Category/account behavior
-Category soft deletion hides it from selectors without deleting transactions or changing their sums. Historical joins keep same-owner category labels even if category is_delete=true.
-New/edit/restored transactions or templates must use an active compatible category; restore the category first or choose another active category during an edit. Existing historical records remain readable and deletable.
-User soft deletion sets the account flag and revokes sessions in the same transaction, pauses schedules and blocks queued jobs at execution. Child flags do not change.
-Only an admin can restore a deleted account, because deleted users cannot authenticate. Restore does not resurrect revoked sessions or resume schedules automatically.
-A trusted operator bootstrap/recovery command remains available; there is no automatic role promotion.
+## Otorisasi dan konkurensi
 
-## Reads, reports and exports
-Active transaction detail/list: WHERE user_id=$owner AND is_delete=false. Trash uses the same owner predicate with is_delete=true and updated_at DESC,id DESC.
-Reports/exports always filter active transactions regardless of Trash UI state. Use inclusive transaction_date >= start AND <= end.
-SUM income/expense separately with COALESCE(...,0); difference is computed. Filter dates before Monday-week/month grouping; boundary groups are partial.
-Daily history returns only populated dates; today's summary is computed separately and may be zero.
-Do not add a deleted-category predicate to the transaction join that would erase historical amounts.
-Cursors bind actor, owner, mode, endpoint, date/category/type filters and deletion state.
+Service membuat scope eksplisit {actor_user_id,owner_user_id,mode}. Personal owner=actor; admin owner=target path tervalidasi.
+Semua baca/tulis berscope menyertakan owner ID, termasuk untuk admin. Resource terkait dari target lain menghasilkan 404.
+Sebelum mutasi, lock baris akun yang terlibat dalam urutan UUID dengan FOR UPDATE, periksa ulang actor aktif/role admin dan state target, lalu mutasikan resource dengan version wajib.
+Delete/restore/perubahan role akun memakai protokol lock yang sama. Jangan menahan lock saat memanggil Google atau merender file.
+Aturan domain menerima owner biasa atau admin aktif; scope repository tidak boleh berasal langsung dari body request.
 
-## Audit and roles
-Admin access events now cover read/create/update/delete/restore, exports/jobs, account and role operations. resource_type/action/outcome use a service whitelist defined with the contract; safe_metadata may contain versions/changed-field names and old/new role, never finance payloads/secrets.
-Admin writes and success audit inserts commit atomically. Reads persist success auditing before returning. Failed authorized attempts log denial/conflict where possible without masking the primary error.
-Runtime can insert and read audit records for the protected admin log service, but cannot update/delete them. It is not the migration owner.
-Registration SQL excludes role and uses the default. Personal profile SQL only updates allowed fields. Admin account/role SQL is invoked exclusively after current-role service authorization and audit setup; update is now permitted through protected admin operations.
-Role updates revoke target refresh sessions. Locking/rechecks prevent a transaction authorized before concurrent demotion from committing after a contradictory role change without serialization.
+## Create, update, delete, dan restore
 
-## Jobs, backups and restoration
-Persist owner and requester separately. Admin role does not make requester the financial owner.
-Owner can access own jobs; any current admin can manage jobs under their verified target route, including jobs created by another admin.
-Workers revalidate requester/owner and request_mode. Admin jobs require requester still admin. Invalid jobs are canceled/paused before execution; IDs/filters never change on retries.
-Backup data includes isDelete and row relationships; reports exclude deleted rows but backups preserve them for recovery.
-Exclude roles/passwords/session/provider secrets and audit records from personal-data backups. Imports validate strict schemas, reject privilege fields and remap only into the authorized owner, preserving deletion flags.
-Snapshot restore may preserve an active historical transaction referencing a deleted same-owner category; validate its owner/type foreign key without silently dropping the transaction or reactivating the category. Individual transaction restore and new edits still require an active category.
-Version/restore conflict policy and provider retention are finalized in Issue 012.
+Create memasukkan is_delete=false, version=1. Transactions mencatat actor sebenarnya pada created_by dan updated_by.
+Hash field create kanonis dan tegakkan UNIQUE(owner,client_request_id). Replay request yang sama mengembalikan hasil asli; field berbeda atau replay atas hasil terhapus mengembalikan 409. Kunci idempotensi tetap disimpan setelah delete.
+Edit transaksi aktif memakai WHERE id=$id AND user_id=$owner AND version=$expected AND is_delete=false; menaikkan version dan updated_by/updated_at.
+Soft delete memakai predicate sama, SET is_delete=true, version=version+1, updated_by=$actor, updated_at=now(). Tidak ada DELETE FROM pada tabel bisnis.
+Restore memerlukan is_delete=true dan expected version; mengatur false dan menaikkan version. Validasi akun target serta kategori aktif/tipe/owner sebelum restore.
+Percobaan lifecycle yang dimiliki tetapi stale/sudah terhapus/sudah dipulihkan mengembalikan 409. Baris yang benar-benar hilang atau owner salah mengembalikan 404.
+Users/categories/templates juga memakai flag+version; atribusi mutasi admin ada di admin_access_events.
+DTO PATCH/POST biasa menolak isDelete; route delete/restore adalah satu-satunya penulis siklus hidup.
 
-## Migration and verification
-Fresh install: users → categories → transactions → sessions → admin_access_events; later templates/jobs as their issues land.
-If upgrading an existing timestamp-deletion schema, add is_delete=false then backfill true where deleted_at IS NOT NULL; keep the old column only during a staged rollout and retire it after verification. Never reset deleted rows to active.
-For the earlier category archive design, map archived_at IS NOT NULL to is_delete=true when replacing archive semantics. This repository has no deployed schema yet; use the fresh schema unless inspection proves otherwise.
-Backfill actor attribution on legacy transactions with known owner only where historical actor information is absent, and document that limitation.
-Migrations preserve all rows/owner IDs. Tests verify defaults, true/false backfill, constraints, role escalation denial, A/B/C admin CRUD, stale versions, delete/restore races, report/Trash behavior, category history and atomic admin audits.
-Run migration down only on disposable fixtures until data implications are reviewed. No production SQL has been executed by this documentation update.
+## Perilaku kategori/akun
+
+Soft delete kategori menyembunyikannya dari selector tanpa menghapus transaksi atau mengubah jumlah. Join historis mempertahankan label kategori owner yang sama meski category.is_delete=true.
+Transaksi/templat baru/edit/restore harus memakai kategori aktif yang cocok; pulihkan kategori lebih dahulu atau pilih kategori aktif lain saat edit. Record historis tetap dapat dibaca dan dihapus.
+Soft delete user mengatur flag akun dan mencabut sesi dalam transaksi yang sama, menjeda jadwal, dan memblokir job antre saat eksekusi. Flag anak tidak berubah.
+Hanya admin yang dapat memulihkan akun terhapus karena pengguna itu tidak dapat autentikasi. Restore tidak menghidupkan sesi yang dicabut atau melanjutkan jadwal otomatis.
+Perintah bootstrap/recovery operator tepercaya tetap tersedia; tidak ada promosi role otomatis.
+
+## Pembacaan, laporan, dan ekspor
+
+Detail/list transaksi aktif: WHERE user_id=$owner AND is_delete=false. Trash memakai predicate owner yang sama dengan is_delete=true dan updated_at DESC,id DESC.
+Report/ekspor selalu memfilter transaksi aktif, apa pun state UI Trash. Gunakan transaction_date >= start AND <= end inklusif.
+Jumlahkan income/expense secara terpisah dengan COALESCE(...,0); hitung difference. Filter tanggal sebelum pengelompokan minggu/bulan; bucket batas dapat parsial.
+Riwayat harian hanya mengembalikan tanggal yang terisi; ringkasan hari ini dihitung terpisah dan dapat bernilai nol.
+Jangan menambahkan predicate kategori terhapus pada join transaksi karena dapat menghilangkan jumlah historis.
+Cursor mengikat actor, owner, mode, endpoint, filter tanggal/kategori/tipe, dan state penghapusan.
+
+## Audit dan role
+
+Admin access event mencakup read/create/update/delete/restore, ekspor/job, akun, dan operasi role. resource_type/action/outcome memakai whitelist service; safe_metadata boleh memuat versi/nama field berubah dan role lama/baru, tetapi tidak payload finansial/secret.
+Write admin dan insert audit sukses commit secara atomik. Pembacaan menyimpan audit sukses sebelum mengembalikan data. Percobaan berwenang yang gagal mencatat denial/conflict jika memungkinkan tanpa menutupi error utama.
+Runtime boleh insert/read record audit untuk service log admin terlindungi, tetapi tidak update/delete. Runtime bukan pemilik migrasi.
+SQL registrasi mengecualikan role dan memakai default. SQL profil personal hanya memperbarui field yang diizinkan. SQL akun/role admin hanya dipanggil setelah otorisasi role dan persiapan audit; update diizinkan melalui operasi admin terlindungi.
+Pembaruan role mencabut sesi refresh target. Lock/recheck mencegah transaksi yang diotorisasi sebelum demotion bersamaan melakukan commit setelah perubahan role yang berlawanan tanpa serialisasi.
+
+## Job, backup, dan pemulihan
+
+Simpan owner dan requester secara terpisah. Role admin tidak menjadikan requester sebagai owner keuangan.
+Owner dapat mengakses job sendiri; admin aktif dapat mengelola job pada route target terverifikasi, termasuk job yang dibuat admin lain.
+Worker memvalidasi ulang requester/owner/request_mode. Job admin memerlukan requester masih admin. Job tidak valid dibatalkan/dijeda sebelum eksekusi; ID/filter tidak berubah saat retry.
+Data backup memuat isDelete dan hubungan baris; laporan mengecualikan baris terhapus tetapi backup mempertahankannya untuk recovery.
+Kecualikan role/password/session/secret provider dan audit record dari backup data personal. Import memvalidasi skema ketat, menolak field privilege, dan hanya memetakan ke owner terotorisasi dengan flag penghapusan tetap.
+Snapshot restore boleh mempertahankan transaksi historis aktif yang merujuk kategori owner sama yang terhapus; validasi owner/type FK tanpa menghapus transaksi atau mengaktifkan kategori diam-diam. Restore transaksi individual dan edit baru tetap memerlukan kategori aktif.
+Kebijakan konflik version/restore dan retensi provider diselesaikan pada Issue 012.
+
+## Migrasi dan verifikasi
+
+Instalasi baru: users → categories → transactions → sessions → admin_access_events; templates/job menyusul sesuai issue.
+Jika upgrade dari skema timestamp deletion, tambahkan is_delete=false lalu isi true saat deleted_at IS NOT NULL; pertahankan kolom lama hanya selama rollout bertahap dan hapus setelah verifikasi. Jangan mengaktifkan kembali baris terhapus.
+Untuk desain archive kategori lama, petakan archived_at IS NOT NULL menjadi is_delete=true saat mengganti semantik archive. Repositori ini belum memiliki skema ter-deploy; gunakan skema baru kecuali inspeksi membuktikan sebaliknya.
+Isi atribusi actor pada transaksi lama dengan owner yang diketahui hanya jika informasi actor historis tidak ada, dan dokumentasikan keterbatasannya.
+Migrasi mempertahankan semua baris/owner ID. Pengujian memeriksa default, backfill true/false, constraint, penolakan eskalasi role, CRUD admin A/B/C, version lama, race delete/restore, perilaku report/Trash, histori kategori, serta audit admin atomik.
+Jalankan migration down hanya pada fixture yang boleh dibuang sampai dampak data direview. Dokumentasi ini tidak menjalankan SQL produksi.
