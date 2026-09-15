@@ -14,6 +14,42 @@ Middleware mengautentikasi aktor dan state akun saat ini → handler memvalidasi
 Scope personal: actor=owner. Scope admin: actor tetap admin yang login; owner berasal dari path target yang tervalidasi. Scope admin mengizinkan create/read/update/delete/restore serta operasi ekspor/templat/backup di tahap berikutnya.
 Aturan domain yang sama berlaku pada kedua scope. Pertahankan predicate owner, constraint kategori/tipe, dan versi optimistis pada setiap mutasi. Jangan mengandalkan kontrol frontend atau klaim role JWT saja.
 
+## Struktur proyek
+
+Struktur kanonis yang direncanakan untuk monelog-api:
+
+```
+monelog-api/
+├── cmd/
+│   ├── api/
+│   │   └── main.go              # komposisi dan server HTTP
+│   ├── worker/
+│   │   └── main.go              # job ekspor/backup tahap berikutnya
+│   └── admin/
+│       └── main.go              # bootstrap/pemulihan admin
+├── internal/
+│   ├── api/                     # kode OpenAPI hasil generate
+│   ├── config/                  # konfigurasi bertipe dan tervalidasi
+│   ├── handlers/                # adapter HTTP personal dan admin
+│   ├── middleware/              # autentikasi, role, logging aman, recovery
+│   ├── service/                 # aturan bisnis, scope, otorisasi, dan job
+│   └── repository/
+│       ├── postgresql/          # koneksi/pool PostgreSQL yang ditulis manual
+│       └── sqlc/                # query SQL hasil generate
+├── db/
+│   ├── migrations/              # migrasi skema berversi
+│   └── queries/                 # sumber query sqlc
+├── api/
+│   └── openapi.yaml             # kontrak API kanonis
+├── tests/
+│   └── integration/             # pengujian PostgreSQL/HTTP
+├── docs/                        # dokumentasi kanonis
+├── go.mod
+└── go.sum
+```
+
+Business logic berada di internal/service; internal/handlers hanya menerjemahkan HTTP ke service. Jika implementasi memakai script/sqlc atau nama direktori lain, sesuaikan plan dan dokumentasi setelah keputusan struktur dibuat.
+
 ## Direktori yang diusulkan
 
 | Path | Tanggung jawab |
@@ -26,6 +62,7 @@ Aturan domain yang sama berlaku pada kedua scope. Pertahankan predicate owner, c
 | internal/middleware | Autentikasi, pemeriksaan akun/peran, logging aman, recovery, throttling |
 | internal/service | Otorisasi aksi, scope, aturan keuangan, dan siklus hidup job |
 | internal/repository | Batas repository yang ditulis manual |
+| internal/repository/postgresql | Koneksi dan pool PostgreSQL |
 | internal/repository/sqlc | Query SQL hasil generate |
 | internal/api | Kode OpenAPI hasil generate |
 | db/migrations, db/queries | Skema berversi dan sumber sqlc |
