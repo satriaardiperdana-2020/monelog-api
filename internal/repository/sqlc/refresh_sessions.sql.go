@@ -81,6 +81,29 @@ func (q *Queries) GetRefreshSessionByTokenHash(ctx context.Context, tokenHash st
 	return i, err
 }
 
+const getRefreshSessionByTokenHashForUpdate = `-- name: GetRefreshSessionByTokenHashForUpdate :one
+SELECT id, user_id, family_id, token_hash, expires_at, revoked_at, replaced_by, created_at
+FROM refresh_sessions
+WHERE token_hash = $1
+FOR UPDATE
+`
+
+func (q *Queries) GetRefreshSessionByTokenHashForUpdate(ctx context.Context, tokenHash string) (RefreshSession, error) {
+	row := q.db.QueryRow(ctx, getRefreshSessionByTokenHashForUpdate, tokenHash)
+	var i RefreshSession
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FamilyID,
+		&i.TokenHash,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+		&i.ReplacedBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const revokeAllUserRefreshSessions = `-- name: RevokeAllUserRefreshSessions :execrows
 UPDATE refresh_sessions
 SET revoked_at = CURRENT_TIMESTAMP

@@ -1,0 +1,362 @@
+openapi: 3.0.3
+info:
+  title: Monelog API
+  version: 1.0.0
+  description: HTTP API for Monelog authentication and account profile management.
+servers:
+  - url: /
+security:
+  - BearerAuth: []
+paths:
+  /health/live:
+    get:
+      operationId: healthLive
+      summary: Process liveness
+      security: []
+      responses:
+        '200':
+          description: Process is live.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /health/ready:
+    get:
+      operationId: healthReady
+      summary: Dependency readiness
+      security: []
+      responses:
+        '200':
+          description: Dependencies are ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/auth/register:
+    post:
+      operationId: register
+      summary: Register a standard user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registered user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      summary: Create an access and refresh session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Access token and native refresh token, or browser refresh cookies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/auth/refresh:
+    post:
+      operationId: refresh
+      summary: Rotate a refresh session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Rotated session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/auth/logout:
+    post:
+      operationId: logout
+      summary: Revoke the refresh-token family
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '204':
+          description: Session family revoked.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/me:
+    get:
+      operationId: getMe
+      summary: Get the current profile
+      responses:
+        '200':
+          description: Current user profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+    patch:
+      operationId: updateMe
+      summary: Update the current profile timezone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileRequest'
+      responses:
+        '200':
+          description: Updated user profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteMe
+      summary: Soft-delete the current account
+      parameters:
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Current profile version, for example `"3"`.
+      responses:
+        '204':
+          description: Account soft-deleted.
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, unavailable]
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, timezone]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          minLength: 12
+          maxLength: 128
+        timezone:
+          type: string
+          example: Asia/Jakarta
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, client_type]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+        client_type:
+          type: string
+          enum: [native, web]
+          description: Use `native` for Android and iOS clients.
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      required: [client_type]
+      properties:
+        client_type:
+          type: string
+          enum: [native, web]
+        refresh_token:
+          type: string
+          description: Required only for native clients; browser clients use an HttpOnly cookie.
+    ProfileRequest:
+      type: object
+      additionalProperties: false
+      required: [timezone, version]
+      properties:
+        timezone:
+          type: string
+          example: Asia/Jakarta
+        version:
+          type: integer
+          format: int32
+          minimum: 1
+    User:
+      type: object
+      required: [id, email, role, timezone, currency, isDelete, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [user, admin]
+        timezone:
+          type: string
+        currency:
+          type: string
+          enum: [IDR]
+        isDelete:
+          type: boolean
+        version:
+          type: integer
+          format: int32
+    UserResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+    LoginResponse:
+      type: object
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+          description: Returned only for native clients.
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          format: int64
+          example: 86400
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+  responses:
+    AuthenticationFailed:
+      description: Authentication failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Request conflicts with current state.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Request is not permitted.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Too many requests.
+      headers:
+        Retry-After:
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Service is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HealthResponse'
+    ValidationError:
+      description: Request validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -20,6 +20,12 @@ SELECT *
 FROM refresh_sessions
 WHERE token_hash = sqlc.arg(token_hash);
 
+-- name: GetRefreshSessionByTokenHashForUpdate :one
+SELECT *
+FROM refresh_sessions
+WHERE token_hash = sqlc.arg(token_hash)
+FOR UPDATE;
+
 -- name: RevokeRefreshSession :one
 UPDATE refresh_sessions
 SET revoked_at = COALESCE(revoked_at, CURRENT_TIMESTAMP),

@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
+	CreateInitialAdmin(ctx context.Context, arg CreateInitialAdminParams) (User, error)
 	CreateRefreshSession(ctx context.Context, arg CreateRefreshSessionParams) (RefreshSession, error)
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
@@ -20,6 +21,7 @@ type Querier interface {
 	GetActiveUserByEmail(ctx context.Context, email string) (User, error)
 	GetActiveUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetRefreshSessionByTokenHash(ctx context.Context, tokenHash string) (RefreshSession, error)
+	GetRefreshSessionByTokenHashForUpdate(ctx context.Context, tokenHash string) (RefreshSession, error)
 	GetTransactionByRequestID(ctx context.Context, arg GetTransactionByRequestIDParams) (Transaction, error)
 	InsertAdminAccessEvent(ctx context.Context, arg InsertAdminAccessEventParams) (AdminAccessEvent, error)
 	ListActiveCategories(ctx context.Context, userID pgtype.UUID) ([]Category, error)
@@ -28,6 +30,7 @@ type Querier interface {
 	ListAdminAccessEventsByTarget(ctx context.Context, arg ListAdminAccessEventsByTargetParams) ([]AdminAccessEvent, error)
 	ListDeletedCategories(ctx context.Context, userID pgtype.UUID) ([]Category, error)
 	ListDeletedTransactions(ctx context.Context, arg ListDeletedTransactionsParams) ([]Transaction, error)
+	LockInitialAdminBootstrap(ctx context.Context) error
 	LockUsersForUpdate(ctx context.Context, ids []pgtype.UUID) ([]User, error)
 	RestoreCategory(ctx context.Context, arg RestoreCategoryParams) (Category, error)
 	RestoreTransaction(ctx context.Context, arg RestoreTransactionParams) (Transaction, error)
