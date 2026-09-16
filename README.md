@@ -61,7 +61,46 @@ curl --fail http://127.0.0.1:8080/health/ready
 
 ## OpenAPI dan Swagger
 
-Kontrak sumber ada di [api/openapi.yaml](api/openapi.yaml). Saat API berjalan, Swagger UI tersedia di `http://127.0.0.1:8080/swagger/` dan dokumen OpenAPI JSON tersedia di `http://127.0.0.1:8080/api/openapi.json`. Gunakan `make oapi-generate` setelah mengubah kontrak; kode hasil generate di `internal/api` harus di-commit.
+Kontrak sumber ada di [api/openapi.yaml](api/openapi.yaml). Saat API berjalan, buka [Swagger UI](http://127.0.0.1:8080/swagger/) atau [OpenAPI JSON](http://127.0.0.1:8080/api/openapi.json). Pilih `Authorize` di Swagger UI untuk mengisi access token setelah login.
+
+Contoh registrasi:
+
+```bash
+curl --location 'http://127.0.0.1:8080/api/v1/auth/register' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "email": "you@example.com",
+    "password": "correct-horse-battery-staple",
+    "timezone": "Asia/Jakarta"
+  }'
+```
+
+Contoh login untuk Android/iOS (`native` mengembalikan refresh token di JSON):
+
+```bash
+curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "email": "you@example.com",
+    "password": "correct-horse-battery-staple",
+    "client_type": "native"
+  }'
+```
+
+Login browser (`web`) memerlukan `Origin` yang terdaftar dan mengirim refresh token melalui cookie:
+
+```bash
+curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
+  --header 'Origin: https://app.example.com' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "email": "you@example.com",
+    "password": "correct-horse-battery-staple",
+    "client_type": "web"
+  }'
+```
+
+`client_type` wajib ditulis dengan underscore dan hanya menerima `native` atau `web`. Gunakan `make oapi-generate` setelah mengubah kontrak; kode hasil generate di `internal/api` harus di-commit.
 
 ## Pengembangan
 

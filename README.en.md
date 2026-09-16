@@ -59,7 +59,46 @@ curl --fail http://127.0.0.1:8080/health/ready
 
 ## OpenAPI and Swagger
 
-The source contract is [api/openapi.yaml](api/openapi.yaml). While the API is running, Swagger UI is available at `http://127.0.0.1:8080/swagger/` and the OpenAPI JSON document is available at `http://127.0.0.1:8080/api/openapi.json`. Run `make oapi-generate` after changing the contract; commit the generated code in `internal/api`.
+The source contract is [api/openapi.yaml](api/openapi.yaml). While the API is running, open [Swagger UI](http://127.0.0.1:8080/swagger/) or the [OpenAPI JSON document](http://127.0.0.1:8080/api/openapi.json). Select `Authorize` in Swagger UI and enter the access token returned by login.
+
+Register an account:
+
+```bash
+curl --location 'http://127.0.0.1:8080/api/v1/auth/register' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "email": "you@example.com",
+    "password": "correct-horse-battery-staple",
+    "timezone": "Asia/Jakarta"
+  }'
+```
+
+Login for Android/iOS (`native` returns the refresh token in JSON):
+
+```bash
+curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "email": "you@example.com",
+    "password": "correct-horse-battery-staple",
+    "client_type": "native"
+  }'
+```
+
+Browser login (`web`) requires an allowed `Origin` and sends the refresh token in a cookie:
+
+```bash
+curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
+  --header 'Origin: https://app.example.com' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "email": "you@example.com",
+    "password": "correct-horse-battery-staple",
+    "client_type": "web"
+  }'
+```
+
+`client_type` must use the underscore spelling and must be either `native` or `web`. Run `make oapi-generate` after changing the contract; commit the generated code in `internal/api`.
 
 ## Development
 
