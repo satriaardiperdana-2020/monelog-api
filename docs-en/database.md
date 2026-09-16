@@ -8,26 +8,189 @@ Soft-deletable entities have is_delete BOOLEAN NOT NULL DEFAULT FALSE and versio
 JSON exposes isDelete (exact spelling) and Go uses IsDelete. Other JSON fields remain snake_case.
 NULL is not a deletion state. Rows are active only when is_delete=false.
 
-## Tables
-| Table | Main fields and constraints |
-| --- | --- |
-| users | id PK; email normalized lowercase UNIQUE NOT NULL; password_hash NOT NULL; role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','admin')); timezone NOT NULL default Asia/Jakarta; currency NOT NULL default IDR CHECK(currency='IDR'); is_delete; version; created_at; updated_at |
-| categories | id PK; user_id FK users NOT NULL; type NOT NULL CHECK IN ('income','expense'); name VARCHAR(80) NOT NULL; is_delete; version; created_at; updated_at; UNIQUE(id,user_id,type) |
-| transactions | id PK; user_id FK users NOT NULL; category_id NOT NULL; type NOT NULL CHECK IN ('income','expense'); amount NUMERIC(14,2) NOT NULL CHECK(amount>0); transaction_date DATE NOT NULL; title VARCHAR(200) NOT NULL; client_request_id UUID NOT NULL; request_hash TEXT NOT NULL; created_by/updated_by UUID NOT NULL FK users; is_delete; version; created_at; updated_at; UNIQUE(user_id,client_request_id) |
-| refresh_sessions | id PK; user_id FK users; family_id UUID; token_hash UNIQUE NOT NULL; expires_at NOT NULL; revoked_at nullable; replaced_by nullable self FK; created_at |
-| admin_access_events | id PK; actor_user_id UUID NOT NULL FK users; target_user_id UUID nullable FK users; resource_type TEXT NOT NULL; resource_id UUID nullable; action TEXT NOT NULL; outcome TEXT NOT NULL; request_id TEXT NOT NULL; safe_metadata JSONB NOT NULL default '{}'; created_at TIMESTAMPTZ NOT NULL default current_timestamp |
-| transaction_templates (later) | id PK; user_id FK users; category_id; type; name VARCHAR(80); amount NUMERIC(14,2) CHECK(amount>0); title; is_delete; version; created_at; updated_at |
-| export_jobs (later, 009) | id PK; owner_user_id FK users; requested_by FK users; request_mode personal/admin; immutable filters/format; status; artifact locator; expires_at; created_at/updated_at |
-| drive_connections (later, 012) | id PK; user_id UNIQUE FK users; encrypted_refresh_token; provider_account_label; revoked_at nullable; created_at/updated_at |
-| backup_schedules (later, 012) | id PK; owner_user_id FK users; authorized_by FK users; request_mode personal/admin; schedule/timezone; enabled/paused state; version; created_at/updated_at |
-| backup_jobs (later, 012) | id PK; owner_user_id FK users; requested_by FK users; request_mode personal/admin; schedule_id nullable; scheduled_for; status; attempt; provider_file_id/checksum/error_code nullable; started_at/completed_at; UNIQUE(schedule_id,scheduled_for) for scheduled runs |
+## Table structure (DDL)
 
-Future job tables need full nullability/status definitions in their feature issues. Common flag/version definitions above apply to users, categories, transactions and templates.
-CHECK(length(btrim(name/title))>0) where applicable. Amount/title limits remain in requirements.md.
-Transactions enforce FOREIGN KEY(category_id,user_id,type) REFERENCES categories(id,user_id,type); templates use the same constraint.
-Roles describe application authority, not database superuser privileges. Admin edits retain selected owner's user_id; created_by/updated_by attribute actual actor.
-Email and per-owner/type category-name uniqueness includes deleted rows to avoid ambiguous recovery; restore an existing row instead of recreating its identity.
-Foreign keys restrict physical deletion; no cascading erase of financial/audit history.
+The following DDL is a readable logical representation. Executable migrations are created and reviewed in Issue 002 and the relevant feature issues.
+
+~~~sql
+CREATE TABLE users (
+    id            UUID PRIMARY KEY,
+    email         TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role          TEXT NOT NULL DEFAULT 'user'
+                  CHECK (role IN ('user', 'admin')),
+    timezone      TEXT NOT NULL DEFAULT 'Asia/Jakarta',
+    currency      TEXT NOT NULL DEFAULT 'IDR'
+                  CHECK (currency = 'IDR'),
+    is_delete     BOOLEAN NOT NULL DEFAULT FALSE,
+    version       INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE categories (
+    id          UUID PRIMARY KEY,
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    type        TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+    name        VARCHAR(80) NOT NULL CHECK (length(btrim(name)) > 0),
+    is_delete   BOOLEAN NOT NULL DEFAULT FALSE,
+    version     INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id, user_id, type)
+);
+
+CREATE TABLE transactions (
+    id                UUID PRIMARY KEY,
+    user_id           UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    category_id       UUID NOT NULL,
+    type              TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+    amount            NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
+    transaction_date  DATE NOT NULL,
+    title             VARCHAR(200) NOT NULL CHECK (length(btrim(title)) > 0),
+    client_request_id UUID NOT NULL,
+    request_hash      TEXT NOT NULL,
+    created_by        UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    updated_by        UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    is_delete         BOOLEAN NOT NULL DEFAULT FALSE,
+    version           INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, client_request_id),
+    FOREIGN KEY (category_id, user_id, type)
+        REFERENCES categories (id, user_id, type) ON DELETE RESTRICT
+);
+
+CREATE TABLE refresh_sessions (
+    id          UUID PRIMARY KEY,
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    family_id   UUID NOT NULL,
+    token_hash  TEXT NOT NULL UNIQUE,
+    expires_at  TIMESTAMPTZ NOT NULL,
+    revoked_at  TIMESTAMPTZ,
+    replaced_by UUID REFERENCES refresh_sessions(id) ON DELETE RESTRICT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE admin_access_events (
+    id             UUID PRIMARY KEY,
+    actor_user_id  UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    target_user_id UUID REFERENCES users(id) ON DELETE RESTRICT,
+    resource_type  TEXT NOT NULL,
+    resource_id    UUID,
+    action         TEXT NOT NULL,
+    outcome        TEXT NOT NULL,
+    request_id     TEXT NOT NULL,
+    safe_metadata  JSONB NOT NULL DEFAULT '{}',
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Added by the relevant later milestone.
+CREATE TABLE transaction_templates (
+    id          UUID PRIMARY KEY,
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    category_id UUID NOT NULL,
+    type        TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+    name        VARCHAR(80) NOT NULL CHECK (length(btrim(name)) > 0),
+    amount      NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
+    title       VARCHAR(200) NOT NULL CHECK (length(btrim(title)) > 0),
+    is_delete   BOOLEAN NOT NULL DEFAULT FALSE,
+    version     INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id, user_id, type),
+    FOREIGN KEY (category_id, user_id, type)
+        REFERENCES categories (id, user_id, type) ON DELETE RESTRICT
+);
+
+CREATE TABLE export_jobs (
+    id                UUID PRIMARY KEY,
+    owner_user_id     UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    requested_by      UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    request_mode      TEXT NOT NULL CHECK (request_mode IN ('personal', 'admin')),
+    immutable_filters JSONB NOT NULL,
+    format            TEXT NOT NULL CHECK (format IN ('xlsx', 'pdf')),
+    status            TEXT NOT NULL,
+    artifact_locator  TEXT,
+    expires_at        TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE drive_connections (
+    id                      UUID PRIMARY KEY,
+    user_id                 UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE RESTRICT,
+    encrypted_refresh_token TEXT NOT NULL,
+    provider_account_label  TEXT NOT NULL,
+    revoked_at              TIMESTAMPTZ,
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE backup_schedules (
+    id            UUID PRIMARY KEY,
+    owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    authorized_by UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    request_mode  TEXT NOT NULL CHECK (request_mode IN ('personal', 'admin')),
+    schedule      TEXT NOT NULL,
+    timezone      TEXT NOT NULL,
+    enabled       BOOLEAN NOT NULL DEFAULT TRUE,
+    paused        BOOLEAN NOT NULL DEFAULT FALSE,
+    version       INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE backup_jobs (
+    id               UUID PRIMARY KEY,
+    owner_user_id    UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    requested_by     UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    request_mode     TEXT NOT NULL CHECK (request_mode IN ('personal', 'admin')),
+    schedule_id      UUID REFERENCES backup_schedules(id) ON DELETE RESTRICT,
+    scheduled_for    TIMESTAMPTZ NOT NULL,
+    status           TEXT NOT NULL,
+    attempt          INTEGER NOT NULL DEFAULT 0 CHECK (attempt >= 0),
+    provider_file_id TEXT,
+    checksum         TEXT,
+    error_code       TEXT,
+    started_at      TIMESTAMPTZ,
+    completed_at    TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (schedule_id, scheduled_for)
+);
+
+CREATE UNIQUE INDEX categories_owner_type_name_uq
+    ON categories (user_id, type, lower(name));
+
+CREATE INDEX transactions_active_list_idx
+    ON transactions (user_id, transaction_date DESC, created_at DESC, id DESC)
+    WHERE is_delete = FALSE;
+
+CREATE INDEX transactions_active_category_idx
+    ON transactions (user_id, category_id, transaction_date)
+    WHERE is_delete = FALSE;
+
+CREATE INDEX transactions_trash_idx
+    ON transactions (user_id, updated_at DESC, id DESC)
+    WHERE is_delete = TRUE;
+
+CREATE INDEX refresh_sessions_cleanup_idx
+    ON refresh_sessions (user_id, family_id, expires_at);
+
+CREATE INDEX admin_access_events_actor_idx
+    ON admin_access_events (actor_user_id, created_at DESC);
+
+CREATE INDEX admin_access_events_target_idx
+    ON admin_access_events (target_user_id, created_at DESC);
+
+CREATE INDEX export_jobs_owner_status_idx
+    ON export_jobs (owner_user_id, status);
+
+CREATE INDEX backup_jobs_owner_status_idx
+    ON backup_jobs (owner_user_id, status, scheduled_for);
+~~~
+
+Job status values, retention rules, and provider states are refined in Issue 009/012. Roles describe application authority, not database superuser privileges. Foreign keys intentionally do not use cascade delete because business rows and audit history must not be physically erased.
 
 ## Indexes
 - categories: UNIQUE(user_id,type,lower(name)), including deleted rows.
