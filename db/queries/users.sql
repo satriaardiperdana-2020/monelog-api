@@ -9,6 +9,26 @@ VALUES (
 )
 RETURNING *;
 
+-- name: LockInitialAdminBootstrap :exec
+SELECT pg_advisory_xact_lock(931503);
+
+-- name: CreateInitialAdmin :one
+INSERT INTO users (id, email, password_hash, role, timezone, currency)
+SELECT
+    sqlc.arg(id),
+    lower(btrim(sqlc.arg(email))),
+    sqlc.arg(password_hash),
+    'admin',
+    sqlc.arg(timezone),
+    'IDR'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM users
+    WHERE role = 'admin'
+      AND is_delete = FALSE
+)
+RETURNING *;
+
 -- name: GetActiveUserByID :one
 SELECT *
 FROM users

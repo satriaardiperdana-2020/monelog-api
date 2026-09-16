@@ -41,11 +41,10 @@ Prasyarat:
 - sqlc 1.31.1 untuk regenerasi query
 - golang-migrate 4.18 atau kompatibel untuk migrasi
 
-Salin nilai dari `.env.example` ke environment shell Anda dan ganti placeholder dengan kredensial PostgreSQL lokal. Aplikasi membaca environment variable secara langsung dan tidak memuat file `.env` secara otomatis.
+Salin nilai dari `.env.example` ke `.env.development` dan ganti placeholder dengan kredensial PostgreSQL lokal. Saat `APP_ENV` tidak ditetapkan, aplikasi memuat `.env.development`; saat ditetapkan, aplikasi memuat `.env.<APP_ENV>`. Environment variable dari shell atau deployment selalu mengesampingkan nilai dari file.
 
 ```bash
-export DATABASE_URL='postgres://<user>:<password>@127.0.0.1:5432/monelog?sslmode=disable'
-make run
+go run ./cmd/api
 ```
 
 Konfigurasi opsional dan nilai default tersedia di [.env.example](.env.example). Jangan commit `.env`, password, token, atau key.
@@ -59,6 +58,10 @@ Health endpoint:
 curl --fail http://127.0.0.1:8080/health/live
 curl --fail http://127.0.0.1:8080/health/ready
 ```
+
+## OpenAPI dan Swagger
+
+Kontrak sumber ada di [api/openapi.yaml](api/openapi.yaml). Saat API berjalan, Swagger UI tersedia di `http://127.0.0.1:8080/swagger/` dan dokumen OpenAPI JSON tersedia di `http://127.0.0.1:8080/api/openapi.json`. Gunakan `make oapi-generate` setelah mengubah kontrak; kode hasil generate di `internal/api` harus di-commit.
 
 ## Pengembangan
 

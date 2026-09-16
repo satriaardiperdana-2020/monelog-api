@@ -47,10 +47,15 @@ func run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 
 	healthService := service.NewHealth(pool, cfg.HTTP.ReadyTimeout)
 	healthHandler := handlers.NewHealth(healthService)
+	authService, err := service.NewAuth(pool, cfg.Auth.JWTSigningKey, cfg.Auth.JWTIssuer, cfg.Auth.JWTAudience, cfg.Auth.AccessTokenLifetime)
+	if err != nil {
+		return errors.New("initialize authentication")
+	}
+	authHandler := handlers.NewAuth(authService, cfg.Auth.AllowedOrigins, appmiddleware.NewLoginRateLimiter())
 
 	e := echo.New()
 	appmiddleware.Register(e, logger)
-	handlers.RegisterRoutes(e, healthHandler)
+	handlers.RegisterRoutes(e, healthHandler, authHandler, appmiddleware.Authenticate(authService))
 
 	server := &http.Server{
 		Addr:              cfg.HTTP.Addr,

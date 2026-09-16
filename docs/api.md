@@ -43,6 +43,8 @@ sub session/JWT tetap actor, bukan target. Perubahan role mencabut refresh sessi
 Akun terhapus tidak dapat memakai route self; admin aktif memulihkannya.
 Registrasi publik dan pembuatan admin melakukan hash password yang diberikan; password tidak pernah dikembalikan atau dicatat.
 
+`POST /auth/login` mengembalikan `401 AUTHENTICATION_FAILED` untuk email yang tidak dikenal maupun password yang salah. Route terlindungi mengembalikan kode yang sama untuk Bearer token yang hilang, kedaluwarsa, memiliki signature/algoritma/issuer/audience tidak valid, atau membawa claim `role`; detailnya tidak dibedakan agar tidak membocorkan kredensial atau mekanisme validasi.
+
 ## Route keuangan personal
 
 | Method | Path | Input / hasil |

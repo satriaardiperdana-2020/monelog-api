@@ -39,11 +39,10 @@ Prerequisites:
 - sqlc 1.31.1 for query regeneration
 - golang-migrate 4.18 or compatible for migrations
 
-Copy the values from `.env.example` into your shell environment and replace the placeholders with local PostgreSQL credentials. The application reads environment variables directly and does not load `.env` files automatically.
+Copy `.env.example` to `.env.development` and replace the placeholders with local PostgreSQL credentials. When `APP_ENV` is unset, the application loads `.env.development`; when it is set, the application loads `.env.<APP_ENV>`. Shell and deployment environment variables always override file values.
 
 ```bash
-export DATABASE_URL='postgres://<user>:<password>@127.0.0.1:5432/monelog?sslmode=disable'
-make run
+go run ./cmd/api
 ```
 
 Optional configuration and default values are documented in [.env.example](.env.example). Do not commit `.env`, passwords, tokens, or keys.
@@ -57,6 +56,10 @@ Health endpoints:
 curl --fail http://127.0.0.1:8080/health/live
 curl --fail http://127.0.0.1:8080/health/ready
 ```
+
+## OpenAPI and Swagger
+
+The source contract is [api/openapi.yaml](api/openapi.yaml). While the API is running, Swagger UI is available at `http://127.0.0.1:8080/swagger/` and the OpenAPI JSON document is available at `http://127.0.0.1:8080/api/openapi.json`. Run `make oapi-generate` after changing the contract; commit the generated code in `internal/api`.
 
 ## Development
 

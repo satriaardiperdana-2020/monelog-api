@@ -74,10 +74,10 @@ Direktori frontend: src/views, components, services, stores, router, dan utils d
 
 ## Autentikasi dan peran
 
-Gunakan access JWT berumur pendek dan secret refresh acak berotasi yang di-hash dalam sesi yang dapat dicabut.
+Gunakan access JWT dengan TTL maksimum 24 jam dan secret refresh acak berotasi yang di-hash dalam sesi yang dapat dicabut.
 Browser: access token di memori; cookie refresh HttpOnly/Secure dengan SameSite, pemeriksaan CSRF, dan origin yang sesuai.
 Native: penyimpanan refresh aman berbasis OS; access token di memori. Jangan gunakan localStorage untuk secret refresh.
-Validasi algoritma JWT, issuer, audience, dan expiry; sub selalu aktor.
+Validasi algoritma JWT, issuer, audience, dan expiry; sub selalu aktor. JWT tidak membawa role; role aktor selalu dimuat dari database saat ini.
 Registrasi publik default ke user dan menolak override role/owner. Pembuatan akun/perubahan role admin memakai endpoint terlindungi dan pemeriksaan role saat ini. GET /me mengembalikan role untuk UI.
 Bootstrap admin pertama melalui perintah operator eksplisit; tidak ada akun hardcode atau promosi pengguna pertama otomatis.
 Akun dengan is_delete=true menolak semua request terlindungi, termasuk dengan access JWT lama. Perubahan role/penghapusan akun mencabut sesi refresh; demotion yang tersimpan memblokir request admin baru.

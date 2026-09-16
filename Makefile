@@ -4,7 +4,7 @@ MIGRATE ?= migrate
 SQLC ?= sqlc
 GO_FILES := $(shell find cmd internal -type f -name '*.go' 2>/dev/null)
 
-.PHONY: build run fmt fmt-check tidy test test-race test-integration vet verify check sqlc-generate sqlc-check sqlc-vet migrate-up migrate-down runtime-grants
+.PHONY: build run fmt fmt-check tidy test test-race test-integration vet verify check sqlc-generate sqlc-check sqlc-vet oapi-generate oapi-check migrate-up migrate-down runtime-grants
 
 build:
 	mkdir -p bin
@@ -43,6 +43,12 @@ sqlc-check: sqlc-generate
 sqlc-vet:
 	$(SQLC) vet
 
+oapi-generate:
+	$(GO) generate ./api
+
+oapi-check: oapi-generate
+	git diff --exit-code -- internal/api
+
 migrate-up:
 	@test -n "$(DATABASE_URL)" || (echo "DATABASE_URL is required" >&2; exit 1)
 	$(MIGRATE) -path db/migrations -database "$(DATABASE_URL)" up
@@ -60,4 +66,4 @@ test-integration:
 	@test -n "$(TEST_DATABASE_URL)" || (echo "TEST_DATABASE_URL is required" >&2; exit 1)
 	$(GO) test -tags=integration ./internal/repository/sqlc
 
-check: fmt-check test vet build verify sqlc-vet sqlc-check
+check: fmt-check test vet build verify sqlc-vet sqlc-check oapi-check

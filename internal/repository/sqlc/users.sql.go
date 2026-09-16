@@ -11,6 +11,54 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createInitialAdmin = `-- name: CreateInitialAdmin :one
+INSERT INTO users (id, email, password_hash, role, timezone, currency)
+SELECT
+    $1,
+    lower(btrim($2)),
+    $3,
+    'admin',
+    $4,
+    'IDR'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM users
+    WHERE role = 'admin'
+      AND is_delete = FALSE
+)
+RETURNING id, email, password_hash, role, timezone, currency, is_delete, version, created_at, updated_at
+`
+
+type CreateInitialAdminParams struct {
+	ID           pgtype.UUID `db:"id" json:"id"`
+	Email        string      `db:"email" json:"email"`
+	PasswordHash string      `db:"password_hash" json:"password_hash"`
+	Timezone     string      `db:"timezone" json:"timezone"`
+}
+
+func (q *Queries) CreateInitialAdmin(ctx context.Context, arg CreateInitialAdminParams) (User, error) {
+	row := q.db.QueryRow(ctx, createInitialAdmin,
+		arg.ID,
+		arg.Email,
+		arg.PasswordHash,
+		arg.Timezone,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Timezone,
+		&i.Currency,
+		&i.IsDelete,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, email, password_hash, timezone, currency)
 VALUES (
@@ -103,6 +151,15 @@ func (q *Queries) GetActiveUserByID(ctx context.Context, id pgtype.UUID) (User, 
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const lockInitialAdminBootstrap = `-- name: LockInitialAdminBootstrap :exec
+SELECT pg_advisory_xact_lock(931503)
+`
+
+func (q *Queries) LockInitialAdminBootstrap(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, lockInitialAdminBootstrap)
+	return err
 }
 
 const lockUsersForUpdate = `-- name: LockUsersForUpdate :many
