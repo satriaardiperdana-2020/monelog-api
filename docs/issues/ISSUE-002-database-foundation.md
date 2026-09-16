@@ -1,7 +1,7 @@
 # ISSUE-002: Migrasi basis data dan fondasi sqlc
 
 Status: Backlog
-Diperbarui: 14 September 2026 (v0.3)
+Diperbarui: 16 September 2026 (v0.4)
 Repositori: monelog-api
 Dependensi: 001
 Remote issue: Belum dibuat
@@ -11,25 +11,25 @@ Kebijakan: [Kontrol akses dan penghapusan lunak](../access-control.md)
 
 ## Tujuan
 
-Membuat skema PostgreSQL dan query sqlc untuk akun, kategori, transaksi, sesi, audit, penghapusan lunak, versi, dan atribusi aktor.
+Membangun fondasi PostgreSQL dan sqlc untuk akun, kategori, transaksi, sesi, audit, lifecycle penghapusan lunak, versi, serta atribusi aktor. Issue ini menyediakan batas data yang diperlukan issue berikutnya; autentikasi, kontrak HTTP, dan alur pengelolaan admin lengkap dikerjakan pada issue masing-masing.
 
 ## Kriteria penerimaan
 
-- [ ] Kriteria fungsional issue tercapai dengan bukti pengujian nyata.
-- [ ] Pengguna biasa hanya dapat memakai scope sendiri; admin dapat memakai target yang dipilih dan tetap mempertahankan owner/actor.
-- [ ] isDelete, version, Trash/restore, dan validasi scope mengikuti kontrak bersama.
-- [ ] Kegagalan otorisasi, versi lama, dan resource lintas owner menghasilkan status yang tepat.
-- [ ] Audit, kode hasil generate, dokumentasi, dan implementasi tetap konsisten.
+- [ ] Migrasi baru menghasilkan skema users, categories, transactions, refresh_sessions, dan admin_access_events yang konsisten dengan desain basis data.
+- [ ] Batas data untuk ownership, tipe kategori/transaksi, nominal, is_delete, dan version menolak state yang tidak valid; semua data yang dapat dihapus lunak mulai aktif.
+- [ ] Query sqlc dasar untuk scope owner, data aktif/Trash, dan lifecycle berversi dapat dihasilkan ulang secara deterministik.
+- [ ] Fondasi actor dan audit mempertahankan perbedaan antara owner terpilih dan actor yang melakukan perubahan, tanpa memberi role aplikasi melalui migrasi atau query registrasi biasa.
+- [ ] Migrasi dan query dibuktikan pada PostgreSQL disposable. Backfill legacy hanya diwajibkan bila inspeksi menemukan skema lama yang benar-benar digunakan.
 
 ## Ruang lingkup dan area terdampak
 
-db/migrations; db/queries; konfigurasi sqlc; internal/repository/sqlc; fixture integrasi PostgreSQL.
+db/migrations; db/queries; konfigurasi sqlc; internal/repository/sqlc; fixture integrasi PostgreSQL; dokumentasi basis data yang terdampak.
 Area di atas adalah rencana; persempit menjadi file nyata saat inspeksi repositori. Jangan mengedit modul yang tidak terkait.
 
 ## Verifikasi
 
-Migrasi baru/legacy; boolean NOT NULL/default; owner/type/amount salah; duplicate request key; query aktif versus Trash; grant audit; generate deterministik.
-Jalankan perintah yang dikonfigurasi untuk proyek (misalnya go test ./..., go vet ./..., suite PostgreSQL/HTTP, atau perintah frontend yang relevan). Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
+Migrasi baru; boolean/default dan version; owner/type/amount salah; duplicate request key; query aktif versus Trash; atribusi owner/actor; akses audit runtime; generate deterministik. Uji backfill hanya bila ada skema legacy yang nyata.
+Jalankan suite PostgreSQL yang dikonfigurasi serta pemeriksaan Go yang relevan. Catat perintah dan hasil sebenarnya; dokumentasi saja bukan bukti perilaku runtime.
 
 ## Batasan dan pemulihan
 
@@ -38,4 +38,8 @@ Pertahankan perubahan pengguna. Uji migrasi pada fixture yang boleh dibuang dan 
 
 ## Definisi selesai
 
-Semua kriteria penerimaan memiliki bukti nyata; kontrak/skema/dokumentasi dan kode hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.
+Semua kriteria penerimaan memiliki bukti nyata; skema, dokumentasi, dan kode sqlc hasil generate konsisten; diff telah direview; regresi relevan lulus. Infrastruktur yang tidak tersedia harus dicatat secara eksplisit. Pembaruan plan atau dokumentasi saja tidak menyelesaikan issue.
+
+## Batas tanggung jawab
+
+Otorisasi role, perilaku status HTTP, dan alur write-admin atomik diverifikasi pada ISSUE-003, ISSUE-004, dan ISSUE-013 dengan memakai fondasi ini.

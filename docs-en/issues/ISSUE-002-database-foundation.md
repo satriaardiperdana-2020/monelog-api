@@ -1,7 +1,7 @@
 # ISSUE-002: Database migrations and sqlc foundation
 
 Status: Backlog
-Updated: 14 September 2026 (v0.3)
+Updated: 16 September 2026 (v0.4)
 Repository: monelog-api
 Dependencies: 001
 Remote issue: Not created
@@ -10,22 +10,26 @@ Plan: [PLAN-002](../plans/PLAN-002.md)
 Policy: [Access control and soft deletion](../access-control.md)
 
 ## Goal
-Implement core role, ownership, boolean lifecycle, actor attribution and audit schema with repeatable SQL generation.
+Build the PostgreSQL and sqlc foundation for accounts, categories, transactions, sessions, audit, soft-deletion lifecycle, versioning, and actor attribution. This issue provides the data boundary required by later work; authentication, HTTP contracts, and complete admin-management flows belong to their respective issues.
 
 ## Acceptance criteria
-- [ ] users/categories/transactions have is_delete BOOLEAN NOT NULL DEFAULT FALSE and version constraints.
-- [ ] Roles default to user; amount/type/owner composite constraints reject invalid data.
-- [ ] Admin changes can retain selected-owner user_id and record actual actor.
-- [ ] Required owner-filtered active/Trash queries and versioned delete/restore operations generate reproducibly.
-- [ ] Fresh migrations and any applicable legacy true/false backfill preserve rows and existing deletion state.
+- [ ] Fresh migrations create users, categories, transactions, refresh_sessions, and admin_access_events consistently with the database design.
+- [ ] Data boundaries for ownership, category/transaction type, amount, is_delete, and version reject invalid state; every soft-deletable record starts active.
+- [ ] Core sqlc queries for owner scope, active/Trash data, and versioned lifecycle operations regenerate deterministically.
+- [ ] The actor and audit foundation preserves the distinction between the selected owner and the actor making a change, without granting application roles through migrations or ordinary registration queries.
+- [ ] Migrations and queries have evidence from a disposable PostgreSQL database. Legacy backfill is required only when inspection finds an actually used legacy schema.
 
 ## Scope and affected areas
-db/migrations; db/queries; sqlc configuration; internal/repository/sqlc; PostgreSQL integration fixtures.
+db/migrations; db/queries; sqlc configuration; internal/repository/sqlc; PostgreSQL integration fixtures; affected database documentation.
 No destructive migration on shared data or automatic promotion of existing accounts.
 
 ## Verification
-Fresh migration; applicable legacy backfill; boolean NOT NULL/default; wrong owner/type/amount; duplicate request key; active versus Trash queries; runtime audit grants; deterministic regeneration.
+Fresh migration; boolean/default and version; invalid owner/type/amount; duplicate request key; active versus Trash queries; owner/actor attribution; runtime audit access; deterministic regeneration. Test legacy backfill only when a real legacy schema exists.
 
 ## Definition of done
-Acceptance criteria pass with actual test evidence; contract/schema/docs and affected generated code are consistent; diff reviewed; relevant regressions pass.
+Acceptance criteria pass with actual test evidence; schema, documentation, and affected generated sqlc code are consistent; diff reviewed; relevant regressions pass.
 Document unavailable infrastructure explicitly. A plan or documentation update does not complete this issue.
+
+## Boundaries
+
+Role authorization, HTTP status behavior, and atomic admin-write workflows are verified in ISSUE-003, ISSUE-004, and ISSUE-013 using this foundation.
