@@ -1,12 +1,12 @@
 # Issue index
-Updated 14 September 2026 (v0.3) for full admin permissions and boolean soft deletion.
-All tasks remain Backlog. These portable task files have no linked GitHub Issues; historical closed repository issues are separate.
+Updated 16 September 2026 (v0.4) for the ISSUE-002 database foundation implementation.
+Each task's status is recorded in the table. Portable task files may link to GitHub Issues without changing their stable IDs.
 Backend 001–007 and 013 complete before monelog-app Issue 008.
 
 | ID | Task | Repository | Depends on | Status | Plan |
 | --- | --- | --- | --- | --- | --- |
 | ISSUE-001 | [Backend project setup](issues/ISSUE-001-project-setup.md) | monelog-api | None | Backlog | [PLAN-001](plans/PLAN-001.md) |
-| ISSUE-002 | [Database migrations and sqlc foundation](issues/ISSUE-002-database-foundation.md) | monelog-api | 001 | Backlog | [PLAN-002](plans/PLAN-002.md) |
+| ISSUE-002 | [Database migrations and sqlc foundation](issues/ISSUE-002-database-foundation.md) | monelog-api | 001 | Review | [PLAN-002](plans/PLAN-002.md) |
 | ISSUE-003 | [Authentication, account state and role authorization](issues/ISSUE-003-authentication.md) | monelog-api | 002 | Backlog | [PLAN-003](plans/PLAN-003.md) |
 | ISSUE-004 | [Owner/admin API and soft-delete contract](issues/ISSUE-004-api-contract.md) | monelog-api | 003 | Backlog | [PLAN-004](plans/PLAN-004.md) |
 | ISSUE-005 | [Category CRUD, Trash and restore](issues/ISSUE-005-categories.md) | monelog-api | 004 | Backlog | [PLAN-005](plans/PLAN-005.md) |

@@ -5,7 +5,7 @@ Persyaratan menjelaskan perilaku aplikasi. Issue mendefinisikan satu deliverable
 1. Baca requirements.md dan access-control.md: CRUD milik sendiri, pengelolaan admin penuh, dan penghapusan `isDelete` telah dikonfirmasi.
 2. Pertahankan dokumen kanonis di monelog-api. Tinjau instruksi repositori dan perubahan yang ada sebelum mengedit.
 3. Gunakan docs/issues.md, satu file ISSUE-NNN, dan PLAN-NNN untuk setiap tugas. Pertahankan ID stabil di GitHub/Bitbucket.
-4. Jika GitHub Issue dibuat nanti, tautkan URL sebenarnya ke file/index tugas; saat ini belum ada task portabel yang dipetakan ke issue remote.
+4. Jika GitHub Issue dibuat, tautkan URL sebenarnya ke file tugas dan pertahankan ID portabelnya. ISSUE-002 dipetakan ke GitHub #6.
 5. Kerjakan backend 001–007 → 013, lalu frontend 008 → 009–012 sesuai dependensi.
 6. Inspeksi repositori dan sesuaikan plan terpilih dengan file, perintah, dan keputusan yang tersisa sebelum implementasi.
 7. Implementasikan issue terpilih sesuai otorisasi pengguna saat ini. Batasi branch/commit/PR pada otorisasi tersebut.

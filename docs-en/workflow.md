@@ -4,7 +4,7 @@ Requirements describe what the app does. An issue defines one deliverable and ac
 1. Read requirements.md and access-control.md: owner-only CRUD, full admin management and isDelete deletion are confirmed.
 2. Keep docs canonical in monelog-api. Review repository instructions and existing changes before editing.
 3. Use docs/issues.md plus one ISSUE-NNN file and PLAN-NNN per task. Preserve stable IDs across GitHub/Bitbucket.
-4. If creating GitHub Issues later, link each actual URL to its task file/index; no current portable task has been mapped to a remote issue.
+4. When a GitHub Issue is created, link its actual URL from the task file and preserve the portable ID. ISSUE-002 maps to GitHub #6.
 5. Work backend 001–007 → 013, then frontend 008 → 009–012 in dependency order.
 6. Inspect the actual repository and refine the chosen plan to exact files, commands and remaining decisions before implementation.
 7. Implement the selected issue under the user's current authorization. Keep branch/commit/PR actions within that authorization.
