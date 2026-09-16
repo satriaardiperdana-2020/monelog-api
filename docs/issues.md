@@ -1,13 +1,13 @@
 # Indeks issue
 
-Diperbarui 14 September 2026 (v0.3) untuk izin admin penuh dan penghapusan lunak boolean.
-Semua tugas masih berstatus Backlog. File tugas portabel ini belum memiliki GitHub Issue tertaut; issue repository historis yang sudah ditutup terpisah.
+Diperbarui 16 September 2026 (v0.4) untuk implementasi fondasi database ISSUE-002.
+Status setiap tugas tercatat pada tabel. File tugas portabel dapat ditautkan ke GitHub Issue tanpa mengubah ID stabilnya.
 Backend 001–007 dan 013 selesai sebelum Issue 008 monelog-app.
 
 | ID | Tugas | Repositori | Dependensi | Status | Plan |
 | --- | --- | --- | --- | --- | --- |
 | ISSUE-001 | [Setup proyek backend](issues/ISSUE-001-project-setup.md) | monelog-api | Tidak ada | Backlog | [PLAN-001](plans/PLAN-001.md) |
-| ISSUE-002 | [Migrasi basis data dan fondasi sqlc](issues/ISSUE-002-database-foundation.md) | monelog-api | 001 | Backlog | [PLAN-002](plans/PLAN-002.md) |
+| ISSUE-002 | [Migrasi basis data dan fondasi sqlc](issues/ISSUE-002-database-foundation.md) | monelog-api | 001 | Review | [PLAN-002](plans/PLAN-002.md) |
 | ISSUE-003 | [Autentikasi, state akun, dan otorisasi peran](issues/ISSUE-003-authentication.md) | monelog-api | 002 | Backlog | [PLAN-003](plans/PLAN-003.md) |
 | ISSUE-004 | [Kontrak API pemilik/admin dan penghapusan lunak](issues/ISSUE-004-api-contract.md) | monelog-api | 003 | Backlog | [PLAN-004](plans/PLAN-004.md) |
 | ISSUE-005 | [CRUD kategori, Trash, dan restore](issues/ISSUE-005-categories.md) | monelog-api | 004 | Backlog | [PLAN-005](plans/PLAN-005.md) |

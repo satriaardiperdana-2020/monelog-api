@@ -30,7 +30,7 @@ Mulai [ISSUE-001](docs/issues/ISSUE-001-project-setup.md) dengan [PLAN-001](docs
 Selesaikan backend 001–007 dan [ISSUE-013](docs/issues/ISSUE-013-admin-viewing.md) sebelum frontend Issue 008.
 Issue 013 kini mencakup pengelolaan admin penuh; nama file lama dipertahankan agar tautan tetap berfungsi.
 Selanjutnya kerjakan ekspor, Android/iOS, templat, dan pencadangan Drive sesuai milestone.
-File Markdown tugas adalah sumber kebenaran yang portabel dan belum memiliki GitHub Issue tertaut. Pertahankan dokumentasi kanonis di monelog-api; monelog-app merujuk pada commit dokumentasi/API yang dipatok.
+File Markdown tugas adalah sumber kebenaran yang portabel dan dapat ditautkan ke GitHub Issue tanpa mengubah ID. Pertahankan dokumentasi kanonis di monelog-api; monelog-app merujuk pada commit dokumentasi/API yang dipatok.
 
 ## Menjalankan API
 
@@ -38,6 +38,8 @@ Prasyarat:
 
 - Go 1.27.1
 - PostgreSQL yang dapat diakses melalui URL koneksi lokal
+- sqlc 1.31.1 untuk regenerasi query
+- golang-migrate 4.18 atau kompatibel untuk migrasi
 
 Salin nilai dari `.env.example` ke environment shell Anda dan ganti placeholder dengan kredensial PostgreSQL lokal. Aplikasi membaca environment variable secara langsung dan tidak memuat file `.env` secara otomatis.
 
@@ -67,3 +69,22 @@ make vet
 make build
 make check
 ```
+
+## Basis data
+
+Jalankan migrasi dengan akun pemilik skema. Gunakan `migrate-down` hanya pada basis data disposable setelah dampak datanya direview.
+
+```bash
+DATABASE_URL="$DATABASE_URL" make migrate-up
+make sqlc-generate
+make sqlc-vet
+TEST_DATABASE_URL="$TEST_DATABASE_URL" make test-integration
+```
+
+Runtime aplikasi harus memakai role yang berbeda dari pemilik migrasi. Setelah tabel tersedia, berikan hak runtime minimum dengan:
+
+```bash
+DATABASE_URL="$DATABASE_URL" RUNTIME_DB_ROLE=monelog_runtime make runtime-grants
+```
+
+Role runtime dapat membaca dan menulis data aplikasi yang dibutuhkan, tetapi tidak dapat menghapus fisik baris bisnis atau mengubah/menghapus audit. Otorisasi pengguna dan admin tetap ditegakkan oleh service pada issue berikutnya.

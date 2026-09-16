@@ -28,7 +28,7 @@ Start [ISSUE-001](docs-en/issues/ISSUE-001-project-setup.md) with [PLAN-001](doc
 Finish backend 001–007 and [ISSUE-013](docs-en/issues/ISSUE-013-admin-viewing.md) before frontend Issue 008.
 Issue 013 now covers full admin management; its original filename is retained to preserve links.
 Then deliver exports, Android/iOS, templates and Drive backups in their listed milestones.
-Task Markdown files are the portable source of truth and have no linked GitHub Issues yet. Keep docs canonical in monelog-api; monelog-app references a pinned documentation/API commit.
+Task Markdown files are the portable source of truth and may link to GitHub Issues without changing their IDs. Keep docs canonical in monelog-api; monelog-app references a pinned documentation/API commit.
 
 ## Running the API
 
@@ -36,6 +36,8 @@ Prerequisites:
 
 - Go 1.27.1
 - PostgreSQL accessible through a local connection URL
+- sqlc 1.31.1 for query regeneration
+- golang-migrate 4.18 or compatible for migrations
 
 Copy the values from `.env.example` into your shell environment and replace the placeholders with local PostgreSQL credentials. The application reads environment variables directly and does not load `.env` files automatically.
 
@@ -65,3 +67,22 @@ make vet
 make build
 make check
 ```
+
+## Database
+
+Run migrations as the schema owner. Use `migrate-down` only on a disposable database after reviewing its data impact.
+
+```bash
+DATABASE_URL="$DATABASE_URL" make migrate-up
+make sqlc-generate
+make sqlc-vet
+TEST_DATABASE_URL="$TEST_DATABASE_URL" make test-integration
+```
+
+The application runtime must use a role separate from the migration owner. After the tables exist, grant minimum runtime privileges with:
+
+```bash
+DATABASE_URL="$DATABASE_URL" RUNTIME_DB_ROLE=monelog_runtime make runtime-grants
+```
+
+The runtime role can read and write required application data, but it cannot physically delete business rows or update/delete audit records. User and admin authorization remains enforced by the service in later issues.
