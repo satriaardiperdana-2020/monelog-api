@@ -20,6 +20,7 @@ type Querier interface {
 	GetActiveTransaction(ctx context.Context, arg GetActiveTransactionParams) (Transaction, error)
 	GetActiveUserByEmail(ctx context.Context, email string) (User, error)
 	GetActiveUserByID(ctx context.Context, id pgtype.UUID) (User, error)
+	GetDeletedCategory(ctx context.Context, arg GetDeletedCategoryParams) (Category, error)
 	GetRefreshSessionByTokenHash(ctx context.Context, tokenHash string) (RefreshSession, error)
 	GetRefreshSessionByTokenHashForUpdate(ctx context.Context, tokenHash string) (RefreshSession, error)
 	GetTransactionByRequestID(ctx context.Context, arg GetTransactionByRequestIDParams) (Transaction, error)

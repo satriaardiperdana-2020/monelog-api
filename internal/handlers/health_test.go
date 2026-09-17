@@ -59,7 +59,7 @@ func TestHealthEndpoints(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			e := echo.New()
-			RegisterRoutes(e, NewHealth(test.service), nil, nil)
+			RegisterRoutes(e, NewHealth(test.service), nil, nil, nil)
 
 			request := httptest.NewRequest(http.MethodGet, test.path, nil)
 			response := httptest.NewRecorder()
@@ -80,7 +80,7 @@ func TestHealthEndpoints(t *testing.T) {
 
 func TestUnknownDomainRouteIsNotImplemented(t *testing.T) {
 	e := echo.New()
-	RegisterRoutes(e, NewHealth(&fakeHealthService{live: true, ready: true}), nil, nil)
+	RegisterRoutes(e, NewHealth(&fakeHealthService{live: true, ready: true}), nil, nil, nil)
 
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/transactions", nil)
 	response := httptest.NewRecorder()

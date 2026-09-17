@@ -74,6 +74,35 @@ func (q *Queries) GetActiveCategory(ctx context.Context, arg GetActiveCategoryPa
 	return i, err
 }
 
+const getDeletedCategory = `-- name: GetDeletedCategory :one
+SELECT id, user_id, type, name, is_delete, version, created_at, updated_at
+FROM categories
+WHERE id = $1
+  AND user_id = $2
+  AND is_delete = TRUE
+`
+
+type GetDeletedCategoryParams struct {
+	ID     pgtype.UUID `db:"id" json:"id"`
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) GetDeletedCategory(ctx context.Context, arg GetDeletedCategoryParams) (Category, error) {
+	row := q.db.QueryRow(ctx, getDeletedCategory, arg.ID, arg.UserID)
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Type,
+		&i.Name,
+		&i.IsDelete,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listActiveCategories = `-- name: ListActiveCategories :many
 SELECT id, user_id, type, name, is_delete, version, created_at, updated_at
 FROM categories
@@ -218,19 +247,17 @@ func (q *Queries) SoftDeleteCategory(ctx context.Context, arg SoftDeleteCategory
 
 const updateCategory = `-- name: UpdateCategory :one
 UPDATE categories
-SET type = $1,
-    name = btrim($2),
+SET name = btrim($1),
     version = version + 1,
     updated_at = CURRENT_TIMESTAMP
-WHERE id = $3
-  AND user_id = $4
-  AND version = $5
+WHERE id = $2
+  AND user_id = $3
+  AND version = $4
   AND is_delete = FALSE
 RETURNING id, user_id, type, name, is_delete, version, created_at, updated_at
 `
 
 type UpdateCategoryParams struct {
-	Type            string      `db:"type" json:"type"`
 	Name            string      `db:"name" json:"name"`
 	ID              pgtype.UUID `db:"id" json:"id"`
 	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
@@ -239,7 +266,6 @@ type UpdateCategoryParams struct {
 
 func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error) {
 	row := q.db.QueryRow(ctx, updateCategory,
-		arg.Type,
 		arg.Name,
 		arg.ID,
 		arg.UserID,

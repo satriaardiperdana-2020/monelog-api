@@ -128,6 +128,302 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /api/v1/categories:
+    get:
+      operationId: listCategories
+      summary: List the current user's categories
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [income, expense]
+        - name: isDelete
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of categories.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriesResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+    post:
+      operationId: createCategory
+      summary: Create a new category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequest'
+      responses:
+        '201':
+          description: Created category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/categories/{id}:
+    get:
+      operationId: getCategory
+      summary: Get a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: isDelete
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Category details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '404':
+          description: Category not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      operationId: updateCategory
+      summary: Update a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdateRequest'
+      responses:
+        '200':
+          description: Updated category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteCategory
+      summary: Soft-delete a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Current category version, for example `"3"`.
+      responses:
+        '204':
+          description: Category soft-deleted.
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/categories/{id}/restore:
+    post:
+      operationId: restoreCategory
+      summary: Restore a soft-deleted category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRestoreRequest'
+      responses:
+        '200':
+          description: Restored category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/admin/users/{user_id}/categories:
+    get:
+      operationId: adminListCategories
+      summary: List a selected user's categories
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: type
+          in: query
+          schema: {type: string, enum: [income, expense]}
+        - name: isDelete
+          in: query
+          schema: {type: boolean, default: false}
+      responses:
+        '200':
+          description: List of categories.
+          content: {application/json: {schema: {$ref: '#/components/schemas/CategoriesResponse'}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      operationId: adminCreateCategory
+      summary: Create a category for a selected user
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/CategoryCreateRequest'}}}
+      responses:
+        '201':
+          description: Created category.
+          content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/v1/admin/users/{user_id}/categories/{id}:
+    get:
+      operationId: adminGetCategory
+      summary: Get a selected user's category
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: isDelete
+          in: query
+          schema: {type: boolean, default: false}
+      responses:
+        '200':
+          description: Category details.
+          content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      operationId: adminUpdateCategory
+      summary: Update a selected user's category
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/CategoryUpdateRequest'}}}
+      responses:
+        '200':
+          description: Updated category.
+          content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      operationId: adminDeleteCategory
+      summary: Soft-delete a selected user's category
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string}
+      responses:
+        '204': {description: Category soft-deleted.}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/admin/users/{user_id}/categories/{id}/restore:
+    post:
+      operationId: adminRestoreCategory
+      summary: Restore a selected user's category
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/CategoryRestoreRequest'}}}
+      responses:
+        '200':
+          description: Restored category.
+          content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
   /api/v1/me:
     get:
       operationId: getMe
@@ -281,6 +577,74 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/User'
+    Category:
+      type: object
+      required: [id, user_id, type, name, isDelete, version]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [income, expense]
+        name:
+          type: string
+          maxLength: 80
+        isDelete:
+          type: boolean
+        version:
+          type: integer
+          format: int32
+    CategoryCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [type, name]
+      properties:
+        type:
+          type: string
+          enum: [income, expense]
+        name:
+          type: string
+          maxLength: 80
+    CategoryUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, version]
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        version:
+          type: integer
+          format: int32
+          minimum: 1
+    CategoryRestoreRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          format: int32
+          minimum: 1
+    CategoryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Category'
+    CategoriesResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
     LoginResponse:
       type: object
       required: [access_token, token_type, expires_in]
@@ -332,6 +696,12 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     InternalError:
       description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found.
       content:
         application/json:
           schema:

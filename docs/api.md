@@ -129,6 +129,41 @@ Payload resource sukses memakai data; payload list menambahkan page.next_cursor 
 Respons admin target juga memuat scope.mode="admin" dan scope.owner_user_id; respons personal mempertahankan envelope. 204 tidak memiliki body.
 request_hash, password_hash, session hash, dan secret provider tidak pernah disertakan.
 
+## Contoh cURL update transaksi
+
+Update transaksi personal memakai access token actor dan hanya dapat mengubah transaksi milik actor. `version` harus berisi versi terakhir yang dibaca; server menaikkan versi setelah update berhasil.
+
+```bash
+curl --fail-with-body --location --request PATCH \
+  'http://127.0.0.1:8080/api/v1/transactions/a1e29497-1328-496c-9c29-542815d5c2fd' \
+  --header 'Authorization: Bearer ACCESS_TOKEN' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "transaction_date": "2026-09-09",
+    "amount": "45000.00",
+    "title": "Belanja mingguan",
+    "version": 1
+  }'
+```
+
+Update admin memakai endpoint target dan tetap mencatat actor dari access token. `user_id` pada path adalah owner transaksi; owner tidak boleh dioverride melalui body.
+
+```bash
+curl --fail-with-body --location --request PATCH \
+  'http://127.0.0.1:8080/api/v1/admin/users/6b3ab04b-22cb-4777-b3ec-15f3247b123d/transactions/a1e29497-1328-496c-9c29-542815d5c2fd' \
+  --header 'Authorization: Bearer ADMIN_ACCESS_TOKEN' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "category_id": "bda088ec-2694-473c-997d-cb93161456f1",
+    "type": "expense",
+    "amount": "45000.00",
+    "title": "Belanja mingguan",
+    "version": 1
+  }'
+```
+
+Respons berhasil mengembalikan resource dengan versi baru, misalnya `version: 2`. Jika transaksi sudah berubah sejak versi terakhir dibaca, server mengembalikan `409` dengan kode konflik versi; ambil detail terbaru lalu ulangi update menggunakan versi tersebut. Field `isDelete` tidak boleh dikirim melalui PATCH dan perubahan ke Trash/restore memakai endpoint lifecycle khusus.
+
 ## List dan laporan
 
 Limit halaman default 30, maksimum 100. Urutan transaksi aktif transaction_date DESC,created_at DESC,id DESC; Trash updated_at DESC,id DESC.
