@@ -55,7 +55,9 @@ Health endpoint:
 - `GET /health/ready` mengembalikan `200` ketika PostgreSQL tersedia dan `503` ketika belum siap.
 
 ```bash
+# Memastikan proses HTTP API hidup.
 curl --fail http://127.0.0.1:8080/health/live
+# Memastikan PostgreSQL dan dependensi runtime siap menerima request.
 curl --fail http://127.0.0.1:8080/health/ready
 ```
 
@@ -63,7 +65,7 @@ curl --fail http://127.0.0.1:8080/health/ready
 
 Kontrak sumber ada di [api/openapi.yaml](api/openapi.yaml). Saat API berjalan, buka [Swagger UI](http://127.0.0.1:8080/swagger/) atau [OpenAPI JSON](http://127.0.0.1:8080/api/openapi.json). Pilih `Authorize` di Swagger UI untuk mengisi access token setelah login.
 
-Contoh registrasi:
+Contoh registrasi untuk membuat akun pengguna baru:
 
 ```bash
 curl --location 'http://127.0.0.1:8080/api/v1/auth/register' \
@@ -75,7 +77,7 @@ curl --location 'http://127.0.0.1:8080/api/v1/auth/register' \
   }'
 ```
 
-Contoh login untuk Android/iOS (`native` mengembalikan refresh token di JSON):
+Contoh login untuk Android/iOS. API mengembalikan refresh token native di JSON:
 
 ```bash
 curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
@@ -87,7 +89,7 @@ curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
   }'
 ```
 
-Login browser (`web`) memerlukan `Origin` yang terdaftar dan mengirim refresh token melalui cookie:
+Contoh login browser. API memerlukan `Origin` terdaftar dan mengirim refresh token melalui cookie HttpOnly:
 
 ```bash
 curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
@@ -101,6 +103,38 @@ curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
 ```
 
 `client_type` wajib ditulis dengan underscore dan hanya menerima `native` atau `web`. Gunakan `make oapi-generate` setelah mengubah kontrak; kode hasil generate di `internal/api` harus di-commit.
+
+Contoh transaksi setelah mendapatkan `access_token` dari login. Header `Authorization` dipakai untuk semua endpoint aplikasi berikut:
+
+```bash
+ACCESS_TOKEN='<access-token-dari-login>'
+
+# Membuat kategori income yang dapat dipilih saat mencatat pemasukan.
+curl --location 'http://127.0.0.1:8080/api/v1/categories' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"name":"Gaji","type":"income"}'
+
+# Mencatat satu transaksi. amount adalah string uang eksak dan client_request_id membuat retry aman.
+curl --location 'http://127.0.0.1:8080/api/v1/transactions' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"transaction_date":"2026-09-17","type":"income","category_id":"<category-uuid>","amount":"15000000.00","title":"Gaji September","client_request_id":"<request-uuid>"}'
+
+# Menampilkan history transaksi aktif dalam rentang tanggal tertentu; ulangi dengan page.next_cursor untuk halaman berikutnya.
+curl --location 'http://127.0.0.1:8080/api/v1/transactions?start_date=2026-09-01&end_date=2026-09-30&limit=30' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
+
+# Menampilkan total income, expense, dan difference per hari untuk kartu ringkasan main page atau navigasi tanggal.
+curl --location 'http://127.0.0.1:8080/api/v1/daily-summaries?start_date=2026-09-01&end_date=2026-09-30' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
+
+# Membaca transaksi yang sudah dihapus lunak dari Trash.
+curl --location 'http://127.0.0.1:8080/api/v1/transactions?start_date=2026-09-01&end_date=2026-09-30&isDelete=true' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+Swagger UI menjelaskan kegunaan setiap endpoint, parameter, scope akses, format amount, cursor pagination, optimistic locking, dan aturan idempotensi. Endpoint admin memakai pola `/api/v1/admin/users/{user_id}/...`; `user_id` target harus dipilih eksplisit pada URL.
 
 ## Pengembangan
 

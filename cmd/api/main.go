@@ -52,10 +52,12 @@ func run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		return errors.New("initialize authentication")
 	}
 	authHandler := handlers.NewAuth(authService, cfg.Auth.AllowedOrigins, appmiddleware.NewLoginRateLimiter())
+	categoryHandler := handlers.NewCategories(service.NewCategories(pool))
+	transactionHandler := handlers.NewTransactions(service.NewTransactions(pool))
 
 	e := echo.New()
 	appmiddleware.Register(e, logger)
-	handlers.RegisterRoutes(e, healthHandler, authHandler, appmiddleware.Authenticate(authService))
+	handlers.RegisterRoutes(e, healthHandler, authHandler, categoryHandler, transactionHandler, appmiddleware.Authenticate(authService))
 
 	server := &http.Server{
 		Addr:              cfg.HTTP.Addr,

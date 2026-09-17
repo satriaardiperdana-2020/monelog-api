@@ -53,7 +53,9 @@ Health endpoints:
 - `GET /health/ready` returns `200` when PostgreSQL is available and `503` while it is unavailable.
 
 ```bash
+# Confirm that the HTTP API process is alive.
 curl --fail http://127.0.0.1:8080/health/live
+# Confirm that PostgreSQL and runtime dependencies are ready.
 curl --fail http://127.0.0.1:8080/health/ready
 ```
 
@@ -61,7 +63,7 @@ curl --fail http://127.0.0.1:8080/health/ready
 
 The source contract is [api/openapi.yaml](api/openapi.yaml). While the API is running, open [Swagger UI](http://127.0.0.1:8080/swagger/) or the [OpenAPI JSON document](http://127.0.0.1:8080/api/openapi.json). Select `Authorize` in Swagger UI and enter the access token returned by login.
 
-Register an account:
+Register an account for a new standard user:
 
 ```bash
 curl --location 'http://127.0.0.1:8080/api/v1/auth/register' \
@@ -73,7 +75,7 @@ curl --location 'http://127.0.0.1:8080/api/v1/auth/register' \
   }'
 ```
 
-Login for Android/iOS (`native` returns the refresh token in JSON):
+Login for Android/iOS. The API returns the native refresh token in JSON:
 
 ```bash
 curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
@@ -85,7 +87,7 @@ curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
   }'
 ```
 
-Browser login (`web`) requires an allowed `Origin` and sends the refresh token in a cookie:
+Browser login (`web`) requires an allowed `Origin` and sends the refresh token in an HttpOnly cookie:
 
 ```bash
 curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
@@ -99,6 +101,38 @@ curl --location 'http://127.0.0.1:8080/api/v1/auth/login' \
 ```
 
 `client_type` must use the underscore spelling and must be either `native` or `web`. Run `make oapi-generate` after changing the contract; commit the generated code in `internal/api`.
+
+Transaction examples after obtaining an `access_token` from login. The `Authorization` header is required for the application endpoints below:
+
+```bash
+ACCESS_TOKEN='<access-token-from-login>'
+
+# Create an income category that can be selected for a new income transaction.
+curl --location 'http://127.0.0.1:8080/api/v1/categories' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"name":"Salary","type":"income"}'
+
+# Record one transaction. amount is an exact money string and client_request_id makes retries safe.
+curl --location 'http://127.0.0.1:8080/api/v1/transactions' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"transaction_date":"2026-09-17","type":"income","category_id":"<category-uuid>","amount":"15000000.00","title":"September salary","client_request_id":"<request-uuid>"}'
+
+# List active transaction history for a date range; repeat with page.next_cursor for the next page.
+curl --location 'http://127.0.0.1:8080/api/v1/transactions?start_date=2026-09-01&end_date=2026-09-30&limit=30' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
+
+# List daily income, expense, and difference for the main page summary or date navigation.
+curl --location 'http://127.0.0.1:8080/api/v1/daily-summaries?start_date=2026-09-01&end_date=2026-09-30' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
+
+# List soft-deleted transactions from Trash.
+curl --location 'http://127.0.0.1:8080/api/v1/transactions?start_date=2026-09-01&end_date=2026-09-30&isDelete=true' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+Swagger UI documents the purpose of every endpoint, parameter, access scope, amount format, cursor pagination, optimistic locking, and idempotency rules. Admin endpoints use `/api/v1/admin/users/{user_id}/...`; the target `user_id` must be selected explicitly in the URL.
 
 ## Development
 

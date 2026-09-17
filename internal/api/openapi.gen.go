@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v5"
@@ -90,6 +91,24 @@ func (e RefreshRequestClientType) Valid() bool {
 	}
 }
 
+// Defines values for TransactionType.
+const (
+	Expense TransactionType = "expense"
+	Income  TransactionType = "income"
+)
+
+// Valid indicates whether the value is a known member of the TransactionType enum.
+func (e TransactionType) Valid() bool {
+	switch e {
+	case Expense:
+		return true
+	case Income:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for UserCurrency.
 const (
 	IDR UserCurrency = "IDR"
@@ -121,6 +140,56 @@ func (e UserRole) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// Category defines model for Category.
+type Category struct {
+	Id       openapi_types.UUID `json:"id"`
+	IsDelete bool               `json:"isDelete"`
+	Name     string             `json:"name"`
+	Type     TransactionType    `json:"type"`
+	UserId   openapi_types.UUID `json:"user_id"`
+	Version  int32              `json:"version"`
+}
+
+// CategoryCreateRequest defines model for CategoryCreateRequest.
+type CategoryCreateRequest struct {
+	Name string          `json:"name"`
+	Type TransactionType `json:"type"`
+}
+
+// CategoryListResponse defines model for CategoryListResponse.
+type CategoryListResponse struct {
+	Data []Category `json:"data"`
+}
+
+// CategoryResponse defines model for CategoryResponse.
+type CategoryResponse struct {
+	Data Category `json:"data"`
+}
+
+// CategoryUpdateRequest defines model for CategoryUpdateRequest.
+type CategoryUpdateRequest struct {
+	Name    string `json:"name"`
+	Version int32  `json:"version"`
+}
+
+// DailySummary defines model for DailySummary.
+type DailySummary struct {
+	Date       openapi_types.Date `json:"date"`
+	Difference string             `json:"difference"`
+
+	// Expense Example: 43500.00
+	Expense Money `json:"expense"`
+
+	// Income Example: 43500.00
+	Income Money `json:"income"`
+}
+
+// DailySummaryListResponse defines model for DailySummaryListResponse.
+type DailySummaryListResponse struct {
+	Data []DailySummary `json:"data"`
+	Page Page           `json:"page"`
 }
 
 // Error defines model for Error.
@@ -168,6 +237,14 @@ type LoginResponse struct {
 // LoginResponseTokenType defines model for LoginResponse.TokenType.
 type LoginResponseTokenType string
 
+// Money Example: 43500.00
+type Money = string
+
+// Page defines model for Page.
+type Page struct {
+	NextCursor *string `json:"next_cursor"`
+}
+
 // ProfileRequest defines model for ProfileRequest.
 type ProfileRequest struct {
 	// Timezone Example: Asia/Jakarta
@@ -195,6 +272,62 @@ type RegisterRequest struct {
 	Timezone string `json:"timezone"`
 }
 
+// Transaction defines model for Transaction.
+type Transaction struct {
+	// Amount Example: 43500.00
+	Amount          Money              `json:"amount"`
+	CategoryId      openapi_types.UUID `json:"category_id"`
+	CategoryName    string             `json:"category_name"`
+	ClientRequestId openapi_types.UUID `json:"client_request_id"`
+	CreatedAt       time.Time          `json:"created_at"`
+	CreatedBy       openapi_types.UUID `json:"created_by"`
+	Id              openapi_types.UUID `json:"id"`
+	IsDelete        bool               `json:"isDelete"`
+	Title           string             `json:"title"`
+	TransactionDate openapi_types.Date `json:"transaction_date"`
+	Type            TransactionType    `json:"type"`
+	UpdatedAt       time.Time          `json:"updated_at"`
+	UpdatedBy       openapi_types.UUID `json:"updated_by"`
+	UserId          openapi_types.UUID `json:"user_id"`
+	Version         int32              `json:"version"`
+}
+
+// TransactionCreateRequest defines model for TransactionCreateRequest.
+type TransactionCreateRequest struct {
+	// Amount Example: 43500.00
+	Amount          Money              `json:"amount"`
+	CategoryId      openapi_types.UUID `json:"category_id"`
+	ClientRequestId openapi_types.UUID `json:"client_request_id"`
+	Title           string             `json:"title"`
+	TransactionDate openapi_types.Date `json:"transaction_date"`
+	Type            TransactionType    `json:"type"`
+}
+
+// TransactionListResponse defines model for TransactionListResponse.
+type TransactionListResponse struct {
+	Data []Transaction `json:"data"`
+	Page Page          `json:"page"`
+}
+
+// TransactionResponse defines model for TransactionResponse.
+type TransactionResponse struct {
+	Data Transaction `json:"data"`
+}
+
+// TransactionType defines model for TransactionType.
+type TransactionType string
+
+// TransactionUpdateRequest defines model for TransactionUpdateRequest.
+type TransactionUpdateRequest struct {
+	// Amount Example: 43500.00
+	Amount          Money              `json:"amount"`
+	CategoryId      openapi_types.UUID `json:"category_id"`
+	Title           string             `json:"title"`
+	TransactionDate openapi_types.Date `json:"transaction_date"`
+	Type            TransactionType    `json:"type"`
+	Version         int32              `json:"version"`
+}
+
 // User defines model for User.
 type User struct {
 	Currency UserCurrency        `json:"currency"`
@@ -217,8 +350,37 @@ type UserResponse struct {
 	Data User `json:"data"`
 }
 
+// VersionRequest defines model for VersionRequest.
+type VersionRequest struct {
+	Version int32 `json:"version"`
+}
+
+// Cursor defines model for Cursor.
+type Cursor = string
+
+// EndDate defines model for EndDate.
+type EndDate = openapi_types.Date
+
+// IfMatch defines model for IfMatch.
+type IfMatch = string
+
+// Limit defines model for Limit.
+type Limit = int32
+
+// ResourceId defines model for ResourceId.
+type ResourceId = openapi_types.UUID
+
+// StartDate defines model for StartDate.
+type StartDate = openapi_types.Date
+
+// UserId defines model for UserId.
+type UserId = openapi_types.UUID
+
 // AuthenticationFailed defines model for AuthenticationFailed.
 type AuthenticationFailed = ErrorResponse
+
+// BadRequest defines model for BadRequest.
+type BadRequest = ErrorResponse
 
 // Conflict defines model for Conflict.
 type Conflict = ErrorResponse
@@ -229,6 +391,9 @@ type Forbidden = ErrorResponse
 // InternalError defines model for InternalError.
 type InternalError = ErrorResponse
 
+// NotFound defines model for NotFound.
+type NotFound = ErrorResponse
+
 // RateLimited defines model for RateLimited.
 type RateLimited = ErrorResponse
 
@@ -238,11 +403,119 @@ type ServiceUnavailable = HealthResponse
 // ValidationError defines model for ValidationError.
 type ValidationError = ErrorResponse
 
+// AdminListCategoriesParams defines parameters for AdminListCategories.
+type AdminListCategoriesParams struct {
+	Type     *TransactionType `form:"type,omitempty" json:"type,omitempty"`
+	IsDelete *bool            `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
+// AdminDeleteCategoryParams defines parameters for AdminDeleteCategory.
+type AdminDeleteCategoryParams struct {
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// AdminGetCategoryParams defines parameters for AdminGetCategory.
+type AdminGetCategoryParams struct {
+	IsDelete *bool `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
+// AdminListDailySummariesParams defines parameters for AdminListDailySummaries.
+type AdminListDailySummariesParams struct {
+	StartDate StartDate `form:"start_date" json:"start_date"`
+	EndDate   EndDate   `form:"end_date" json:"end_date"`
+	Limit     *Limit    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor    *Cursor   `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// AdminListTransactionsParams defines parameters for AdminListTransactions.
+type AdminListTransactionsParams struct {
+	StartDate  StartDate           `form:"start_date" json:"start_date"`
+	EndDate    EndDate             `form:"end_date" json:"end_date"`
+	Type       *TransactionType    `form:"type,omitempty" json:"type,omitempty"`
+	CategoryId *openapi_types.UUID `form:"category_id,omitempty" json:"category_id,omitempty"`
+	IsDelete   *bool               `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+	Limit      *Limit              `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor     *Cursor             `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// AdminDeleteTransactionParams defines parameters for AdminDeleteTransaction.
+type AdminDeleteTransactionParams struct {
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// AdminGetTransactionParams defines parameters for AdminGetTransaction.
+type AdminGetTransactionParams struct {
+	IsDelete *bool `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
+// ListCategoriesParams defines parameters for ListCategories.
+type ListCategoriesParams struct {
+	Type     *TransactionType `form:"type,omitempty" json:"type,omitempty"`
+	IsDelete *bool            `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
+// DeleteCategoryParams defines parameters for DeleteCategory.
+type DeleteCategoryParams struct {
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// GetCategoryParams defines parameters for GetCategory.
+type GetCategoryParams struct {
+	IsDelete *bool `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
+// ListDailySummariesParams defines parameters for ListDailySummaries.
+type ListDailySummariesParams struct {
+	StartDate StartDate `form:"start_date" json:"start_date"`
+	EndDate   EndDate   `form:"end_date" json:"end_date"`
+	Limit     *Limit    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor    *Cursor   `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // DeleteMeParams defines parameters for DeleteMe.
 type DeleteMeParams struct {
 	// IfMatch Current profile version, for example `"3"`.
 	IfMatch string `json:"If-Match"`
 }
+
+// ListTransactionsParams defines parameters for ListTransactions.
+type ListTransactionsParams struct {
+	StartDate  StartDate           `form:"start_date" json:"start_date"`
+	EndDate    EndDate             `form:"end_date" json:"end_date"`
+	Type       *TransactionType    `form:"type,omitempty" json:"type,omitempty"`
+	CategoryId *openapi_types.UUID `form:"category_id,omitempty" json:"category_id,omitempty"`
+	IsDelete   *bool               `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+	Limit      *Limit              `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor     *Cursor             `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// DeleteTransactionParams defines parameters for DeleteTransaction.
+type DeleteTransactionParams struct {
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// GetTransactionParams defines parameters for GetTransaction.
+type GetTransactionParams struct {
+	IsDelete *bool `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
+// AdminCreateCategoryJSONRequestBody defines body for AdminCreateCategory for application/json ContentType.
+type AdminCreateCategoryJSONRequestBody = CategoryCreateRequest
+
+// AdminUpdateCategoryJSONRequestBody defines body for AdminUpdateCategory for application/json ContentType.
+type AdminUpdateCategoryJSONRequestBody = CategoryUpdateRequest
+
+// AdminRestoreCategoryJSONRequestBody defines body for AdminRestoreCategory for application/json ContentType.
+type AdminRestoreCategoryJSONRequestBody = VersionRequest
+
+// AdminCreateTransactionJSONRequestBody defines body for AdminCreateTransaction for application/json ContentType.
+type AdminCreateTransactionJSONRequestBody = TransactionCreateRequest
+
+// AdminUpdateTransactionJSONRequestBody defines body for AdminUpdateTransaction for application/json ContentType.
+type AdminUpdateTransactionJSONRequestBody = TransactionUpdateRequest
+
+// AdminRestoreTransactionJSONRequestBody defines body for AdminRestoreTransaction for application/json ContentType.
+type AdminRestoreTransactionJSONRequestBody = VersionRequest
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
@@ -256,11 +529,68 @@ type RefreshJSONRequestBody = RefreshRequest
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = RegisterRequest
 
+// CreateCategoryJSONRequestBody defines body for CreateCategory for application/json ContentType.
+type CreateCategoryJSONRequestBody = CategoryCreateRequest
+
+// UpdateCategoryJSONRequestBody defines body for UpdateCategory for application/json ContentType.
+type UpdateCategoryJSONRequestBody = CategoryUpdateRequest
+
+// RestoreCategoryJSONRequestBody defines body for RestoreCategory for application/json ContentType.
+type RestoreCategoryJSONRequestBody = VersionRequest
+
 // UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
 type UpdateMeJSONRequestBody = ProfileRequest
 
+// CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
+type CreateTransactionJSONRequestBody = TransactionCreateRequest
+
+// UpdateTransactionJSONRequestBody defines body for UpdateTransaction for application/json ContentType.
+type UpdateTransactionJSONRequestBody = TransactionUpdateRequest
+
+// RestoreTransactionJSONRequestBody defines body for RestoreTransaction for application/json ContentType.
+type RestoreTransactionJSONRequestBody = VersionRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// AdminListCategories List categories for a selected user
+	// (GET /api/v1/admin/users/{user_id}/categories)
+	AdminListCategories(ctx *echo.Context, userId UserId, params AdminListCategoriesParams) error
+	// AdminCreateCategory Create a category for a selected user
+	// (POST /api/v1/admin/users/{user_id}/categories)
+	AdminCreateCategory(ctx *echo.Context, userId UserId) error
+	// AdminDeleteCategory Archive a selected user's category
+	// (DELETE /api/v1/admin/users/{user_id}/categories/{id})
+	AdminDeleteCategory(ctx *echo.Context, userId UserId, id ResourceId, params AdminDeleteCategoryParams) error
+	// AdminGetCategory Get a selected user's category
+	// (GET /api/v1/admin/users/{user_id}/categories/{id})
+	AdminGetCategory(ctx *echo.Context, userId UserId, id ResourceId, params AdminGetCategoryParams) error
+	// AdminUpdateCategory Update a selected user's category
+	// (PATCH /api/v1/admin/users/{user_id}/categories/{id})
+	AdminUpdateCategory(ctx *echo.Context, userId UserId, id ResourceId) error
+	// AdminRestoreCategory Restore a selected user's category
+	// (POST /api/v1/admin/users/{user_id}/categories/{id}/restore)
+	AdminRestoreCategory(ctx *echo.Context, userId UserId, id ResourceId) error
+	// AdminListDailySummaries List daily summaries for a selected user
+	// (GET /api/v1/admin/users/{user_id}/daily-summaries)
+	AdminListDailySummaries(ctx *echo.Context, userId UserId, params AdminListDailySummariesParams) error
+	// AdminListTransactions List transaction history for a selected user
+	// (GET /api/v1/admin/users/{user_id}/transactions)
+	AdminListTransactions(ctx *echo.Context, userId UserId, params AdminListTransactionsParams) error
+	// AdminCreateTransaction Create a transaction for a selected user
+	// (POST /api/v1/admin/users/{user_id}/transactions)
+	AdminCreateTransaction(ctx *echo.Context, userId UserId) error
+	// AdminDeleteTransaction Delete a selected user's transaction
+	// (DELETE /api/v1/admin/users/{user_id}/transactions/{id})
+	AdminDeleteTransaction(ctx *echo.Context, userId UserId, id ResourceId, params AdminDeleteTransactionParams) error
+	// AdminGetTransaction Get a selected user's transaction
+	// (GET /api/v1/admin/users/{user_id}/transactions/{id})
+	AdminGetTransaction(ctx *echo.Context, userId UserId, id ResourceId, params AdminGetTransactionParams) error
+	// AdminUpdateTransaction Update a selected user's transaction
+	// (PATCH /api/v1/admin/users/{user_id}/transactions/{id})
+	AdminUpdateTransaction(ctx *echo.Context, userId UserId, id ResourceId) error
+	// AdminRestoreTransaction Restore a selected user's transaction
+	// (POST /api/v1/admin/users/{user_id}/transactions/{id}/restore)
+	AdminRestoreTransaction(ctx *echo.Context, userId UserId, id ResourceId) error
 	// Login Create an access and refresh session
 	// (POST /api/v1/auth/login)
 	Login(ctx *echo.Context) error
@@ -273,6 +603,27 @@ type ServerInterface interface {
 	// Register Register a standard user
 	// (POST /api/v1/auth/register)
 	Register(ctx *echo.Context) error
+	// ListCategories List the user's categories
+	// (GET /api/v1/categories)
+	ListCategories(ctx *echo.Context, params ListCategoriesParams) error
+	// CreateCategory Create a category
+	// (POST /api/v1/categories)
+	CreateCategory(ctx *echo.Context) error
+	// DeleteCategory Archive a category
+	// (DELETE /api/v1/categories/{id})
+	DeleteCategory(ctx *echo.Context, id ResourceId, params DeleteCategoryParams) error
+	// GetCategory Get a category
+	// (GET /api/v1/categories/{id})
+	GetCategory(ctx *echo.Context, id ResourceId, params GetCategoryParams) error
+	// UpdateCategory Update a category
+	// (PATCH /api/v1/categories/{id})
+	UpdateCategory(ctx *echo.Context, id ResourceId) error
+	// RestoreCategory Restore a category
+	// (POST /api/v1/categories/{id}/restore)
+	RestoreCategory(ctx *echo.Context, id ResourceId) error
+	// ListDailySummaries List daily transaction summaries
+	// (GET /api/v1/daily-summaries)
+	ListDailySummaries(ctx *echo.Context, params ListDailySummariesParams) error
 	// DeleteMe Soft-delete the current account
 	// (DELETE /api/v1/me)
 	DeleteMe(ctx *echo.Context, params DeleteMeParams) error
@@ -282,6 +633,24 @@ type ServerInterface interface {
 	// UpdateMe Update the current profile timezone
 	// (PATCH /api/v1/me)
 	UpdateMe(ctx *echo.Context) error
+	// ListTransactions List transaction history
+	// (GET /api/v1/transactions)
+	ListTransactions(ctx *echo.Context, params ListTransactionsParams) error
+	// CreateTransaction Create an income or expense transaction
+	// (POST /api/v1/transactions)
+	CreateTransaction(ctx *echo.Context) error
+	// DeleteTransaction Delete a transaction
+	// (DELETE /api/v1/transactions/{id})
+	DeleteTransaction(ctx *echo.Context, id ResourceId, params DeleteTransactionParams) error
+	// GetTransaction Get a transaction
+	// (GET /api/v1/transactions/{id})
+	GetTransaction(ctx *echo.Context, id ResourceId, params GetTransactionParams) error
+	// UpdateTransaction Update a transaction
+	// (PATCH /api/v1/transactions/{id})
+	UpdateTransaction(ctx *echo.Context, id ResourceId) error
+	// RestoreTransaction Restore a transaction
+	// (POST /api/v1/transactions/{id}/restore)
+	RestoreTransaction(ctx *echo.Context, id ResourceId) error
 	// HealthLive Process liveness
 	// (GET /health/live)
 	HealthLive(ctx *echo.Context) error
@@ -293,6 +662,437 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// AdminListCategories converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminListCategories(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListCategoriesParams
+	// ------------- Optional query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "type", ctx.QueryParams(), &params.Type, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter type: %s", err))
+	}
+
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminListCategories(ctx, userId, params)
+	return err
+}
+
+// AdminCreateCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminCreateCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminCreateCategory(ctx, userId)
+	return err
+}
+
+// AdminDeleteCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminDeleteCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDeleteCategoryParams
+
+	headers := ctx.Request().Header
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for If-Match, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter If-Match: %s", err))
+		}
+
+		params.IfMatch = IfMatch
+	} else {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter If-Match is required, but not found"))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminDeleteCategory(ctx, userId, id, params)
+	return err
+}
+
+// AdminGetCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminGetCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetCategoryParams
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminGetCategory(ctx, userId, id, params)
+	return err
+}
+
+// AdminUpdateCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminUpdateCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminUpdateCategory(ctx, userId, id)
+	return err
+}
+
+// AdminRestoreCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminRestoreCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminRestoreCategory(ctx, userId, id)
+	return err
+}
+
+// AdminListDailySummaries converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminListDailySummaries(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListDailySummariesParams
+	// ------------- Required query parameter "start_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "start_date", ctx.QueryParams(), &params.StartDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start_date: %s", err))
+	}
+
+	// ------------- Required query parameter "end_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "end_date", ctx.QueryParams(), &params.EndDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end_date: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", ctx.QueryParams(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminListDailySummaries(ctx, userId, params)
+	return err
+}
+
+// AdminListTransactions converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminListTransactions(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListTransactionsParams
+	// ------------- Required query parameter "start_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "start_date", ctx.QueryParams(), &params.StartDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start_date: %s", err))
+	}
+
+	// ------------- Required query parameter "end_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "end_date", ctx.QueryParams(), &params.EndDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end_date: %s", err))
+	}
+
+	// ------------- Optional query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "type", ctx.QueryParams(), &params.Type, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter type: %s", err))
+	}
+
+	// ------------- Optional query parameter "category_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category_id", ctx.QueryParams(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter category_id: %s", err))
+	}
+
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", ctx.QueryParams(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminListTransactions(ctx, userId, params)
+	return err
+}
+
+// AdminCreateTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminCreateTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminCreateTransaction(ctx, userId)
+	return err
+}
+
+// AdminDeleteTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminDeleteTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDeleteTransactionParams
+
+	headers := ctx.Request().Header
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for If-Match, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter If-Match: %s", err))
+		}
+
+		params.IfMatch = IfMatch
+	} else {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter If-Match is required, but not found"))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminDeleteTransaction(ctx, userId, id, params)
+	return err
+}
+
+// AdminGetTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminGetTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetTransactionParams
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminGetTransaction(ctx, userId, id, params)
+	return err
+}
+
+// AdminUpdateTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminUpdateTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminUpdateTransaction(ctx, userId, id)
+	return err
+}
+
+// AdminRestoreTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminRestoreTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminRestoreTransaction(ctx, userId, id)
+	return err
 }
 
 // Login converts echo context to params.
@@ -328,6 +1128,174 @@ func (w *ServerInterfaceWrapper) Register(ctx *echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.Register(ctx)
+	return err
+}
+
+// ListCategories converts echo context to params.
+func (w *ServerInterfaceWrapper) ListCategories(ctx *echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCategoriesParams
+	// ------------- Optional query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "type", ctx.QueryParams(), &params.Type, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter type: %s", err))
+	}
+
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListCategories(ctx, params)
+	return err
+}
+
+// CreateCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateCategory(ctx *echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CreateCategory(ctx)
+	return err
+}
+
+// DeleteCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteCategoryParams
+
+	headers := ctx.Request().Header
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for If-Match, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter If-Match: %s", err))
+		}
+
+		params.IfMatch = IfMatch
+	} else {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter If-Match is required, but not found"))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteCategory(ctx, id, params)
+	return err
+}
+
+// GetCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) GetCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCategoryParams
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetCategory(ctx, id, params)
+	return err
+}
+
+// UpdateCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdateCategory(ctx, id)
+	return err
+}
+
+// RestoreCategory converts echo context to params.
+func (w *ServerInterfaceWrapper) RestoreCategory(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.RestoreCategory(ctx, id)
+	return err
+}
+
+// ListDailySummaries converts echo context to params.
+func (w *ServerInterfaceWrapper) ListDailySummaries(ctx *echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListDailySummariesParams
+	// ------------- Required query parameter "start_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "start_date", ctx.QueryParams(), &params.StartDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start_date: %s", err))
+	}
+
+	// ------------- Required query parameter "end_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "end_date", ctx.QueryParams(), &params.EndDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end_date: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", ctx.QueryParams(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListDailySummaries(ctx, params)
 	return err
 }
 
@@ -377,6 +1345,170 @@ func (w *ServerInterfaceWrapper) UpdateMe(ctx *echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.UpdateMe(ctx)
+	return err
+}
+
+// ListTransactions converts echo context to params.
+func (w *ServerInterfaceWrapper) ListTransactions(ctx *echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTransactionsParams
+	// ------------- Required query parameter "start_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "start_date", ctx.QueryParams(), &params.StartDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start_date: %s", err))
+	}
+
+	// ------------- Required query parameter "end_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "end_date", ctx.QueryParams(), &params.EndDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end_date: %s", err))
+	}
+
+	// ------------- Optional query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "type", ctx.QueryParams(), &params.Type, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter type: %s", err))
+	}
+
+	// ------------- Optional query parameter "category_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category_id", ctx.QueryParams(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter category_id: %s", err))
+	}
+
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", ctx.QueryParams(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListTransactions(ctx, params)
+	return err
+}
+
+// CreateTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateTransaction(ctx *echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CreateTransaction(ctx)
+	return err
+}
+
+// DeleteTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteTransactionParams
+
+	headers := ctx.Request().Header
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for If-Match, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter If-Match: %s", err))
+		}
+
+		params.IfMatch = IfMatch
+	} else {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter If-Match is required, but not found"))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTransaction(ctx, id, params)
+	return err
+}
+
+// GetTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetTransactionParams
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetTransaction(ctx, id, params)
+	return err
+}
+
+// UpdateTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdateTransaction(ctx, id)
+	return err
+}
+
+// RestoreTransaction converts echo context to params.
+func (w *ServerInterfaceWrapper) RestoreTransaction(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.RestoreTransaction(ctx, id)
 	return err
 }
 
@@ -454,16 +1586,46 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 	router.DELETE(options.BaseURL+"/api/v1/me", wrapper.DeleteMe, options.OperationMiddlewares["deleteMe"]...)
 	router.GET(options.BaseURL+"/api/v1/me", wrapper.GetMe, options.OperationMiddlewares["getMe"]...)
 	router.PATCH(options.BaseURL+"/api/v1/me", wrapper.UpdateMe, options.OperationMiddlewares["updateMe"]...)
+	router.GET(options.BaseURL+"/api/v1/categories", wrapper.ListCategories, options.OperationMiddlewares["listCategories"]...)
+	router.POST(options.BaseURL+"/api/v1/categories", wrapper.CreateCategory, options.OperationMiddlewares["createCategory"]...)
+	router.DELETE(options.BaseURL+"/api/v1/categories/:id", wrapper.DeleteCategory, options.OperationMiddlewares["deleteCategory"]...)
+	router.GET(options.BaseURL+"/api/v1/categories/:id", wrapper.GetCategory, options.OperationMiddlewares["getCategory"]...)
+	router.PATCH(options.BaseURL+"/api/v1/categories/:id", wrapper.UpdateCategory, options.OperationMiddlewares["updateCategory"]...)
+	router.POST(options.BaseURL+"/api/v1/categories/:id/restore", wrapper.RestoreCategory, options.OperationMiddlewares["restoreCategory"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/categories", wrapper.AdminListCategories, options.OperationMiddlewares["adminListCategories"]...)
+	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/categories", wrapper.AdminCreateCategory, options.OperationMiddlewares["adminCreateCategory"]...)
+	router.DELETE(options.BaseURL+"/api/v1/admin/users/:user_id/categories/:id", wrapper.AdminDeleteCategory, options.OperationMiddlewares["adminDeleteCategory"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/categories/:id", wrapper.AdminGetCategory, options.OperationMiddlewares["adminGetCategory"]...)
+	router.PATCH(options.BaseURL+"/api/v1/admin/users/:user_id/categories/:id", wrapper.AdminUpdateCategory, options.OperationMiddlewares["adminUpdateCategory"]...)
+	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/categories/:id/restore", wrapper.AdminRestoreCategory, options.OperationMiddlewares["adminRestoreCategory"]...)
+	router.GET(options.BaseURL+"/api/v1/transactions", wrapper.ListTransactions, options.OperationMiddlewares["listTransactions"]...)
+	router.POST(options.BaseURL+"/api/v1/transactions", wrapper.CreateTransaction, options.OperationMiddlewares["createTransaction"]...)
+	router.DELETE(options.BaseURL+"/api/v1/transactions/:id", wrapper.DeleteTransaction, options.OperationMiddlewares["deleteTransaction"]...)
+	router.GET(options.BaseURL+"/api/v1/transactions/:id", wrapper.GetTransaction, options.OperationMiddlewares["getTransaction"]...)
+	router.PATCH(options.BaseURL+"/api/v1/transactions/:id", wrapper.UpdateTransaction, options.OperationMiddlewares["updateTransaction"]...)
+	router.POST(options.BaseURL+"/api/v1/transactions/:id/restore", wrapper.RestoreTransaction, options.OperationMiddlewares["restoreTransaction"]...)
+	router.GET(options.BaseURL+"/api/v1/daily-summaries", wrapper.ListDailySummaries, options.OperationMiddlewares["listDailySummaries"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/transactions", wrapper.AdminListTransactions, options.OperationMiddlewares["adminListTransactions"]...)
+	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/transactions", wrapper.AdminCreateTransaction, options.OperationMiddlewares["adminCreateTransaction"]...)
+	router.DELETE(options.BaseURL+"/api/v1/admin/users/:user_id/transactions/:id", wrapper.AdminDeleteTransaction, options.OperationMiddlewares["adminDeleteTransaction"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/transactions/:id", wrapper.AdminGetTransaction, options.OperationMiddlewares["adminGetTransaction"]...)
+	router.PATCH(options.BaseURL+"/api/v1/admin/users/:user_id/transactions/:id", wrapper.AdminUpdateTransaction, options.OperationMiddlewares["adminUpdateTransaction"]...)
+	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/transactions/:id/restore", wrapper.AdminRestoreTransaction, options.OperationMiddlewares["adminRestoreTransaction"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/daily-summaries", wrapper.AdminListDailySummaries, options.OperationMiddlewares["adminListDailySummaries"]...)
 
 }
 
 type AuthenticationFailedJSONResponse ErrorResponse
+
+type BadRequestJSONResponse ErrorResponse
 
 type ConflictJSONResponse ErrorResponse
 
 type ForbiddenJSONResponse ErrorResponse
 
 type InternalErrorJSONResponse ErrorResponse
+
+type NotFoundJSONResponse ErrorResponse
 
 type RateLimitedResponseHeaders struct {
 	RetryAfter int
@@ -477,6 +1639,385 @@ type RateLimitedJSONResponse struct {
 type ServiceUnavailableJSONResponse HealthResponse
 
 type ValidationErrorJSONResponse ErrorResponse
+
+type AdminListCategoriesRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Params AdminListCategoriesParams
+}
+
+type AdminListCategoriesResponseObject interface {
+	VisitAdminListCategoriesResponse(w http.ResponseWriter) error
+}
+
+type AdminListCategories200JSONResponse CategoryListResponse
+
+func (response AdminListCategories200JSONResponse) VisitAdminListCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListCategories403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListCategories403JSONResponse) VisitAdminListCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateCategoryRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Body   *AdminCreateCategoryJSONRequestBody
+}
+
+type AdminCreateCategoryResponseObject interface {
+	VisitAdminCreateCategoryResponse(w http.ResponseWriter) error
+}
+
+type AdminCreateCategory201JSONResponse CategoryResponse
+
+func (response AdminCreateCategory201JSONResponse) VisitAdminCreateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateCategory403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminCreateCategory403JSONResponse) VisitAdminCreateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteCategoryRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Params AdminDeleteCategoryParams
+}
+
+type AdminDeleteCategoryResponseObject interface {
+	VisitAdminDeleteCategoryResponse(w http.ResponseWriter) error
+}
+
+type AdminDeleteCategory204Response struct {
+}
+
+func (response AdminDeleteCategory204Response) VisitAdminDeleteCategoryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminGetCategoryRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Params AdminGetCategoryParams
+}
+
+type AdminGetCategoryResponseObject interface {
+	VisitAdminGetCategoryResponse(w http.ResponseWriter) error
+}
+
+type AdminGetCategory200JSONResponse CategoryResponse
+
+func (response AdminGetCategory200JSONResponse) VisitAdminGetCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateCategoryRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Body   *AdminUpdateCategoryJSONRequestBody
+}
+
+type AdminUpdateCategoryResponseObject interface {
+	VisitAdminUpdateCategoryResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdateCategory200JSONResponse CategoryResponse
+
+func (response AdminUpdateCategory200JSONResponse) VisitAdminUpdateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRestoreCategoryRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Body   *AdminRestoreCategoryJSONRequestBody
+}
+
+type AdminRestoreCategoryResponseObject interface {
+	VisitAdminRestoreCategoryResponse(w http.ResponseWriter) error
+}
+
+type AdminRestoreCategory200JSONResponse CategoryResponse
+
+func (response AdminRestoreCategory200JSONResponse) VisitAdminRestoreCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListDailySummariesRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Params AdminListDailySummariesParams
+}
+
+type AdminListDailySummariesResponseObject interface {
+	VisitAdminListDailySummariesResponse(w http.ResponseWriter) error
+}
+
+type AdminListDailySummaries200JSONResponse DailySummaryListResponse
+
+func (response AdminListDailySummaries200JSONResponse) VisitAdminListDailySummariesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListDailySummaries403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListDailySummaries403JSONResponse) VisitAdminListDailySummariesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListTransactionsRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Params AdminListTransactionsParams
+}
+
+type AdminListTransactionsResponseObject interface {
+	VisitAdminListTransactionsResponse(w http.ResponseWriter) error
+}
+
+type AdminListTransactions200JSONResponse TransactionListResponse
+
+func (response AdminListTransactions200JSONResponse) VisitAdminListTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListTransactions403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListTransactions403JSONResponse) VisitAdminListTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateTransactionRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Body   *AdminCreateTransactionJSONRequestBody
+}
+
+type AdminCreateTransactionResponseObject interface {
+	VisitAdminCreateTransactionResponse(w http.ResponseWriter) error
+}
+
+type AdminCreateTransaction200JSONResponse TransactionResponse
+
+func (response AdminCreateTransaction200JSONResponse) VisitAdminCreateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateTransaction201JSONResponse TransactionResponse
+
+func (response AdminCreateTransaction201JSONResponse) VisitAdminCreateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateTransaction403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminCreateTransaction403JSONResponse) VisitAdminCreateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteTransactionRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Params AdminDeleteTransactionParams
+}
+
+type AdminDeleteTransactionResponseObject interface {
+	VisitAdminDeleteTransactionResponse(w http.ResponseWriter) error
+}
+
+type AdminDeleteTransaction204Response struct {
+}
+
+func (response AdminDeleteTransaction204Response) VisitAdminDeleteTransactionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminGetTransactionRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Params AdminGetTransactionParams
+}
+
+type AdminGetTransactionResponseObject interface {
+	VisitAdminGetTransactionResponse(w http.ResponseWriter) error
+}
+
+type AdminGetTransaction200JSONResponse TransactionResponse
+
+func (response AdminGetTransaction200JSONResponse) VisitAdminGetTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateTransactionRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Body   *AdminUpdateTransactionJSONRequestBody
+}
+
+type AdminUpdateTransactionResponseObject interface {
+	VisitAdminUpdateTransactionResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdateTransaction200JSONResponse TransactionResponse
+
+func (response AdminUpdateTransaction200JSONResponse) VisitAdminUpdateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRestoreTransactionRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Body   *AdminRestoreTransactionJSONRequestBody
+}
+
+type AdminRestoreTransactionResponseObject interface {
+	VisitAdminRestoreTransactionResponse(w http.ResponseWriter) error
+}
+
+type AdminRestoreTransaction200JSONResponse TransactionResponse
+
+func (response AdminRestoreTransaction200JSONResponse) VisitAdminRestoreTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type LoginRequestObject struct {
 	Body *LoginJSONRequestBody
@@ -733,6 +2274,302 @@ func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWri
 	return err
 }
 
+type ListCategoriesRequestObject struct {
+	Params ListCategoriesParams
+}
+
+type ListCategoriesResponseObject interface {
+	VisitListCategoriesResponse(w http.ResponseWriter) error
+}
+
+type ListCategories200JSONResponse CategoryListResponse
+
+func (response ListCategories200JSONResponse) VisitListCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCategories401JSONResponse struct {
+	AuthenticationFailedJSONResponse
+}
+
+func (response ListCategories401JSONResponse) VisitListCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCategoryRequestObject struct {
+	Body *CreateCategoryJSONRequestBody
+}
+
+type CreateCategoryResponseObject interface {
+	VisitCreateCategoryResponse(w http.ResponseWriter) error
+}
+
+type CreateCategory201JSONResponse CategoryResponse
+
+func (response CreateCategory201JSONResponse) VisitCreateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCategory401JSONResponse struct {
+	AuthenticationFailedJSONResponse
+}
+
+func (response CreateCategory401JSONResponse) VisitCreateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCategory409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateCategory409JSONResponse) VisitCreateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCategory422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response CreateCategory422JSONResponse) VisitCreateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCategoryRequestObject struct {
+	Id     ResourceId `json:"id"`
+	Params DeleteCategoryParams
+}
+
+type DeleteCategoryResponseObject interface {
+	VisitDeleteCategoryResponse(w http.ResponseWriter) error
+}
+
+type DeleteCategory204Response struct {
+}
+
+func (response DeleteCategory204Response) VisitDeleteCategoryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCategory409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteCategory409JSONResponse) VisitDeleteCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategoryRequestObject struct {
+	Id     ResourceId `json:"id"`
+	Params GetCategoryParams
+}
+
+type GetCategoryResponseObject interface {
+	VisitGetCategoryResponse(w http.ResponseWriter) error
+}
+
+type GetCategory200JSONResponse CategoryResponse
+
+func (response GetCategory200JSONResponse) VisitGetCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategory404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetCategory404JSONResponse) VisitGetCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCategoryRequestObject struct {
+	Id   ResourceId `json:"id"`
+	Body *UpdateCategoryJSONRequestBody
+}
+
+type UpdateCategoryResponseObject interface {
+	VisitUpdateCategoryResponse(w http.ResponseWriter) error
+}
+
+type UpdateCategory200JSONResponse CategoryResponse
+
+func (response UpdateCategory200JSONResponse) VisitUpdateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCategory409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateCategory409JSONResponse) VisitUpdateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCategory422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response UpdateCategory422JSONResponse) VisitUpdateCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreCategoryRequestObject struct {
+	Id   ResourceId `json:"id"`
+	Body *RestoreCategoryJSONRequestBody
+}
+
+type RestoreCategoryResponseObject interface {
+	VisitRestoreCategoryResponse(w http.ResponseWriter) error
+}
+
+type RestoreCategory200JSONResponse CategoryResponse
+
+func (response RestoreCategory200JSONResponse) VisitRestoreCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreCategory409JSONResponse struct{ ConflictJSONResponse }
+
+func (response RestoreCategory409JSONResponse) VisitRestoreCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDailySummariesRequestObject struct {
+	Params ListDailySummariesParams
+}
+
+type ListDailySummariesResponseObject interface {
+	VisitListDailySummariesResponse(w http.ResponseWriter) error
+}
+
+type ListDailySummaries200JSONResponse DailySummaryListResponse
+
+func (response ListDailySummaries200JSONResponse) VisitListDailySummariesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDailySummaries422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response ListDailySummaries422JSONResponse) VisitListDailySummariesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteMeRequestObject struct {
 	Params DeleteMeParams
 }
@@ -896,6 +2733,276 @@ func (response UpdateMe422JSONResponse) VisitUpdateMeResponse(w http.ResponseWri
 	return err
 }
 
+type ListTransactionsRequestObject struct {
+	Params ListTransactionsParams
+}
+
+type ListTransactionsResponseObject interface {
+	VisitListTransactionsResponse(w http.ResponseWriter) error
+}
+
+type ListTransactions200JSONResponse TransactionListResponse
+
+func (response ListTransactions200JSONResponse) VisitListTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListTransactions400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListTransactions400JSONResponse) VisitListTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListTransactions422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response ListTransactions422JSONResponse) VisitListTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransactionRequestObject struct {
+	Body *CreateTransactionJSONRequestBody
+}
+
+type CreateTransactionResponseObject interface {
+	VisitCreateTransactionResponse(w http.ResponseWriter) error
+}
+
+type CreateTransaction200JSONResponse TransactionResponse
+
+func (response CreateTransaction200JSONResponse) VisitCreateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransaction201JSONResponse TransactionResponse
+
+func (response CreateTransaction201JSONResponse) VisitCreateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransaction409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateTransaction409JSONResponse) VisitCreateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransaction422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response CreateTransaction422JSONResponse) VisitCreateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTransactionRequestObject struct {
+	Id     ResourceId `json:"id"`
+	Params DeleteTransactionParams
+}
+
+type DeleteTransactionResponseObject interface {
+	VisitDeleteTransactionResponse(w http.ResponseWriter) error
+}
+
+type DeleteTransaction204Response struct {
+}
+
+func (response DeleteTransaction204Response) VisitDeleteTransactionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteTransaction409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteTransaction409JSONResponse) VisitDeleteTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTransactionRequestObject struct {
+	Id     ResourceId `json:"id"`
+	Params GetTransactionParams
+}
+
+type GetTransactionResponseObject interface {
+	VisitGetTransactionResponse(w http.ResponseWriter) error
+}
+
+type GetTransaction200JSONResponse TransactionResponse
+
+func (response GetTransaction200JSONResponse) VisitGetTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTransaction404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetTransaction404JSONResponse) VisitGetTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransactionRequestObject struct {
+	Id   ResourceId `json:"id"`
+	Body *UpdateTransactionJSONRequestBody
+}
+
+type UpdateTransactionResponseObject interface {
+	VisitUpdateTransactionResponse(w http.ResponseWriter) error
+}
+
+type UpdateTransaction200JSONResponse TransactionResponse
+
+func (response UpdateTransaction200JSONResponse) VisitUpdateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransaction409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateTransaction409JSONResponse) VisitUpdateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransaction422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response UpdateTransaction422JSONResponse) VisitUpdateTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreTransactionRequestObject struct {
+	Id   ResourceId `json:"id"`
+	Body *RestoreTransactionJSONRequestBody
+}
+
+type RestoreTransactionResponseObject interface {
+	VisitRestoreTransactionResponse(w http.ResponseWriter) error
+}
+
+type RestoreTransaction200JSONResponse TransactionResponse
+
+func (response RestoreTransaction200JSONResponse) VisitRestoreTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreTransaction409JSONResponse struct{ ConflictJSONResponse }
+
+func (response RestoreTransaction409JSONResponse) VisitRestoreTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type HealthLiveRequestObject struct {
 }
 
@@ -968,6 +3075,45 @@ func (response HealthReady503JSONResponse) VisitHealthReadyResponse(w http.Respo
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// AdminListCategories List categories for a selected user
+	// (GET /api/v1/admin/users/{user_id}/categories)
+	AdminListCategories(ctx context.Context, request AdminListCategoriesRequestObject) (AdminListCategoriesResponseObject, error)
+	// AdminCreateCategory Create a category for a selected user
+	// (POST /api/v1/admin/users/{user_id}/categories)
+	AdminCreateCategory(ctx context.Context, request AdminCreateCategoryRequestObject) (AdminCreateCategoryResponseObject, error)
+	// AdminDeleteCategory Archive a selected user's category
+	// (DELETE /api/v1/admin/users/{user_id}/categories/{id})
+	AdminDeleteCategory(ctx context.Context, request AdminDeleteCategoryRequestObject) (AdminDeleteCategoryResponseObject, error)
+	// AdminGetCategory Get a selected user's category
+	// (GET /api/v1/admin/users/{user_id}/categories/{id})
+	AdminGetCategory(ctx context.Context, request AdminGetCategoryRequestObject) (AdminGetCategoryResponseObject, error)
+	// AdminUpdateCategory Update a selected user's category
+	// (PATCH /api/v1/admin/users/{user_id}/categories/{id})
+	AdminUpdateCategory(ctx context.Context, request AdminUpdateCategoryRequestObject) (AdminUpdateCategoryResponseObject, error)
+	// AdminRestoreCategory Restore a selected user's category
+	// (POST /api/v1/admin/users/{user_id}/categories/{id}/restore)
+	AdminRestoreCategory(ctx context.Context, request AdminRestoreCategoryRequestObject) (AdminRestoreCategoryResponseObject, error)
+	// AdminListDailySummaries List daily summaries for a selected user
+	// (GET /api/v1/admin/users/{user_id}/daily-summaries)
+	AdminListDailySummaries(ctx context.Context, request AdminListDailySummariesRequestObject) (AdminListDailySummariesResponseObject, error)
+	// AdminListTransactions List transaction history for a selected user
+	// (GET /api/v1/admin/users/{user_id}/transactions)
+	AdminListTransactions(ctx context.Context, request AdminListTransactionsRequestObject) (AdminListTransactionsResponseObject, error)
+	// AdminCreateTransaction Create a transaction for a selected user
+	// (POST /api/v1/admin/users/{user_id}/transactions)
+	AdminCreateTransaction(ctx context.Context, request AdminCreateTransactionRequestObject) (AdminCreateTransactionResponseObject, error)
+	// AdminDeleteTransaction Delete a selected user's transaction
+	// (DELETE /api/v1/admin/users/{user_id}/transactions/{id})
+	AdminDeleteTransaction(ctx context.Context, request AdminDeleteTransactionRequestObject) (AdminDeleteTransactionResponseObject, error)
+	// AdminGetTransaction Get a selected user's transaction
+	// (GET /api/v1/admin/users/{user_id}/transactions/{id})
+	AdminGetTransaction(ctx context.Context, request AdminGetTransactionRequestObject) (AdminGetTransactionResponseObject, error)
+	// AdminUpdateTransaction Update a selected user's transaction
+	// (PATCH /api/v1/admin/users/{user_id}/transactions/{id})
+	AdminUpdateTransaction(ctx context.Context, request AdminUpdateTransactionRequestObject) (AdminUpdateTransactionResponseObject, error)
+	// AdminRestoreTransaction Restore a selected user's transaction
+	// (POST /api/v1/admin/users/{user_id}/transactions/{id}/restore)
+	AdminRestoreTransaction(ctx context.Context, request AdminRestoreTransactionRequestObject) (AdminRestoreTransactionResponseObject, error)
 	// Login Create an access and refresh session
 	// (POST /api/v1/auth/login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
@@ -980,6 +3126,27 @@ type StrictServerInterface interface {
 	// Register Register a standard user
 	// (POST /api/v1/auth/register)
 	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
+	// ListCategories List the user's categories
+	// (GET /api/v1/categories)
+	ListCategories(ctx context.Context, request ListCategoriesRequestObject) (ListCategoriesResponseObject, error)
+	// CreateCategory Create a category
+	// (POST /api/v1/categories)
+	CreateCategory(ctx context.Context, request CreateCategoryRequestObject) (CreateCategoryResponseObject, error)
+	// DeleteCategory Archive a category
+	// (DELETE /api/v1/categories/{id})
+	DeleteCategory(ctx context.Context, request DeleteCategoryRequestObject) (DeleteCategoryResponseObject, error)
+	// GetCategory Get a category
+	// (GET /api/v1/categories/{id})
+	GetCategory(ctx context.Context, request GetCategoryRequestObject) (GetCategoryResponseObject, error)
+	// UpdateCategory Update a category
+	// (PATCH /api/v1/categories/{id})
+	UpdateCategory(ctx context.Context, request UpdateCategoryRequestObject) (UpdateCategoryResponseObject, error)
+	// RestoreCategory Restore a category
+	// (POST /api/v1/categories/{id}/restore)
+	RestoreCategory(ctx context.Context, request RestoreCategoryRequestObject) (RestoreCategoryResponseObject, error)
+	// ListDailySummaries List daily transaction summaries
+	// (GET /api/v1/daily-summaries)
+	ListDailySummaries(ctx context.Context, request ListDailySummariesRequestObject) (ListDailySummariesResponseObject, error)
 	// DeleteMe Soft-delete the current account
 	// (DELETE /api/v1/me)
 	DeleteMe(ctx context.Context, request DeleteMeRequestObject) (DeleteMeResponseObject, error)
@@ -989,6 +3156,24 @@ type StrictServerInterface interface {
 	// UpdateMe Update the current profile timezone
 	// (PATCH /api/v1/me)
 	UpdateMe(ctx context.Context, request UpdateMeRequestObject) (UpdateMeResponseObject, error)
+	// ListTransactions List transaction history
+	// (GET /api/v1/transactions)
+	ListTransactions(ctx context.Context, request ListTransactionsRequestObject) (ListTransactionsResponseObject, error)
+	// CreateTransaction Create an income or expense transaction
+	// (POST /api/v1/transactions)
+	CreateTransaction(ctx context.Context, request CreateTransactionRequestObject) (CreateTransactionResponseObject, error)
+	// DeleteTransaction Delete a transaction
+	// (DELETE /api/v1/transactions/{id})
+	DeleteTransaction(ctx context.Context, request DeleteTransactionRequestObject) (DeleteTransactionResponseObject, error)
+	// GetTransaction Get a transaction
+	// (GET /api/v1/transactions/{id})
+	GetTransaction(ctx context.Context, request GetTransactionRequestObject) (GetTransactionResponseObject, error)
+	// UpdateTransaction Update a transaction
+	// (PATCH /api/v1/transactions/{id})
+	UpdateTransaction(ctx context.Context, request UpdateTransactionRequestObject) (UpdateTransactionResponseObject, error)
+	// RestoreTransaction Restore a transaction
+	// (POST /api/v1/transactions/{id}/restore)
+	RestoreTransaction(ctx context.Context, request RestoreTransactionRequestObject) (RestoreTransactionResponseObject, error)
 	// HealthLive Process liveness
 	// (GET /health/live)
 	HealthLive(ctx context.Context, request HealthLiveRequestObject) (HealthLiveResponseObject, error)
@@ -1007,6 +3192,442 @@ func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareF
 type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
+}
+
+// AdminListCategories operation middleware
+func (sh *strictHandler) AdminListCategories(ctx *echo.Context, userId UserId, params AdminListCategoriesParams) error {
+	var request AdminListCategoriesRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListCategories(ctx.Request().Context(), request.(AdminListCategoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListCategories")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListCategoriesResponseObject); ok {
+		return validResponse.VisitAdminListCategoriesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateCategory operation middleware
+func (sh *strictHandler) AdminCreateCategory(ctx *echo.Context, userId UserId) error {
+	var request AdminCreateCategoryRequestObject
+
+	request.UserId = userId
+
+	var body AdminCreateCategoryJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateCategory(ctx.Request().Context(), request.(AdminCreateCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateCategoryResponseObject); ok {
+		return validResponse.VisitAdminCreateCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeleteCategory operation middleware
+func (sh *strictHandler) AdminDeleteCategory(ctx *echo.Context, userId UserId, id ResourceId, params AdminDeleteCategoryParams) error {
+	var request AdminDeleteCategoryRequestObject
+
+	request.UserId = userId
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteCategory(ctx.Request().Context(), request.(AdminDeleteCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeleteCategoryResponseObject); ok {
+		return validResponse.VisitAdminDeleteCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetCategory operation middleware
+func (sh *strictHandler) AdminGetCategory(ctx *echo.Context, userId UserId, id ResourceId, params AdminGetCategoryParams) error {
+	var request AdminGetCategoryRequestObject
+
+	request.UserId = userId
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetCategory(ctx.Request().Context(), request.(AdminGetCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetCategoryResponseObject); ok {
+		return validResponse.VisitAdminGetCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateCategory operation middleware
+func (sh *strictHandler) AdminUpdateCategory(ctx *echo.Context, userId UserId, id ResourceId) error {
+	var request AdminUpdateCategoryRequestObject
+
+	request.UserId = userId
+	request.Id = id
+
+	var body AdminUpdateCategoryJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateCategory(ctx.Request().Context(), request.(AdminUpdateCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateCategoryResponseObject); ok {
+		return validResponse.VisitAdminUpdateCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminRestoreCategory operation middleware
+func (sh *strictHandler) AdminRestoreCategory(ctx *echo.Context, userId UserId, id ResourceId) error {
+	var request AdminRestoreCategoryRequestObject
+
+	request.UserId = userId
+	request.Id = id
+
+	var body AdminRestoreCategoryJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminRestoreCategory(ctx.Request().Context(), request.(AdminRestoreCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminRestoreCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminRestoreCategoryResponseObject); ok {
+		return validResponse.VisitAdminRestoreCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListDailySummaries operation middleware
+func (sh *strictHandler) AdminListDailySummaries(ctx *echo.Context, userId UserId, params AdminListDailySummariesParams) error {
+	var request AdminListDailySummariesRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListDailySummaries(ctx.Request().Context(), request.(AdminListDailySummariesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListDailySummaries")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListDailySummariesResponseObject); ok {
+		return validResponse.VisitAdminListDailySummariesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListTransactions operation middleware
+func (sh *strictHandler) AdminListTransactions(ctx *echo.Context, userId UserId, params AdminListTransactionsParams) error {
+	var request AdminListTransactionsRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListTransactions(ctx.Request().Context(), request.(AdminListTransactionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListTransactions")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListTransactionsResponseObject); ok {
+		return validResponse.VisitAdminListTransactionsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateTransaction operation middleware
+func (sh *strictHandler) AdminCreateTransaction(ctx *echo.Context, userId UserId) error {
+	var request AdminCreateTransactionRequestObject
+
+	request.UserId = userId
+
+	var body AdminCreateTransactionJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateTransaction(ctx.Request().Context(), request.(AdminCreateTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateTransactionResponseObject); ok {
+		return validResponse.VisitAdminCreateTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeleteTransaction operation middleware
+func (sh *strictHandler) AdminDeleteTransaction(ctx *echo.Context, userId UserId, id ResourceId, params AdminDeleteTransactionParams) error {
+	var request AdminDeleteTransactionRequestObject
+
+	request.UserId = userId
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteTransaction(ctx.Request().Context(), request.(AdminDeleteTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeleteTransactionResponseObject); ok {
+		return validResponse.VisitAdminDeleteTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetTransaction operation middleware
+func (sh *strictHandler) AdminGetTransaction(ctx *echo.Context, userId UserId, id ResourceId, params AdminGetTransactionParams) error {
+	var request AdminGetTransactionRequestObject
+
+	request.UserId = userId
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetTransaction(ctx.Request().Context(), request.(AdminGetTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetTransactionResponseObject); ok {
+		return validResponse.VisitAdminGetTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateTransaction operation middleware
+func (sh *strictHandler) AdminUpdateTransaction(ctx *echo.Context, userId UserId, id ResourceId) error {
+	var request AdminUpdateTransactionRequestObject
+
+	request.UserId = userId
+	request.Id = id
+
+	var body AdminUpdateTransactionJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateTransaction(ctx.Request().Context(), request.(AdminUpdateTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateTransactionResponseObject); ok {
+		return validResponse.VisitAdminUpdateTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminRestoreTransaction operation middleware
+func (sh *strictHandler) AdminRestoreTransaction(ctx *echo.Context, userId UserId, id ResourceId) error {
+	var request AdminRestoreTransactionRequestObject
+
+	request.UserId = userId
+	request.Id = id
+
+	var body AdminRestoreTransactionJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminRestoreTransaction(ctx.Request().Context(), request.(AdminRestoreTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminRestoreTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminRestoreTransactionResponseObject); ok {
+		return validResponse.VisitAdminRestoreTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
 }
 
 // Login operation middleware
@@ -1165,6 +3786,229 @@ func (sh *strictHandler) Register(ctx *echo.Context) error {
 	return nil
 }
 
+// ListCategories operation middleware
+func (sh *strictHandler) ListCategories(ctx *echo.Context, params ListCategoriesParams) error {
+	var request ListCategoriesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCategories(ctx.Request().Context(), request.(ListCategoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCategories")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListCategoriesResponseObject); ok {
+		return validResponse.VisitListCategoriesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateCategory operation middleware
+func (sh *strictHandler) CreateCategory(ctx *echo.Context) error {
+	var request CreateCategoryRequestObject
+
+	var body CreateCategoryJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCategory(ctx.Request().Context(), request.(CreateCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateCategoryResponseObject); ok {
+		return validResponse.VisitCreateCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteCategory operation middleware
+func (sh *strictHandler) DeleteCategory(ctx *echo.Context, id ResourceId, params DeleteCategoryParams) error {
+	var request DeleteCategoryRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCategory(ctx.Request().Context(), request.(DeleteCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteCategoryResponseObject); ok {
+		return validResponse.VisitDeleteCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetCategory operation middleware
+func (sh *strictHandler) GetCategory(ctx *echo.Context, id ResourceId, params GetCategoryParams) error {
+	var request GetCategoryRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCategory(ctx.Request().Context(), request.(GetCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCategoryResponseObject); ok {
+		return validResponse.VisitGetCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateCategory operation middleware
+func (sh *strictHandler) UpdateCategory(ctx *echo.Context, id ResourceId) error {
+	var request UpdateCategoryRequestObject
+
+	request.Id = id
+
+	var body UpdateCategoryJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCategory(ctx.Request().Context(), request.(UpdateCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateCategoryResponseObject); ok {
+		return validResponse.VisitUpdateCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// RestoreCategory operation middleware
+func (sh *strictHandler) RestoreCategory(ctx *echo.Context, id ResourceId) error {
+	var request RestoreCategoryRequestObject
+
+	request.Id = id
+
+	var body RestoreCategoryJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.RestoreCategory(ctx.Request().Context(), request.(RestoreCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RestoreCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(RestoreCategoryResponseObject); ok {
+		return validResponse.VisitRestoreCategoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListDailySummaries operation middleware
+func (sh *strictHandler) ListDailySummaries(ctx *echo.Context, params ListDailySummariesParams) error {
+	var request ListDailySummariesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDailySummaries(ctx.Request().Context(), request.(ListDailySummariesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDailySummaries")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListDailySummariesResponseObject); ok {
+		return validResponse.VisitListDailySummariesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // DeleteMe operation middleware
 func (sh *strictHandler) DeleteMe(ctx *echo.Context, params DeleteMeParams) error {
 	var request DeleteMeRequestObject
@@ -1252,6 +4096,204 @@ func (sh *strictHandler) UpdateMe(ctx *echo.Context) error {
 	return nil
 }
 
+// ListTransactions operation middleware
+func (sh *strictHandler) ListTransactions(ctx *echo.Context, params ListTransactionsParams) error {
+	var request ListTransactionsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListTransactions(ctx.Request().Context(), request.(ListTransactionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListTransactions")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListTransactionsResponseObject); ok {
+		return validResponse.VisitListTransactionsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateTransaction operation middleware
+func (sh *strictHandler) CreateTransaction(ctx *echo.Context) error {
+	var request CreateTransactionRequestObject
+
+	var body CreateTransactionJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateTransaction(ctx.Request().Context(), request.(CreateTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateTransactionResponseObject); ok {
+		return validResponse.VisitCreateTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteTransaction operation middleware
+func (sh *strictHandler) DeleteTransaction(ctx *echo.Context, id ResourceId, params DeleteTransactionParams) error {
+	var request DeleteTransactionRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteTransaction(ctx.Request().Context(), request.(DeleteTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteTransactionResponseObject); ok {
+		return validResponse.VisitDeleteTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetTransaction operation middleware
+func (sh *strictHandler) GetTransaction(ctx *echo.Context, id ResourceId, params GetTransactionParams) error {
+	var request GetTransactionRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTransaction(ctx.Request().Context(), request.(GetTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetTransactionResponseObject); ok {
+		return validResponse.VisitGetTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateTransaction operation middleware
+func (sh *strictHandler) UpdateTransaction(ctx *echo.Context, id ResourceId) error {
+	var request UpdateTransactionRequestObject
+
+	request.Id = id
+
+	var body UpdateTransactionJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateTransaction(ctx.Request().Context(), request.(UpdateTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateTransactionResponseObject); ok {
+		return validResponse.VisitUpdateTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// RestoreTransaction operation middleware
+func (sh *strictHandler) RestoreTransaction(ctx *echo.Context, id ResourceId) error {
+	var request RestoreTransactionRequestObject
+
+	request.Id = id
+
+	var body RestoreTransactionJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.RestoreTransaction(ctx.Request().Context(), request.(RestoreTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RestoreTransaction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(RestoreTransactionResponseObject); ok {
+		return validResponse.VisitRestoreTransactionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // HealthLive operation middleware
 func (sh *strictHandler) HealthLive(ctx *echo.Context) error {
 	var request HealthLiveRequestObject
@@ -1303,33 +4345,89 @@ func (sh *strictHandler) HealthReady(ctx *echo.Context) error {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"j6E/Pgud0pj26fx6/s8A",
+	"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",
+	"bhTbt2Ft3m7+fwA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
