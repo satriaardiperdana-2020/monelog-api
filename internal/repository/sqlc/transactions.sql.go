@@ -13,35 +13,19 @@ import (
 
 const createTransaction = `-- name: CreateTransaction :one
 INSERT INTO transactions (
-    id,
-    user_id,
-    category_id,
-    type,
-    amount,
-    transaction_date,
-    title,
-    client_request_id,
-    request_hash,
-    created_by,
-    updated_by
+    id, user_id, category_id, type, amount, transaction_date, title,
+    client_request_id, request_hash, created_by, updated_by
 )
-SELECT
-    $1,
-    $2,
-    $3,
-    $4,
-    $5,
-    $6,
-    btrim($7),
-    $8,
-    $9,
-    $10,
-    $10
+SELECT $1, $2, $3, $4,
+       $5, $6, btrim($7),
+       $8, $9,
+       $10, $10
 FROM categories
 WHERE categories.id = $3
   AND categories.user_id = $2
   AND categories.type = $4
   AND categories.is_delete = FALSE
+ON CONFLICT (user_id, client_request_id) DO NOTHING
 RETURNING transactions.id, transactions.user_id, transactions.category_id, transactions.type, transactions.amount, transactions.transaction_date, transactions.title, transactions.client_request_id, transactions.request_hash, transactions.created_by, transactions.updated_by, transactions.is_delete, transactions.version, transactions.created_at, transactions.updated_at
 `
 
@@ -93,11 +77,10 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 }
 
 const getActiveTransaction = `-- name: GetActiveTransaction :one
-SELECT id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at
-FROM transactions
-WHERE id = $1
-  AND user_id = $2
-  AND is_delete = FALSE
+SELECT t.id, t.user_id, t.category_id, t.type, t.amount, t.transaction_date, t.title, t.client_request_id, t.request_hash, t.created_by, t.updated_by, t.is_delete, t.version, t.created_at, t.updated_at, c.name AS category_name
+FROM transactions t
+JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id AND c.type = t.type
+WHERE t.id = $1 AND t.user_id = $2 AND t.is_delete = FALSE
 `
 
 type GetActiveTransactionParams struct {
@@ -105,8 +88,117 @@ type GetActiveTransactionParams struct {
 	UserID pgtype.UUID `db:"user_id" json:"user_id"`
 }
 
-func (q *Queries) GetActiveTransaction(ctx context.Context, arg GetActiveTransactionParams) (Transaction, error) {
+type GetActiveTransactionRow struct {
+	ID              pgtype.UUID        `db:"id" json:"id"`
+	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	Type            string             `db:"type" json:"type"`
+	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
+	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
+	Title           string             `db:"title" json:"title"`
+	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	RequestHash     string             `db:"request_hash" json:"request_hash"`
+	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
+	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	IsDelete        bool               `db:"is_delete" json:"is_delete"`
+	Version         int32              `db:"version" json:"version"`
+	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	CategoryName    string             `db:"category_name" json:"category_name"`
+}
+
+func (q *Queries) GetActiveTransaction(ctx context.Context, arg GetActiveTransactionParams) (GetActiveTransactionRow, error) {
 	row := q.db.QueryRow(ctx, getActiveTransaction, arg.ID, arg.UserID)
+	var i GetActiveTransactionRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CategoryID,
+		&i.Type,
+		&i.Amount,
+		&i.TransactionDate,
+		&i.Title,
+		&i.ClientRequestID,
+		&i.RequestHash,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.IsDelete,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.CategoryName,
+	)
+	return i, err
+}
+
+const getDeletedTransaction = `-- name: GetDeletedTransaction :one
+SELECT t.id, t.user_id, t.category_id, t.type, t.amount, t.transaction_date, t.title, t.client_request_id, t.request_hash, t.created_by, t.updated_by, t.is_delete, t.version, t.created_at, t.updated_at, c.name AS category_name
+FROM transactions t
+JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id AND c.type = t.type
+WHERE t.id = $1 AND t.user_id = $2 AND t.is_delete = TRUE
+`
+
+type GetDeletedTransactionParams struct {
+	ID     pgtype.UUID `db:"id" json:"id"`
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+}
+
+type GetDeletedTransactionRow struct {
+	ID              pgtype.UUID        `db:"id" json:"id"`
+	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	Type            string             `db:"type" json:"type"`
+	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
+	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
+	Title           string             `db:"title" json:"title"`
+	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	RequestHash     string             `db:"request_hash" json:"request_hash"`
+	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
+	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	IsDelete        bool               `db:"is_delete" json:"is_delete"`
+	Version         int32              `db:"version" json:"version"`
+	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	CategoryName    string             `db:"category_name" json:"category_name"`
+}
+
+func (q *Queries) GetDeletedTransaction(ctx context.Context, arg GetDeletedTransactionParams) (GetDeletedTransactionRow, error) {
+	row := q.db.QueryRow(ctx, getDeletedTransaction, arg.ID, arg.UserID)
+	var i GetDeletedTransactionRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CategoryID,
+		&i.Type,
+		&i.Amount,
+		&i.TransactionDate,
+		&i.Title,
+		&i.ClientRequestID,
+		&i.RequestHash,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.IsDelete,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.CategoryName,
+	)
+	return i, err
+}
+
+const getTransactionByRequestIDForUpdate = `-- name: GetTransactionByRequestIDForUpdate :one
+SELECT id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at FROM transactions
+WHERE user_id = $1 AND client_request_id = $2
+FOR UPDATE
+`
+
+type GetTransactionByRequestIDForUpdateParams struct {
+	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
+	ClientRequestID pgtype.UUID `db:"client_request_id" json:"client_request_id"`
+}
+
+func (q *Queries) GetTransactionByRequestIDForUpdate(ctx context.Context, arg GetTransactionByRequestIDForUpdateParams) (Transaction, error) {
+	row := q.db.QueryRow(ctx, getTransactionByRequestIDForUpdate, arg.UserID, arg.ClientRequestID)
 	var i Transaction
 	err := row.Scan(
 		&i.ID,
@@ -128,20 +220,19 @@ func (q *Queries) GetActiveTransaction(ctx context.Context, arg GetActiveTransac
 	return i, err
 }
 
-const getTransactionByRequestID = `-- name: GetTransactionByRequestID :one
-SELECT id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at
-FROM transactions
-WHERE user_id = $1
-  AND client_request_id = $2
+const getTransactionStateForUpdate = `-- name: GetTransactionStateForUpdate :one
+SELECT id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at FROM transactions
+WHERE id = $1 AND user_id = $2
+FOR UPDATE
 `
 
-type GetTransactionByRequestIDParams struct {
-	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
-	ClientRequestID pgtype.UUID `db:"client_request_id" json:"client_request_id"`
+type GetTransactionStateForUpdateParams struct {
+	ID     pgtype.UUID `db:"id" json:"id"`
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
 }
 
-func (q *Queries) GetTransactionByRequestID(ctx context.Context, arg GetTransactionByRequestIDParams) (Transaction, error) {
-	row := q.db.QueryRow(ctx, getTransactionByRequestID, arg.UserID, arg.ClientRequestID)
+func (q *Queries) GetTransactionStateForUpdate(ctx context.Context, arg GetTransactionStateForUpdateParams) (Transaction, error) {
+	row := q.db.QueryRow(ctx, getTransactionStateForUpdate, arg.ID, arg.UserID)
 	var i Transaction
 	err := row.Scan(
 		&i.ID,
@@ -164,28 +255,74 @@ func (q *Queries) GetTransactionByRequestID(ctx context.Context, arg GetTransact
 }
 
 const listActiveTransactions = `-- name: ListActiveTransactions :many
-SELECT id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at
-FROM transactions
-WHERE user_id = $1
-  AND is_delete = FALSE
-ORDER BY transaction_date DESC, id DESC
-LIMIT $2
+SELECT t.id, t.user_id, t.category_id, t.type, t.amount, t.transaction_date, t.title, t.client_request_id, t.request_hash, t.created_by, t.updated_by, t.is_delete, t.version, t.created_at, t.updated_at, c.name AS category_name
+FROM transactions t
+JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id AND c.type = t.type
+WHERE t.user_id = $1
+  AND t.is_delete = FALSE
+  AND t.transaction_date BETWEEN $2 AND $3
+  AND ($4::text = '' OR t.type = $4)
+  AND (NOT $5::boolean OR t.category_id = $6)
+  AND (NOT $7::boolean OR (t.transaction_date, t.created_at, t.id) <
+      ($8::date, $9::timestamptz, $10::uuid))
+ORDER BY t.transaction_date DESC, t.created_at DESC, t.id DESC
+LIMIT $11
 `
 
 type ListActiveTransactionsParams struct {
-	UserID   pgtype.UUID `db:"user_id" json:"user_id"`
-	PageSize int32       `db:"page_size" json:"page_size"`
+	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	StartDate       pgtype.Date        `db:"start_date" json:"start_date"`
+	EndDate         pgtype.Date        `db:"end_date" json:"end_date"`
+	FilterType      string             `db:"filter_type" json:"filter_type"`
+	HasCategory     bool               `db:"has_category" json:"has_category"`
+	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	HasCursor       bool               `db:"has_cursor" json:"has_cursor"`
+	CursorDate      pgtype.Date        `db:"cursor_date" json:"cursor_date"`
+	CursorCreatedAt pgtype.Timestamptz `db:"cursor_created_at" json:"cursor_created_at"`
+	CursorID        pgtype.UUID        `db:"cursor_id" json:"cursor_id"`
+	PageSize        int32              `db:"page_size" json:"page_size"`
 }
 
-func (q *Queries) ListActiveTransactions(ctx context.Context, arg ListActiveTransactionsParams) ([]Transaction, error) {
-	rows, err := q.db.Query(ctx, listActiveTransactions, arg.UserID, arg.PageSize)
+type ListActiveTransactionsRow struct {
+	ID              pgtype.UUID        `db:"id" json:"id"`
+	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	Type            string             `db:"type" json:"type"`
+	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
+	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
+	Title           string             `db:"title" json:"title"`
+	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	RequestHash     string             `db:"request_hash" json:"request_hash"`
+	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
+	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	IsDelete        bool               `db:"is_delete" json:"is_delete"`
+	Version         int32              `db:"version" json:"version"`
+	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	CategoryName    string             `db:"category_name" json:"category_name"`
+}
+
+func (q *Queries) ListActiveTransactions(ctx context.Context, arg ListActiveTransactionsParams) ([]ListActiveTransactionsRow, error) {
+	rows, err := q.db.Query(ctx, listActiveTransactions,
+		arg.UserID,
+		arg.StartDate,
+		arg.EndDate,
+		arg.FilterType,
+		arg.HasCategory,
+		arg.CategoryID,
+		arg.HasCursor,
+		arg.CursorDate,
+		arg.CursorCreatedAt,
+		arg.CursorID,
+		arg.PageSize,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Transaction{}
+	items := []ListActiveTransactionsRow{}
 	for rows.Next() {
-		var i Transaction
+		var i ListActiveTransactionsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -202,7 +339,63 @@ func (q *Queries) ListActiveTransactions(ctx context.Context, arg ListActiveTran
 			&i.Version,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.CategoryName,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDailySummaries = `-- name: ListDailySummaries :many
+SELECT transaction_date,
+       COALESCE(SUM(amount) FILTER (WHERE type = 'income'), 0)::numeric(14,2) AS income,
+       COALESCE(SUM(amount) FILTER (WHERE type = 'expense'), 0)::numeric(14,2) AS expense
+FROM transactions
+WHERE user_id = $1 AND is_delete = FALSE
+  AND transaction_date BETWEEN $2 AND $3
+  AND (NOT $4::boolean OR transaction_date < $5)
+GROUP BY transaction_date
+ORDER BY transaction_date DESC
+LIMIT $6
+`
+
+type ListDailySummariesParams struct {
+	UserID     pgtype.UUID `db:"user_id" json:"user_id"`
+	StartDate  pgtype.Date `db:"start_date" json:"start_date"`
+	EndDate    pgtype.Date `db:"end_date" json:"end_date"`
+	HasCursor  bool        `db:"has_cursor" json:"has_cursor"`
+	CursorDate pgtype.Date `db:"cursor_date" json:"cursor_date"`
+	PageSize   int32       `db:"page_size" json:"page_size"`
+}
+
+type ListDailySummariesRow struct {
+	TransactionDate pgtype.Date    `db:"transaction_date" json:"transaction_date"`
+	Income          pgtype.Numeric `db:"income" json:"income"`
+	Expense         pgtype.Numeric `db:"expense" json:"expense"`
+}
+
+func (q *Queries) ListDailySummaries(ctx context.Context, arg ListDailySummariesParams) ([]ListDailySummariesRow, error) {
+	rows, err := q.db.Query(ctx, listDailySummaries,
+		arg.UserID,
+		arg.StartDate,
+		arg.EndDate,
+		arg.HasCursor,
+		arg.CursorDate,
+		arg.PageSize,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDailySummariesRow{}
+	for rows.Next() {
+		var i ListDailySummariesRow
+		if err := rows.Scan(&i.TransactionDate, &i.Income, &i.Expense); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -214,28 +407,72 @@ func (q *Queries) ListActiveTransactions(ctx context.Context, arg ListActiveTran
 }
 
 const listDeletedTransactions = `-- name: ListDeletedTransactions :many
-SELECT id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at
-FROM transactions
-WHERE user_id = $1
-  AND is_delete = TRUE
-ORDER BY updated_at DESC, id DESC
-LIMIT $2
+SELECT t.id, t.user_id, t.category_id, t.type, t.amount, t.transaction_date, t.title, t.client_request_id, t.request_hash, t.created_by, t.updated_by, t.is_delete, t.version, t.created_at, t.updated_at, c.name AS category_name
+FROM transactions t
+JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id AND c.type = t.type
+WHERE t.user_id = $1
+  AND t.is_delete = TRUE
+  AND t.transaction_date BETWEEN $2 AND $3
+  AND ($4::text = '' OR t.type = $4)
+  AND (NOT $5::boolean OR t.category_id = $6)
+  AND (NOT $7::boolean OR (t.updated_at, t.id) <
+      ($8::timestamptz, $9::uuid))
+ORDER BY t.updated_at DESC, t.id DESC
+LIMIT $10
 `
 
 type ListDeletedTransactionsParams struct {
-	UserID   pgtype.UUID `db:"user_id" json:"user_id"`
-	PageSize int32       `db:"page_size" json:"page_size"`
+	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	StartDate       pgtype.Date        `db:"start_date" json:"start_date"`
+	EndDate         pgtype.Date        `db:"end_date" json:"end_date"`
+	FilterType      string             `db:"filter_type" json:"filter_type"`
+	HasCategory     bool               `db:"has_category" json:"has_category"`
+	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	HasCursor       bool               `db:"has_cursor" json:"has_cursor"`
+	CursorUpdatedAt pgtype.Timestamptz `db:"cursor_updated_at" json:"cursor_updated_at"`
+	CursorID        pgtype.UUID        `db:"cursor_id" json:"cursor_id"`
+	PageSize        int32              `db:"page_size" json:"page_size"`
 }
 
-func (q *Queries) ListDeletedTransactions(ctx context.Context, arg ListDeletedTransactionsParams) ([]Transaction, error) {
-	rows, err := q.db.Query(ctx, listDeletedTransactions, arg.UserID, arg.PageSize)
+type ListDeletedTransactionsRow struct {
+	ID              pgtype.UUID        `db:"id" json:"id"`
+	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	Type            string             `db:"type" json:"type"`
+	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
+	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
+	Title           string             `db:"title" json:"title"`
+	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	RequestHash     string             `db:"request_hash" json:"request_hash"`
+	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
+	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	IsDelete        bool               `db:"is_delete" json:"is_delete"`
+	Version         int32              `db:"version" json:"version"`
+	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	CategoryName    string             `db:"category_name" json:"category_name"`
+}
+
+func (q *Queries) ListDeletedTransactions(ctx context.Context, arg ListDeletedTransactionsParams) ([]ListDeletedTransactionsRow, error) {
+	rows, err := q.db.Query(ctx, listDeletedTransactions,
+		arg.UserID,
+		arg.StartDate,
+		arg.EndDate,
+		arg.FilterType,
+		arg.HasCategory,
+		arg.CategoryID,
+		arg.HasCursor,
+		arg.CursorUpdatedAt,
+		arg.CursorID,
+		arg.PageSize,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Transaction{}
+	items := []ListDeletedTransactionsRow{}
 	for rows.Next() {
-		var i Transaction
+		var i ListDeletedTransactionsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -252,6 +489,7 @@ func (q *Queries) ListDeletedTransactions(ctx context.Context, arg ListDeletedTr
 			&i.Version,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.CategoryName,
 		); err != nil {
 			return nil, err
 		}
@@ -263,24 +501,42 @@ func (q *Queries) ListDeletedTransactions(ctx context.Context, arg ListDeletedTr
 	return items, nil
 }
 
+const lockScopedCategoryForTransaction = `-- name: LockScopedCategoryForTransaction :one
+SELECT id, user_id, type, name, is_delete, version, created_at, updated_at FROM categories
+WHERE id = $1 AND user_id = $2
+FOR UPDATE
+`
+
+type LockScopedCategoryForTransactionParams struct {
+	CategoryID pgtype.UUID `db:"category_id" json:"category_id"`
+	UserID     pgtype.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) LockScopedCategoryForTransaction(ctx context.Context, arg LockScopedCategoryForTransactionParams) (Category, error) {
+	row := q.db.QueryRow(ctx, lockScopedCategoryForTransaction, arg.CategoryID, arg.UserID)
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Type,
+		&i.Name,
+		&i.IsDelete,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const restoreTransaction = `-- name: RestoreTransaction :one
 UPDATE transactions
-SET is_delete = FALSE,
-    updated_by = $1,
-    version = version + 1,
-    updated_at = CURRENT_TIMESTAMP
-WHERE transactions.id = $2
-  AND transactions.user_id = $3
-  AND transactions.version = $4
-  AND transactions.is_delete = TRUE
-  AND EXISTS (
-      SELECT 1
-      FROM categories
-      WHERE categories.id = transactions.category_id
-        AND categories.user_id = transactions.user_id
-        AND categories.type = transactions.type
-        AND categories.is_delete = FALSE
-  )
+SET is_delete = FALSE, updated_by = $1,
+    version = version + 1, updated_at = CURRENT_TIMESTAMP
+WHERE transactions.id = $2 AND transactions.user_id = $3
+  AND transactions.version = $4 AND transactions.is_delete = TRUE
+  AND EXISTS (SELECT 1 FROM categories WHERE categories.id = transactions.category_id
+      AND categories.user_id = transactions.user_id AND categories.type = transactions.type
+      AND categories.is_delete = FALSE)
 RETURNING id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at
 `
 
@@ -321,14 +577,10 @@ func (q *Queries) RestoreTransaction(ctx context.Context, arg RestoreTransaction
 
 const softDeleteTransaction = `-- name: SoftDeleteTransaction :one
 UPDATE transactions
-SET is_delete = TRUE,
-    updated_by = $1,
-    version = version + 1,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $2
-  AND user_id = $3
-  AND version = $4
-  AND is_delete = FALSE
+SET is_delete = TRUE, updated_by = $1,
+    version = version + 1, updated_at = CURRENT_TIMESTAMP
+WHERE id = $2 AND user_id = $3
+  AND version = $4 AND is_delete = FALSE
 RETURNING id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at
 `
 
@@ -369,26 +621,14 @@ func (q *Queries) SoftDeleteTransaction(ctx context.Context, arg SoftDeleteTrans
 
 const updateTransaction = `-- name: UpdateTransaction :one
 UPDATE transactions
-SET category_id = $1,
-    type = $2,
-    amount = $3,
-    transaction_date = $4,
-    title = btrim($5),
-    updated_by = $6,
-    version = version + 1,
-    updated_at = CURRENT_TIMESTAMP
-WHERE transactions.id = $7
-  AND transactions.user_id = $8
-  AND transactions.version = $9
-  AND transactions.is_delete = FALSE
-  AND EXISTS (
-      SELECT 1
-      FROM categories
-      WHERE categories.id = $1
-        AND categories.user_id = $8
-        AND categories.type = $2
-        AND categories.is_delete = FALSE
-  )
+SET category_id = $1, type = $2, amount = $3,
+    transaction_date = $4, title = btrim($5),
+    updated_by = $6, version = version + 1, updated_at = CURRENT_TIMESTAMP
+WHERE transactions.id = $7 AND transactions.user_id = $8
+  AND transactions.version = $9 AND transactions.is_delete = FALSE
+  AND EXISTS (SELECT 1 FROM categories WHERE categories.id = $1
+      AND categories.user_id = $8 AND categories.type = $2
+      AND categories.is_delete = FALSE)
 RETURNING id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at
 `
 

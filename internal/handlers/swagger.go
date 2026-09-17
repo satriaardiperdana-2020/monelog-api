@@ -18,8 +18,9 @@ const swaggerUIHTML = `<!doctype html>
 </head>
 <body>
   <div id="swagger-ui"></div>
+  <p style="font-family: sans-serif; margin: 1rem 2rem;">Login melalui <code>POST /api/v1/auth/login</code>, salin <code>access_token</code>, lalu klik <strong>Authorize</strong> dan tempel token tersebut. Swagger UI akan mengirimkannya sebagai header <code>Authorization: Bearer &lt;token&gt;</code> ke endpoint yang membutuhkan autentikasi.</p>
   <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
-  <script>window.ui = SwaggerUIBundle({ url: '/api/openapi.json', dom_id: '#swagger-ui', deepLinking: true, persistAuthorization: true });</script>
+  <script>window.ui = SwaggerUIBundle({ url: '/api/openapi.json', dom_id: '#swagger-ui', deepLinking: true, persistAuthorization: true, tryItOutEnabled: true });</script>
 </body>
 </html>`
 

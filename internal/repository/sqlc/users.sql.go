@@ -153,6 +153,30 @@ func (q *Queries) GetActiveUserByID(ctx context.Context, id pgtype.UUID) (User, 
 	return i, err
 }
 
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, email, password_hash, role, timezone, currency, is_delete, version, created_at, updated_at
+FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Timezone,
+		&i.Currency,
+		&i.IsDelete,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const lockInitialAdminBootstrap = `-- name: LockInitialAdminBootstrap :exec
 SELECT pg_advisory_xact_lock(931503)
 `

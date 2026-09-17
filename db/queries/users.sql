@@ -35,6 +35,11 @@ FROM users
 WHERE id = sqlc.arg(id)
   AND is_delete = FALSE;
 
+-- name: GetUserByID :one
+SELECT *
+FROM users
+WHERE id = sqlc.arg(id);
+
 -- name: GetActiveUserByEmail :one
 SELECT *
 FROM users

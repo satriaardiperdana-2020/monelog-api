@@ -128,7 +128,9 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 		RequestHash:     "different-hash",
 		ActorUserID:     actorID,
 	})
-	assertPostgresCode(t, err, "23505")
+	if !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("duplicate idempotency key should return no inserted row, got %v", err)
+	}
 
 	_, err = queries.CreateTransaction(ctx, db.CreateTransactionParams{
 		ID:              testUUID(10),
@@ -156,7 +158,7 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	if _, err := queries.GetActiveTransaction(ctx, db.GetActiveTransactionParams{ID: transactionID, UserID: ownerID}); !errors.Is(err, pgx.ErrNoRows) {
 		t.Fatalf("deleted transaction remained active: %v", err)
 	}
-	trash, err := queries.ListDeletedTransactions(ctx, db.ListDeletedTransactionsParams{UserID: ownerID, PageSize: 10})
+	trash, err := queries.ListDeletedTransactions(ctx, db.ListDeletedTransactionsParams{UserID: ownerID, StartDate: testDate(2026, time.January, 1), EndDate: testDate(2026, time.December, 31), PageSize: 10})
 	if err != nil || len(trash) != 1 {
 		t.Fatalf("list transaction trash: len=%d err=%v", len(trash), err)
 	}

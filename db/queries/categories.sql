@@ -10,6 +10,19 @@ WHERE id = sqlc.arg(id)
   AND user_id = sqlc.arg(user_id)
   AND is_delete = FALSE;
 
+-- name: GetCategoryByID :one
+SELECT *
+FROM categories
+WHERE id = sqlc.arg(id)
+  AND user_id = sqlc.arg(user_id);
+
+-- name: GetDeletedCategory :one
+SELECT *
+FROM categories
+WHERE id = sqlc.arg(id)
+  AND user_id = sqlc.arg(user_id)
+  AND is_delete = TRUE;
+
 -- name: ListActiveCategories :many
 SELECT *
 FROM categories
@@ -26,8 +39,7 @@ ORDER BY updated_at DESC, id DESC;
 
 -- name: UpdateCategory :one
 UPDATE categories
-SET type = sqlc.arg(type),
-    name = btrim(sqlc.arg(name)),
+SET name = btrim(sqlc.arg(name)),
     version = version + 1,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = sqlc.arg(id)

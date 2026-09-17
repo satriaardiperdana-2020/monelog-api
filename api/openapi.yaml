@@ -2,7 +2,26 @@ openapi: 3.0.3
 info:
   title: Monelog API
   version: 1.0.0
-  description: HTTP API for Monelog authentication and account profile management.
+  description: HTTP API Monelog untuk autentikasi, profil, kategori, pencatatan transaksi, history transaksi, dan ringkasan harian. Access token diperlukan untuk endpoint aplikasi.
+tags:
+  - name: Health
+    description: Memeriksa apakah proses API hidup dan dependensi PostgreSQL siap digunakan.
+  - name: Authentication
+    description: Membuat akun dan mengelola access token serta refresh session.
+  - name: Profile
+    description: Membaca, memperbarui, dan menghapus lunak profil pengguna yang sedang login.
+  - name: Categories
+    description: Mengelola kategori income dan expense milik pengguna.
+  - name: Transactions
+    description: Mencatat dan membaca transaksi pengguna, termasuk Trash dan pemulihan.
+  - name: Daily summaries
+    description: Menyediakan total income, expense, dan selisih per hari untuk main page atau navigasi tanggal.
+  - name: Admin categories
+    description: Operasi kategori admin pada user_id yang dipilih secara eksplisit.
+  - name: Admin transactions
+    description: Operasi transaksi admin pada user_id yang dipilih secara eksplisit.
+  - name: Admin daily summaries
+    description: Ringkasan harian admin untuk user_id yang dipilih secara eksplisit.
 servers:
   - url: /
 security:
@@ -10,8 +29,10 @@ security:
 paths:
   /health/live:
     get:
+      tags: [Health]
       operationId: healthLive
       summary: Process liveness
+      description: Memeriksa apakah proses HTTP API sedang hidup. Endpoint ini tidak memerlukan autentikasi.
       security: []
       responses:
         '200':
@@ -24,8 +45,10 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
   /health/ready:
     get:
+      tags: [Health]
       operationId: healthReady
       summary: Dependency readiness
+      description: Memeriksa apakah dependensi utama, terutama PostgreSQL, siap menerima request. Endpoint ini tidak memerlukan autentikasi.
       security: []
       responses:
         '200':
@@ -38,8 +61,10 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
   /api/v1/auth/register:
     post:
+      tags: [Authentication]
       operationId: register
       summary: Register a standard user
+      description: Membuat akun pengguna biasa baru dengan timezone yang akan dipakai untuk navigasi tanggal dan ringkasan harian.
       security: []
       requestBody:
         required: true
@@ -62,8 +87,10 @@ paths:
           $ref: '#/components/responses/InternalError'
   /api/v1/auth/login:
     post:
+      tags: [Authentication]
       operationId: login
       summary: Create an access and refresh session
+      description: Memvalidasi kredensial dan membuat access token. Client native menerima refresh token di JSON, sedangkan client web menggunakan cookie refresh HttpOnly.
       security: []
       requestBody:
         required: true
@@ -88,8 +115,10 @@ paths:
           $ref: '#/components/responses/RateLimited'
   /api/v1/auth/refresh:
     post:
+      tags: [Authentication]
       operationId: refresh
       summary: Rotate a refresh session
+      description: Menukar refresh token yang masih valid dengan access token dan refresh session baru. Rotasi ini menjaga satu keluarga session tetap terlacak.
       security: []
       requestBody:
         required: true
@@ -112,8 +141,10 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /api/v1/auth/logout:
     post:
+      tags: [Authentication]
       operationId: logout
       summary: Revoke the refresh-token family
+      description: Mencabut seluruh refresh session dalam keluarga token sehingga session perangkat tersebut tidak dapat dipakai lagi.
       security: []
       requestBody:
         required: true
@@ -130,8 +161,10 @@ paths:
           $ref: '#/components/responses/ValidationError'
   /api/v1/me:
     get:
+      tags: [Profile]
       operationId: getMe
       summary: Get the current profile
+      description: Mengambil profil milik actor yang sedang login, termasuk role, timezone, currency, status penghapusan, dan version.
       responses:
         '200':
           description: Current user profile.
@@ -142,8 +175,10 @@ paths:
         '401':
           $ref: '#/components/responses/AuthenticationFailed'
     patch:
+      tags: [Profile]
       operationId: updateMe
       summary: Update the current profile timezone
+      description: Memperbarui timezone profil dengan optimistic locking. Timezone ini menjadi dasar interpretasi tanggal harian pengguna.
       requestBody:
         required: true
         content:
@@ -164,8 +199,10 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
+      tags: [Profile]
       operationId: deleteMe
       summary: Soft-delete the current account
+      description: Menonaktifkan akun secara lunak dengan version check. Baris akun tetap dipertahankan untuk integritas data.
       parameters:
         - name: If-Match
           in: header
@@ -182,13 +219,429 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /api/v1/categories:
+    get:
+      tags: [Categories]
+      operationId: listCategories
+      summary: List the user's categories
+      description: Mengambil kategori milik pengguna yang sedang login. Gunakan isDelete=true untuk melihat kategori di Trash; kategori archived tidak dapat dipakai pada transaksi baru.
+      parameters:
+        - {name: type, in: query, schema: {$ref: '#/components/schemas/TransactionType'}}
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Categories., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryListResponse'}}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+    post:
+      tags: [Categories]
+      operationId: createCategory
+      summary: Create a category
+      description: Membuat kategori income atau expense baru untuk pengguna yang sedang login.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CategoryCreateRequest'}}}}
+      responses:
+        '201': {description: Category created., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/v1/categories/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/ResourceId'}
+    get:
+      tags: [Categories]
+      operationId: getCategory
+      summary: Get a category
+      description: Mengambil satu kategori dalam scope pengguna yang sedang login; resource milik user lain tidak dapat diakses.
+      parameters:
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Category., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Categories]
+      operationId: updateCategory
+      summary: Update a category
+      description: Mengubah nama kategori dengan optimistic locking menggunakan version saat ini.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CategoryUpdateRequest'}}}}
+      responses:
+        '200': {description: Category updated., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [Categories]
+      operationId: deleteCategory
+      summary: Archive a category
+      description: Mengarsipkan kategori secara lunak. Kategori yang archived tidak bisa dipilih untuk transaksi baru.
+      parameters:
+        - {$ref: '#/components/parameters/IfMatch'}
+      responses:
+        '204': {description: Category soft-deleted.}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/categories/{id}/restore:
+    parameters:
+      - {$ref: '#/components/parameters/ResourceId'}
+    post:
+      tags: [Categories]
+      operationId: restoreCategory
+      summary: Restore a category
+      description: Mengembalikan kategori dari Trash dengan version check agar perubahan bersamaan tidak tertimpa.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionRequest'}}}}
+      responses:
+        '200': {description: Category restored., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/admin/users/{user_id}/categories:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+    get:
+      tags: [Admin categories]
+      operationId: adminListCategories
+      summary: List categories for a selected user
+      description: Admin mengambil kategori milik user_id pada path. Target user dipilih eksplisit melalui URL dan bukan dari request body.
+      parameters:
+        - {name: type, in: query, schema: {$ref: '#/components/schemas/TransactionType'}}
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Target categories., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryListResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Admin categories]
+      operationId: adminCreateCategory
+      summary: Create a category for a selected user
+      description: Admin membuat kategori untuk user_id pada path. Request body hanya berisi nama dan tipe kategori.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CategoryCreateRequest'}}}}
+      responses:
+        '201': {description: Category created., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/v1/admin/users/{user_id}/categories/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+      - {$ref: '#/components/parameters/ResourceId'}
+    get:
+      tags: [Admin categories]
+      operationId: adminGetCategory
+      summary: Get a selected user's category
+      description: Admin membaca satu kategori dalam scope user_id yang dipilih secara eksplisit.
+      parameters:
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Target category., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+    patch:
+      tags: [Admin categories]
+      operationId: adminUpdateCategory
+      summary: Update a selected user's category
+      description: Admin mengubah nama kategori target dengan optimistic locking menggunakan version.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CategoryUpdateRequest'}}}}
+      responses:
+        '200': {description: Category updated., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+    delete:
+      tags: [Admin categories]
+      operationId: adminDeleteCategory
+      summary: Archive a selected user's category
+      description: Admin mengarsipkan kategori target secara lunak sehingga kategori itu tidak dapat dipakai untuk transaksi baru.
+      parameters:
+        - {$ref: '#/components/parameters/IfMatch'}
+      responses:
+        '204': {description: Category soft-deleted.}
+  /api/v1/admin/users/{user_id}/categories/{id}/restore:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+      - {$ref: '#/components/parameters/ResourceId'}
+    post:
+      tags: [Admin categories]
+      operationId: adminRestoreCategory
+      summary: Restore a selected user's category
+      description: Admin memulihkan kategori target dari Trash dengan version check.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionRequest'}}}}
+      responses:
+        '200': {description: Category restored., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+  /api/v1/transactions:
+    get:
+      tags: [Transactions]
+      operationId: listTransactions
+      summary: List transaction history
+      description: Mengambil history transaksi aktif milik pengguna dalam rentang tanggal inklusif. Gunakan start_date=end_date untuk satu hari, cursor untuk halaman berikutnya, dan isDelete=true untuk Trash. Hasil memakai cursor stabil.
+      parameters:
+        - {$ref: '#/components/parameters/StartDate'}
+        - {$ref: '#/components/parameters/EndDate'}
+        - {name: type, in: query, schema: {$ref: '#/components/schemas/TransactionType'}}
+        - {name: category_id, in: query, schema: {type: string, format: uuid}}
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200': {description: Transaction history., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionListResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    post:
+      tags: [Transactions]
+      operationId: createTransaction
+      summary: Create an income or expense transaction
+      description: Mencatat income atau expense milik pengguna yang sedang login. amount dikirim sebagai string uang eksak, category harus milik user dan tipenya harus sama. client_request_id membuat retry aman; payload kanonis yang sama mengembalikan hasil asli, sedangkan payload berbeda menghasilkan conflict.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransactionCreateRequest'}}}}
+      responses:
+        '200': {description: Idempotent replay., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+        '201': {description: Transaction created., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/v1/transactions/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/ResourceId'}
+    get:
+      tags: [Transactions]
+      operationId: getTransaction
+      summary: Get a transaction
+      description: Mengambil satu transaksi dalam scope pengguna yang sedang login. Gunakan isDelete=true untuk membaca transaksi di Trash.
+      parameters:
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Transaction., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Transactions]
+      operationId: updateTransaction
+      summary: Update a transaction
+      description: Mengubah transaksi milik pengguna dengan optimistic locking. Kirim version terakhir dan gunakan category aktif yang tipenya sama dengan transaksi.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransactionUpdateRequest'}}}}
+      responses:
+        '200': {description: Transaction updated., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [Transactions]
+      operationId: deleteTransaction
+      summary: Delete a transaction
+      description: Menghapus transaksi secara lunak dengan If-Match version. Data tetap tersimpan dan dikeluarkan dari list serta total normal.
+      parameters:
+        - {$ref: '#/components/parameters/IfMatch'}
+      responses:
+        '204': {description: Transaction soft-deleted.}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/transactions/{id}/restore:
+    parameters:
+      - {$ref: '#/components/parameters/ResourceId'}
+    post:
+      tags: [Transactions]
+      operationId: restoreTransaction
+      summary: Restore a transaction
+      description: Mengembalikan transaksi dari Trash dengan version check sehingga transaksi kembali terlihat pada history dan total normal.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionRequest'}}}}
+      responses:
+        '200': {description: Transaction restored., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/daily-summaries:
+    get:
+      tags: [Daily summaries]
+      operationId: listDailySummaries
+      summary: List daily transaction summaries
+      description: Mengambil total income, expense, dan difference per hari dari transaksi aktif. Endpoint ini cocok untuk ringkasan main page dan navigasi history berdasarkan rentang tanggal.
+      parameters:
+        - {$ref: '#/components/parameters/StartDate'}
+        - {$ref: '#/components/parameters/EndDate'}
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200': {description: Daily navigation., content: {application/json: {schema: {$ref: '#/components/schemas/DailySummaryListResponse'}}}}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/v1/admin/users/{user_id}/transactions:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+    get:
+      tags: [Admin transactions]
+      operationId: adminListTransactions
+      summary: List transaction history for a selected user
+      description: Admin mengambil history transaksi aktif milik user_id pada path dalam rentang tanggal inklusif. Gunakan isDelete=true untuk Trash dan cursor untuk pagination stabil.
+      parameters:
+        - {$ref: '#/components/parameters/StartDate'}
+        - {$ref: '#/components/parameters/EndDate'}
+        - {name: type, in: query, schema: {$ref: '#/components/schemas/TransactionType'}}
+        - {name: category_id, in: query, schema: {type: string, format: uuid}}
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200': {description: Target transaction history., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionListResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Admin transactions]
+      operationId: adminCreateTransaction
+      summary: Create a transaction for a selected user
+      description: Admin mencatat transaksi untuk user_id pada path. Target user ditentukan eksplisit di URL; userId tidak dibaca dari body. Aturan category ownership, tipe, archived category, format uang, dan idempotensi tetap berlaku.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransactionCreateRequest'}}}}
+      responses:
+        '200': {description: Idempotent replay., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+        '201': {description: Transaction created., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/v1/admin/users/{user_id}/transactions/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+      - {$ref: '#/components/parameters/ResourceId'}
+    get:
+      tags: [Admin transactions]
+      operationId: adminGetTransaction
+      summary: Get a selected user's transaction
+      description: Admin membaca satu transaksi milik user_id pada path, termasuk transaksi Trash bila isDelete=true.
+      parameters:
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Target transaction., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+    patch:
+      tags: [Admin transactions]
+      operationId: adminUpdateTransaction
+      summary: Update a selected user's transaction
+      description: Admin mengubah transaksi target dengan optimistic locking menggunakan version dan validasi kategori milik target user.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransactionUpdateRequest'}}}}
+      responses:
+        '200': {description: Transaction updated., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+    delete:
+      tags: [Admin transactions]
+      operationId: adminDeleteTransaction
+      summary: Delete a selected user's transaction
+      description: Admin menghapus transaksi target secara lunak dengan If-Match version. Transaksi terhapus tidak masuk list atau total normal.
+      parameters:
+        - {$ref: '#/components/parameters/IfMatch'}
+      responses:
+        '204': {description: Transaction soft-deleted.}
+  /api/v1/admin/users/{user_id}/transactions/{id}/restore:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+      - {$ref: '#/components/parameters/ResourceId'}
+    post:
+      tags: [Admin transactions]
+      operationId: adminRestoreTransaction
+      summary: Restore a selected user's transaction
+      description: Admin memulihkan transaksi target dari Trash dengan version check.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionRequest'}}}}
+      responses:
+        '200': {description: Transaction restored., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionResponse'}}}}
+  /api/v1/admin/users/{user_id}/daily-summaries:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+    get:
+      tags: [Admin daily summaries]
+      operationId: adminListDailySummaries
+      summary: List daily summaries for a selected user
+      description: Admin mengambil total harian transaksi aktif milik user_id pada path untuk main page atau navigasi history pengguna tersebut.
+      parameters:
+        - {$ref: '#/components/parameters/StartDate'}
+        - {$ref: '#/components/parameters/EndDate'}
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200': {description: Target daily navigation., content: {application/json: {schema: {$ref: '#/components/schemas/DailySummaryListResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
 components:
+  parameters:
+    ResourceId: {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    UserId: {name: user_id, in: path, required: true, schema: {type: string, format: uuid}}
+    IfMatch: {name: If-Match, in: header, required: true, schema: {type: string}}
+    StartDate: {name: start_date, in: query, required: true, schema: {type: string, format: date}}
+    EndDate: {name: end_date, in: query, required: true, schema: {type: string, format: date}}
+    Limit: {name: limit, in: query, schema: {type: integer, format: int32, minimum: 1, maximum: 100, default: 30}}
+    Cursor: {name: cursor, in: query, schema: {type: string}}
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: 'Masukkan access token hasil login pada field ini. Cukup tempel nilai token JWT tanpa menulis prefix `Bearer`; Swagger UI akan mengirim header `Authorization: Bearer <token>` otomatis.'
   schemas:
+    TransactionType: {type: string, enum: [income, expense]}
+    Money: {type: string, pattern: '^(0|[1-9][0-9]{0,11})\.[0-9]{2}$', example: '43500.00'}
+    VersionRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties: {version: {type: integer, format: int32, minimum: 1}}
+    CategoryCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, type]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 80}
+        type: {$ref: '#/components/schemas/TransactionType'}
+    CategoryUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, version]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 80}
+        version: {type: integer, format: int32, minimum: 1}
+    Category:
+      type: object
+      required: [id, user_id, type, name, isDelete, version]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        name: {type: string}
+        isDelete: {type: boolean}
+        version: {type: integer, format: int32}
+    CategoryResponse: {type: object, required: [data], properties: {data: {$ref: '#/components/schemas/Category'}}}
+    CategoryListResponse: {type: object, required: [data], properties: {data: {type: array, items: {$ref: '#/components/schemas/Category'}}}}
+    TransactionCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [transaction_date, type, category_id, amount, title, client_request_id]
+      properties:
+        transaction_date: {type: string, format: date}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        category_id: {type: string, format: uuid}
+        amount: {$ref: '#/components/schemas/Money'}
+        title: {type: string, minLength: 1, maxLength: 200}
+        client_request_id: {type: string, format: uuid}
+    TransactionUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [transaction_date, type, category_id, amount, title, version]
+      properties:
+        transaction_date: {type: string, format: date}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        category_id: {type: string, format: uuid}
+        amount: {$ref: '#/components/schemas/Money'}
+        title: {type: string, minLength: 1, maxLength: 200}
+        version: {type: integer, format: int32, minimum: 1}
+    Transaction:
+      type: object
+      required: [id, user_id, category_id, category_name, transaction_date, type, amount, title, client_request_id, created_by, updated_by, isDelete, version, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        category_id: {type: string, format: uuid}
+        category_name: {type: string}
+        transaction_date: {type: string, format: date}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        amount: {$ref: '#/components/schemas/Money'}
+        title: {type: string}
+        client_request_id: {type: string, format: uuid}
+        created_by: {type: string, format: uuid}
+        updated_by: {type: string, format: uuid}
+        isDelete: {type: boolean}
+        version: {type: integer, format: int32}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    Page:
+      type: object
+      required: [next_cursor]
+      properties: {next_cursor: {type: string, nullable: true}}
+    TransactionResponse: {type: object, required: [data], properties: {data: {$ref: '#/components/schemas/Transaction'}}}
+    TransactionListResponse:
+      type: object
+      required: [data, page]
+      properties:
+        data: {type: array, items: {$ref: '#/components/schemas/Transaction'}}
+        page: {$ref: '#/components/schemas/Page'}
+    DailySummary:
+      type: object
+      required: [date, income, expense, difference]
+      properties:
+        date: {type: string, format: date}
+        income: {$ref: '#/components/schemas/Money'}
+        expense: {$ref: '#/components/schemas/Money'}
+        difference: {type: string, pattern: '^-?[0-9]+\.[0-9]{2}$'}
+    DailySummaryListResponse:
+      type: object
+      required: [data, page]
+      properties:
+        data: {type: array, items: {$ref: '#/components/schemas/DailySummary'}}
+        page: {$ref: '#/components/schemas/Page'}
     HealthResponse:
       type: object
       required: [status]
@@ -312,6 +765,12 @@ components:
         error:
           $ref: '#/components/schemas/Error'
   responses:
+    BadRequest:
+      description: Invalid request syntax or cursor.
+      content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+    NotFound:
+      description: Resource not found in the authorized scope.
+      content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
     AuthenticationFailed:
       description: Authentication failed.
       content:

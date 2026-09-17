@@ -64,6 +64,6 @@ runtime-grants:
 
 test-integration:
 	@test -n "$(TEST_DATABASE_URL)" || (echo "TEST_DATABASE_URL is required" >&2; exit 1)
-	$(GO) test -tags=integration ./internal/repository/sqlc
+	$(GO) test -tags=integration ./internal/repository/sqlc ./internal/service
 
 check: fmt-check test vet build verify sqlc-vet sqlc-check oapi-check
