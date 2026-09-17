@@ -23,6 +23,59 @@ type transactionService interface {
 	SoftDeleteTransaction(context.Context, service.TransactionScope, uuid.UUID, int32) error
 	RestoreTransaction(context.Context, service.TransactionScope, uuid.UUID, int32) (service.Transaction, error)
 	ListDailySummaries(context.Context, service.TransactionScope, string, string, int32, string) (service.DailySummaryPage, error)
+	GetReportSummary(context.Context, service.TransactionScope, service.ReportFilter) (service.ReportSummary, error)
+	GetReportBreakdown(context.Context, service.TransactionScope, service.ReportFilter) (service.ReportBreakdown, error)
+}
+
+func (h *Transactions) Summary(c *echo.Context, p api.GetReportSummaryParams) error {
+	return h.summary(c, h.personalScope(c), service.ReportFilter{Range: string(p.Range), StartDate: dateParam(p.StartDate), EndDate: dateParam(p.EndDate)})
+}
+func (h *Transactions) AdminSummary(c *echo.Context, owner uuid.UUID, p api.AdminGetReportSummaryParams) error {
+	return h.summary(c, h.adminScope(c, owner), service.ReportFilter{Range: string(p.Range), StartDate: dateParam(p.StartDate), EndDate: dateParam(p.EndDate)})
+}
+func (h *Transactions) summary(c *echo.Context, scope service.TransactionScope, filter service.ReportFilter) error {
+	item, err := h.service.GetReportSummary(c.Request().Context(), scope, filter)
+	if err != nil {
+		return h.writeError(c, err)
+	}
+	return c.JSON(http.StatusOK, api.ReportSummaryResponse{Data: reportSummaryPayload(item)})
+}
+func (h *Transactions) Breakdown(c *echo.Context, p api.GetReportBreakdownParams) error {
+	return h.breakdown(c, h.personalScope(c), service.ReportFilter{Range: string(p.Range), StartDate: dateParam(p.StartDate), EndDate: dateParam(p.EndDate), GroupBy: string(p.GroupBy)})
+}
+func (h *Transactions) AdminBreakdown(c *echo.Context, owner uuid.UUID, p api.AdminGetReportBreakdownParams) error {
+	return h.breakdown(c, h.adminScope(c, owner), service.ReportFilter{Range: string(p.Range), StartDate: dateParam(p.StartDate), EndDate: dateParam(p.EndDate), GroupBy: string(p.GroupBy)})
+}
+func (h *Transactions) breakdown(c *echo.Context, scope service.TransactionScope, filter service.ReportFilter) error {
+	item, err := h.service.GetReportBreakdown(c.Request().Context(), scope, filter)
+	if err != nil {
+		return h.writeError(c, err)
+	}
+	return c.JSON(http.StatusOK, api.ReportBreakdownResponse{Data: reportBreakdownPayload(item)})
+}
+
+func dateParam(value *openapi_types.Date) string {
+	if value == nil {
+		return ""
+	}
+	return value.Time.Format(time.DateOnly)
+}
+func reportCategoryPayload(items []service.ReportCategoryTotal) []api.ReportCategoryTotal {
+	result := make([]api.ReportCategoryTotal, 0, len(items))
+	for _, item := range items {
+		result = append(result, api.ReportCategoryTotal{CategoryId: item.CategoryID, Name: item.Name, Type: api.TransactionType(item.Type), Amount: api.Money(item.Amount)})
+	}
+	return result
+}
+func reportSummaryPayload(item service.ReportSummary) api.ReportSummary {
+	return api.ReportSummary{Period: api.ReportPeriod{StartDate: openapi_types.Date{Time: item.StartDate}, EndDate: openapi_types.Date{Time: item.EndDate}}, Income: api.Money(item.Income), Expense: api.Money(item.Expense), Difference: item.Difference, TopIncomeCategories: reportCategoryPayload(item.TopIncomeCategories), TopExpenseCategories: reportCategoryPayload(item.TopExpenseCategories)}
+}
+func reportBreakdownPayload(item service.ReportBreakdown) api.ReportBreakdown {
+	periods := make([]api.ReportPeriodTotal, 0, len(item.Periods))
+	for _, value := range item.Periods {
+		periods = append(periods, api.ReportPeriodTotal{PeriodStart: openapi_types.Date{Time: value.PeriodStart}, Income: api.Money(value.Income), Expense: api.Money(value.Expense), Difference: value.Difference})
+	}
+	return api.ReportBreakdown{Period: api.ReportPeriod{StartDate: openapi_types.Date{Time: item.StartDate}, EndDate: openapi_types.Date{Time: item.EndDate}}, GroupBy: api.ReportBreakdownGroupBy(item.GroupBy), Periods: periods, Categories: reportCategoryPayload(item.Categories)}
 }
 
 type Transactions struct{ service transactionService }

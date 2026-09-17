@@ -186,6 +186,34 @@ func (q *Queries) GetDeletedTransaction(ctx context.Context, arg GetDeletedTrans
 	return i, err
 }
 
+const getReportSummary = `-- name: GetReportSummary :one
+SELECT
+    COALESCE(SUM(amount) FILTER (WHERE type = 'income'), 0)::numeric(14,2) AS income,
+    COALESCE(SUM(amount) FILTER (WHERE type = 'expense'), 0)::numeric(14,2) AS expense
+FROM transactions
+WHERE user_id = $1
+  AND is_delete = FALSE
+  AND transaction_date BETWEEN $2 AND $3
+`
+
+type GetReportSummaryParams struct {
+	UserID    pgtype.UUID `db:"user_id" json:"user_id"`
+	StartDate pgtype.Date `db:"start_date" json:"start_date"`
+	EndDate   pgtype.Date `db:"end_date" json:"end_date"`
+}
+
+type GetReportSummaryRow struct {
+	Income  pgtype.Numeric `db:"income" json:"income"`
+	Expense pgtype.Numeric `db:"expense" json:"expense"`
+}
+
+func (q *Queries) GetReportSummary(ctx context.Context, arg GetReportSummaryParams) (GetReportSummaryRow, error) {
+	row := q.db.QueryRow(ctx, getReportSummary, arg.UserID, arg.StartDate, arg.EndDate)
+	var i GetReportSummaryRow
+	err := row.Scan(&i.Income, &i.Expense)
+	return i, err
+}
+
 const getTransactionByRequestIDForUpdate = `-- name: GetTransactionByRequestIDForUpdate :one
 SELECT id, user_id, category_id, type, amount, transaction_date, title, client_request_id, request_hash, created_by, updated_by, is_delete, version, created_at, updated_at FROM transactions
 WHERE user_id = $1 AND client_request_id = $2
@@ -490,6 +518,162 @@ func (q *Queries) ListDeletedTransactions(ctx context.Context, arg ListDeletedTr
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CategoryName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReportCategoryBreakdown = `-- name: ListReportCategoryBreakdown :many
+SELECT t.type, t.category_id, c.name,
+       SUM(t.amount)::numeric(14,2) AS amount
+FROM transactions t
+JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id AND c.type = t.type
+WHERE t.user_id = $1
+  AND t.is_delete = FALSE
+  AND t.transaction_date BETWEEN $2 AND $3
+GROUP BY t.type, t.category_id, c.name
+ORDER BY t.type ASC, amount DESC, t.category_id ASC
+`
+
+type ListReportCategoryBreakdownParams struct {
+	UserID    pgtype.UUID `db:"user_id" json:"user_id"`
+	StartDate pgtype.Date `db:"start_date" json:"start_date"`
+	EndDate   pgtype.Date `db:"end_date" json:"end_date"`
+}
+
+type ListReportCategoryBreakdownRow struct {
+	Type       string         `db:"type" json:"type"`
+	CategoryID pgtype.UUID    `db:"category_id" json:"category_id"`
+	Name       string         `db:"name" json:"name"`
+	Amount     pgtype.Numeric `db:"amount" json:"amount"`
+}
+
+func (q *Queries) ListReportCategoryBreakdown(ctx context.Context, arg ListReportCategoryBreakdownParams) ([]ListReportCategoryBreakdownRow, error) {
+	rows, err := q.db.Query(ctx, listReportCategoryBreakdown, arg.UserID, arg.StartDate, arg.EndDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListReportCategoryBreakdownRow{}
+	for rows.Next() {
+		var i ListReportCategoryBreakdownRow
+		if err := rows.Scan(
+			&i.Type,
+			&i.CategoryID,
+			&i.Name,
+			&i.Amount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReportPeriodBreakdown = `-- name: ListReportPeriodBreakdown :many
+SELECT date_trunc($1::text, transaction_date)::date AS period_start,
+       COALESCE(SUM(amount) FILTER (WHERE type = 'income'), 0)::numeric(14,2) AS income,
+       COALESCE(SUM(amount) FILTER (WHERE type = 'expense'), 0)::numeric(14,2) AS expense
+FROM transactions
+WHERE user_id = $2
+  AND is_delete = FALSE
+  AND transaction_date BETWEEN $3 AND $4
+GROUP BY date_trunc($1::text, transaction_date)::date
+ORDER BY period_start ASC
+`
+
+type ListReportPeriodBreakdownParams struct {
+	GroupBy   string      `db:"group_by" json:"group_by"`
+	UserID    pgtype.UUID `db:"user_id" json:"user_id"`
+	StartDate pgtype.Date `db:"start_date" json:"start_date"`
+	EndDate   pgtype.Date `db:"end_date" json:"end_date"`
+}
+
+type ListReportPeriodBreakdownRow struct {
+	PeriodStart pgtype.Date    `db:"period_start" json:"period_start"`
+	Income      pgtype.Numeric `db:"income" json:"income"`
+	Expense     pgtype.Numeric `db:"expense" json:"expense"`
+}
+
+func (q *Queries) ListReportPeriodBreakdown(ctx context.Context, arg ListReportPeriodBreakdownParams) ([]ListReportPeriodBreakdownRow, error) {
+	rows, err := q.db.Query(ctx, listReportPeriodBreakdown,
+		arg.GroupBy,
+		arg.UserID,
+		arg.StartDate,
+		arg.EndDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListReportPeriodBreakdownRow{}
+	for rows.Next() {
+		var i ListReportPeriodBreakdownRow
+		if err := rows.Scan(&i.PeriodStart, &i.Income, &i.Expense); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTopReportCategories = `-- name: ListTopReportCategories :many
+WITH totals AS (
+    SELECT t.type, t.category_id, c.name,
+           SUM(t.amount)::numeric(14,2) AS amount,
+           ROW_NUMBER() OVER (PARTITION BY t.type ORDER BY SUM(t.amount) DESC, t.category_id ASC) AS rank
+    FROM transactions t
+    JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id AND c.type = t.type
+    WHERE t.user_id = $1
+      AND t.is_delete = FALSE
+      AND t.transaction_date BETWEEN $2 AND $3
+    GROUP BY t.type, t.category_id, c.name
+)
+SELECT type, category_id, name, amount
+FROM totals
+WHERE rank <= 5
+ORDER BY type ASC, amount DESC, category_id ASC
+`
+
+type ListTopReportCategoriesParams struct {
+	UserID    pgtype.UUID `db:"user_id" json:"user_id"`
+	StartDate pgtype.Date `db:"start_date" json:"start_date"`
+	EndDate   pgtype.Date `db:"end_date" json:"end_date"`
+}
+
+type ListTopReportCategoriesRow struct {
+	Type       string         `db:"type" json:"type"`
+	CategoryID pgtype.UUID    `db:"category_id" json:"category_id"`
+	Name       string         `db:"name" json:"name"`
+	Amount     pgtype.Numeric `db:"amount" json:"amount"`
+}
+
+func (q *Queries) ListTopReportCategories(ctx context.Context, arg ListTopReportCategoriesParams) ([]ListTopReportCategoriesRow, error) {
+	rows, err := q.db.Query(ctx, listTopReportCategories, arg.UserID, arg.StartDate, arg.EndDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListTopReportCategoriesRow{}
+	for rows.Next() {
+		var i ListTopReportCategoriesRow
+		if err := rows.Scan(
+			&i.Type,
+			&i.CategoryID,
+			&i.Name,
+			&i.Amount,
 		); err != nil {
 			return nil, err
 		}

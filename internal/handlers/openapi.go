@@ -108,3 +108,16 @@ func (s *openAPIServer) AdminRestoreTransaction(c *echo.Context, owner api.UserI
 func (s *openAPIServer) AdminListDailySummaries(c *echo.Context, owner api.UserId, p api.AdminListDailySummariesParams) error {
 	return s.transactions.AdminDaily(c, owner, p)
 }
+
+func (s *openAPIServer) GetReportSummary(c *echo.Context, p api.GetReportSummaryParams) error {
+	return s.transactions.Summary(c, p)
+}
+func (s *openAPIServer) GetReportBreakdown(c *echo.Context, p api.GetReportBreakdownParams) error {
+	return s.transactions.Breakdown(c, p)
+}
+func (s *openAPIServer) AdminGetReportSummary(c *echo.Context, owner api.UserId, p api.AdminGetReportSummaryParams) error {
+	return s.transactions.AdminSummary(c, owner, p)
+}
+func (s *openAPIServer) AdminGetReportBreakdown(c *echo.Context, owner api.UserId, p api.AdminGetReportBreakdownParams) error {
+	return s.transactions.AdminBreakdown(c, owner, p)
+}

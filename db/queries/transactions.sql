@@ -112,3 +112,51 @@ WHERE user_id = sqlc.arg(user_id) AND is_delete = FALSE
 GROUP BY transaction_date
 ORDER BY transaction_date DESC
 LIMIT sqlc.arg(page_size);
+
+-- name: GetReportSummary :one
+SELECT
+    COALESCE(SUM(amount) FILTER (WHERE type = 'income'), 0)::numeric(14,2) AS income,
+    COALESCE(SUM(amount) FILTER (WHERE type = 'expense'), 0)::numeric(14,2) AS expense
+FROM transactions
+WHERE user_id = sqlc.arg(user_id)
+  AND is_delete = FALSE
+  AND transaction_date BETWEEN sqlc.arg(start_date) AND sqlc.arg(end_date);
+
+-- name: ListTopReportCategories :many
+WITH totals AS (
+    SELECT t.type, t.category_id, c.name,
+           SUM(t.amount)::numeric(14,2) AS amount,
+           ROW_NUMBER() OVER (PARTITION BY t.type ORDER BY SUM(t.amount) DESC, t.category_id ASC) AS rank
+    FROM transactions t
+    JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id AND c.type = t.type
+    WHERE t.user_id = sqlc.arg(user_id)
+      AND t.is_delete = FALSE
+      AND t.transaction_date BETWEEN sqlc.arg(start_date) AND sqlc.arg(end_date)
+    GROUP BY t.type, t.category_id, c.name
+)
+SELECT type, category_id, name, amount
+FROM totals
+WHERE rank <= 5
+ORDER BY type ASC, amount DESC, category_id ASC;
+
+-- name: ListReportPeriodBreakdown :many
+SELECT date_trunc(sqlc.arg(group_by)::text, transaction_date)::date AS period_start,
+       COALESCE(SUM(amount) FILTER (WHERE type = 'income'), 0)::numeric(14,2) AS income,
+       COALESCE(SUM(amount) FILTER (WHERE type = 'expense'), 0)::numeric(14,2) AS expense
+FROM transactions
+WHERE user_id = sqlc.arg(user_id)
+  AND is_delete = FALSE
+  AND transaction_date BETWEEN sqlc.arg(start_date) AND sqlc.arg(end_date)
+GROUP BY date_trunc(sqlc.arg(group_by)::text, transaction_date)::date
+ORDER BY period_start ASC;
+
+-- name: ListReportCategoryBreakdown :many
+SELECT t.type, t.category_id, c.name,
+       SUM(t.amount)::numeric(14,2) AS amount
+FROM transactions t
+JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id AND c.type = t.type
+WHERE t.user_id = sqlc.arg(user_id)
+  AND t.is_delete = FALSE
+  AND t.transaction_date BETWEEN sqlc.arg(start_date) AND sqlc.arg(end_date)
+GROUP BY t.type, t.category_id, c.name
+ORDER BY t.type ASC, amount DESC, t.category_id ASC;

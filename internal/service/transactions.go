@@ -74,6 +74,33 @@ type DailySummaryPage struct {
 	NextCursor *string
 }
 
+type ReportFilter struct {
+	Range, StartDate, EndDate, GroupBy string
+}
+
+type ReportCategoryTotal struct {
+	CategoryID         uuid.UUID
+	Name, Type, Amount string
+}
+
+type ReportPeriodTotal struct {
+	PeriodStart                 time.Time
+	Income, Expense, Difference string
+}
+
+type ReportSummary struct {
+	StartDate, EndDate                        time.Time
+	Income, Expense, Difference               string
+	TopIncomeCategories, TopExpenseCategories []ReportCategoryTotal
+}
+
+type ReportBreakdown struct {
+	StartDate, EndDate time.Time
+	GroupBy            string
+	Periods            []ReportPeriodTotal
+	Categories         []ReportCategoryTotal
+}
+
 type Transactions struct {
 	pool    *pgxpool.Pool
 	queries *db.Queries
@@ -434,6 +461,134 @@ func (s *Transactions) ListDailySummaries(ctx context.Context, scope Transaction
 		}
 	}
 	return DailySummaryPage{Items: items, NextCursor: next}, nil
+}
+
+func (s *Transactions) resolveReportRange(ctx context.Context, scope TransactionScope, filter ReportFilter) (time.Time, time.Time, error) {
+	if filter.Range == "custom" {
+		start, end, err := validateDateRange(filter.StartDate, filter.EndDate)
+		if err != nil {
+			return time.Time{}, time.Time{}, ErrValidation
+		}
+		return start, end, nil
+	}
+	if filter.StartDate != "" || filter.EndDate != "" || (filter.Range != "last_7_days" && filter.Range != "last_30_days") {
+		return time.Time{}, time.Time{}, ErrValidation
+	}
+	owner, err := s.queries.GetUserByID(ctx, toPGUUID(scope.Owner))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return time.Time{}, time.Time{}, ErrNotFound
+	}
+	if err != nil {
+		return time.Time{}, time.Time{}, err
+	}
+	zone, err := ValidateTimezone(owner.Timezone)
+	if err != nil {
+		return time.Time{}, time.Time{}, ErrValidation
+	}
+	location, _ := time.LoadLocation(zone)
+	now := s.now().In(location)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	days := 6
+	if filter.Range == "last_30_days" {
+		days = 29
+	}
+	return today.AddDate(0, 0, -days), today, nil
+}
+
+func (s *Transactions) GetReportSummary(ctx context.Context, scope TransactionScope, filter ReportFilter) (ReportSummary, error) {
+	if err := s.validateReadScope(ctx, scope); err != nil {
+		return ReportSummary{}, err
+	}
+	start, end, err := s.resolveReportRange(ctx, scope, filter)
+	if err != nil {
+		return ReportSummary{}, err
+	}
+	args := db.GetReportSummaryParams{UserID: toPGUUID(scope.Owner), StartDate: pgDate(start), EndDate: pgDate(end)}
+	row, err := s.queries.GetReportSummary(ctx, args)
+	if err != nil {
+		return ReportSummary{}, err
+	}
+	income, err := moneyFromNumeric(row.Income)
+	if err != nil {
+		return ReportSummary{}, err
+	}
+	expense, err := moneyFromNumeric(row.Expense)
+	if err != nil {
+		return ReportSummary{}, err
+	}
+	tops, err := s.queries.ListTopReportCategories(ctx, db.ListTopReportCategoriesParams{UserID: args.UserID, StartDate: args.StartDate, EndDate: args.EndDate})
+	if err != nil {
+		return ReportSummary{}, err
+	}
+	result := ReportSummary{StartDate: start, EndDate: end, Income: income.String(), Expense: expense.String(), Difference: formatCents(income.Cents() - expense.Cents()), TopIncomeCategories: []ReportCategoryTotal{}, TopExpenseCategories: []ReportCategoryTotal{}}
+	for _, item := range tops {
+		amount, e := moneyFromNumeric(item.Amount)
+		if e != nil {
+			return ReportSummary{}, e
+		}
+		value := ReportCategoryTotal{CategoryID: fromPGUUID(item.CategoryID), Name: item.Name, Type: item.Type, Amount: amount.String()}
+		if item.Type == CategoryTypeIncome {
+			result.TopIncomeCategories = append(result.TopIncomeCategories, value)
+		} else {
+			result.TopExpenseCategories = append(result.TopExpenseCategories, value)
+		}
+	}
+	if scope.Admin {
+		if err := s.auditRead(ctx, scope, "report_summary", uuid.Nil); err != nil {
+			return ReportSummary{}, err
+		}
+	}
+	return result, nil
+}
+
+func (s *Transactions) GetReportBreakdown(ctx context.Context, scope TransactionScope, filter ReportFilter) (ReportBreakdown, error) {
+	if err := s.validateReadScope(ctx, scope); err != nil {
+		return ReportBreakdown{}, err
+	}
+	if filter.GroupBy != "week" && filter.GroupBy != "month" && filter.GroupBy != "category" {
+		return ReportBreakdown{}, ErrValidation
+	}
+	start, end, err := s.resolveReportRange(ctx, scope, filter)
+	if err != nil {
+		return ReportBreakdown{}, err
+	}
+	args := db.ListReportPeriodBreakdownParams{GroupBy: filter.GroupBy, UserID: toPGUUID(scope.Owner), StartDate: pgDate(start), EndDate: pgDate(end)}
+	result := ReportBreakdown{StartDate: start, EndDate: end, GroupBy: filter.GroupBy, Periods: []ReportPeriodTotal{}, Categories: []ReportCategoryTotal{}}
+	if filter.GroupBy == "category" {
+		rows, e := s.queries.ListReportCategoryBreakdown(ctx, db.ListReportCategoryBreakdownParams{UserID: args.UserID, StartDate: args.StartDate, EndDate: args.EndDate})
+		if e != nil {
+			return ReportBreakdown{}, e
+		}
+		for _, item := range rows {
+			amount, e := moneyFromNumeric(item.Amount)
+			if e != nil {
+				return ReportBreakdown{}, e
+			}
+			result.Categories = append(result.Categories, ReportCategoryTotal{CategoryID: fromPGUUID(item.CategoryID), Name: item.Name, Type: item.Type, Amount: amount.String()})
+		}
+	} else {
+		rows, e := s.queries.ListReportPeriodBreakdown(ctx, args)
+		if e != nil {
+			return ReportBreakdown{}, e
+		}
+		for _, item := range rows {
+			income, e := moneyFromNumeric(item.Income)
+			if e != nil {
+				return ReportBreakdown{}, e
+			}
+			expense, e := moneyFromNumeric(item.Expense)
+			if e != nil {
+				return ReportBreakdown{}, e
+			}
+			result.Periods = append(result.Periods, ReportPeriodTotal{PeriodStart: item.PeriodStart.Time, Income: income.String(), Expense: expense.String(), Difference: formatCents(income.Cents() - expense.Cents())})
+		}
+	}
+	if scope.Admin {
+		if err := s.auditRead(ctx, scope, "report_breakdown", uuid.Nil); err != nil {
+			return ReportBreakdown{}, err
+		}
+	}
+	return result, nil
 }
 
 type validatedTransaction struct {

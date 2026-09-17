@@ -42,6 +42,12 @@ func (f *fakeTransactionService) RestoreTransaction(context.Context, service.Tra
 func (f *fakeTransactionService) ListDailySummaries(context.Context, service.TransactionScope, string, string, int32, string) (service.DailySummaryPage, error) {
 	return service.DailySummaryPage{}, nil
 }
+func (f *fakeTransactionService) GetReportSummary(context.Context, service.TransactionScope, service.ReportFilter) (service.ReportSummary, error) {
+	return service.ReportSummary{}, nil
+}
+func (f *fakeTransactionService) GetReportBreakdown(context.Context, service.TransactionScope, service.ReportFilter) (service.ReportBreakdown, error) {
+	return service.ReportBreakdown{}, nil
+}
 
 func TestTransactionCreateUsesActorOwnerAndRejectsOwnerInjection(t *testing.T) {
 	actorID := uuid.New()

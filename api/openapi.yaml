@@ -22,6 +22,10 @@ tags:
     description: Operasi transaksi admin pada user_id yang dipilih secara eksplisit.
   - name: Admin daily summaries
     description: Ringkasan harian admin untuk user_id yang dipilih secara eksplisit.
+  - name: Reports
+    description: Laporan income dan expense aktif milik pengguna.
+  - name: Admin reports
+    description: Laporan aktif untuk user_id yang dipilih secara eksplisit oleh admin.
 servers:
   - url: /
 security:
@@ -527,6 +531,72 @@ paths:
       responses:
         '200': {description: Target daily navigation., content: {application/json: {schema: {$ref: '#/components/schemas/DailySummaryListResponse'}}}}
         '403': {$ref: '#/components/responses/Forbidden'}
+  /api/v1/reports/summary:
+    get:
+      tags: [Reports]
+      operationId: getReportSummary
+      summary: Get an active transaction report
+      description: Mengambil total income, expense, difference, dan lima kategori teratas dari transaksi aktif dalam rentang preset atau custom yang inklusif. Preset dihitung dalam timezone owner.
+      parameters:
+        - {$ref: '#/components/parameters/ReportRange'}
+        - {$ref: '#/components/parameters/ReportStartDate'}
+        - {$ref: '#/components/parameters/ReportEndDate'}
+      responses:
+        '200': {description: Active transaction report., content: {application/json: {schema: {$ref: '#/components/schemas/ReportSummaryResponse'}}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/v1/reports/breakdown:
+    get:
+      tags: [Reports]
+      operationId: getReportBreakdown
+      summary: Get an active transaction breakdown
+      description: Mengelompokkan transaksi aktif berdasarkan minggu (Senin), bulan, atau kategori. Filter tanggal diterapkan sebelum grouping.
+      parameters:
+        - {$ref: '#/components/parameters/ReportRange'}
+        - {$ref: '#/components/parameters/ReportStartDate'}
+        - {$ref: '#/components/parameters/ReportEndDate'}
+        - {$ref: '#/components/parameters/ReportGroupBy'}
+      responses:
+        '200': {description: Active transaction breakdown., content: {application/json: {schema: {$ref: '#/components/schemas/ReportBreakdownResponse'}}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/v1/admin/users/{user_id}/reports/summary:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+    get:
+      tags: [Admin reports]
+      operationId: adminGetReportSummary
+      summary: Get an active report for a selected user
+      description: Admin mengambil laporan transaksi aktif milik user_id pada path. Preset memakai timezone target dan tidak mencampur owner.
+      parameters:
+        - {$ref: '#/components/parameters/ReportRange'}
+        - {$ref: '#/components/parameters/ReportStartDate'}
+        - {$ref: '#/components/parameters/ReportEndDate'}
+      responses:
+        '200': {description: Target active transaction report., content: {application/json: {schema: {$ref: '#/components/schemas/ReportSummaryResponse'}}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/v1/admin/users/{user_id}/reports/breakdown:
+    parameters:
+      - {$ref: '#/components/parameters/UserId'}
+    get:
+      tags: [Admin reports]
+      operationId: adminGetReportBreakdown
+      summary: Get an active breakdown for a selected user
+      description: Admin mengelompokkan transaksi aktif user_id pada path berdasarkan minggu, bulan, atau kategori.
+      parameters:
+        - {$ref: '#/components/parameters/ReportRange'}
+        - {$ref: '#/components/parameters/ReportStartDate'}
+        - {$ref: '#/components/parameters/ReportEndDate'}
+        - {$ref: '#/components/parameters/ReportGroupBy'}
+      responses:
+        '200': {description: Target active transaction breakdown., content: {application/json: {schema: {$ref: '#/components/schemas/ReportBreakdownResponse'}}}}
+        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
 components:
   parameters:
     ResourceId: {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -536,6 +606,25 @@ components:
     EndDate: {name: end_date, in: query, required: true, schema: {type: string, format: date}}
     Limit: {name: limit, in: query, schema: {type: integer, format: int32, minimum: 1, maximum: 100, default: 30}}
     Cursor: {name: cursor, in: query, schema: {type: string}}
+    ReportRange:
+      name: range
+      in: query
+      required: true
+      schema: {type: string, enum: [last_7_days, last_30_days, custom]}
+      description: Preset owner timezone atau custom. custom mewajibkan start_date dan end_date; preset tidak boleh mengirim keduanya.
+    ReportStartDate:
+      name: start_date
+      in: query
+      schema: {type: string, format: date}
+    ReportEndDate:
+      name: end_date
+      in: query
+      schema: {type: string, format: date}
+    ReportGroupBy:
+      name: group_by
+      in: query
+      required: true
+      schema: {type: string, enum: [week, month, category]}
   securitySchemes:
     BearerAuth:
       type: http
@@ -642,6 +731,54 @@ components:
       properties:
         data: {type: array, items: {$ref: '#/components/schemas/DailySummary'}}
         page: {$ref: '#/components/schemas/Page'}
+    ReportPeriod:
+      type: object
+      required: [start_date, end_date]
+      properties:
+        start_date: {type: string, format: date}
+        end_date: {type: string, format: date}
+    ReportCategoryTotal:
+      type: object
+      required: [category_id, name, type, amount]
+      properties:
+        category_id: {type: string, format: uuid}
+        name: {type: string}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        amount: {$ref: '#/components/schemas/Money'}
+    ReportPeriodTotal:
+      type: object
+      required: [period_start, income, expense, difference]
+      properties:
+        period_start: {type: string, format: date}
+        income: {$ref: '#/components/schemas/Money'}
+        expense: {$ref: '#/components/schemas/Money'}
+        difference: {type: string, pattern: '^-?[0-9]+\.[0-9]{2}$'}
+    ReportSummary:
+      type: object
+      required: [period, income, expense, difference, top_income_categories, top_expense_categories]
+      properties:
+        period: {$ref: '#/components/schemas/ReportPeriod'}
+        income: {$ref: '#/components/schemas/Money'}
+        expense: {$ref: '#/components/schemas/Money'}
+        difference: {type: string, pattern: '^-?[0-9]+\.[0-9]{2}$'}
+        top_income_categories: {type: array, maxItems: 5, items: {$ref: '#/components/schemas/ReportCategoryTotal'}}
+        top_expense_categories: {type: array, maxItems: 5, items: {$ref: '#/components/schemas/ReportCategoryTotal'}}
+    ReportSummaryResponse:
+      type: object
+      required: [data]
+      properties: {data: {$ref: '#/components/schemas/ReportSummary'}}
+    ReportBreakdown:
+      type: object
+      required: [period, group_by, periods, categories]
+      properties:
+        period: {$ref: '#/components/schemas/ReportPeriod'}
+        group_by: {type: string, enum: [week, month, category]}
+        periods: {type: array, items: {$ref: '#/components/schemas/ReportPeriodTotal'}}
+        categories: {type: array, items: {$ref: '#/components/schemas/ReportCategoryTotal'}}
+    ReportBreakdownResponse:
+      type: object
+      required: [data]
+      properties: {data: {$ref: '#/components/schemas/ReportBreakdown'}}
     HealthResponse:
       type: object
       required: [status]

@@ -91,6 +91,27 @@ func (e RefreshRequestClientType) Valid() bool {
 	}
 }
 
+// Defines values for ReportBreakdownGroupBy.
+const (
+	ReportBreakdownGroupByCategory ReportBreakdownGroupBy = "category"
+	ReportBreakdownGroupByMonth    ReportBreakdownGroupBy = "month"
+	ReportBreakdownGroupByWeek     ReportBreakdownGroupBy = "week"
+)
+
+// Valid indicates whether the value is a known member of the ReportBreakdownGroupBy enum.
+func (e ReportBreakdownGroupBy) Valid() bool {
+	switch e {
+	case ReportBreakdownGroupByCategory:
+		return true
+	case ReportBreakdownGroupByMonth:
+		return true
+	case ReportBreakdownGroupByWeek:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TransactionType.
 const (
 	Expense TransactionType = "expense"
@@ -136,6 +157,174 @@ func (e UserRole) Valid() bool {
 	case UserRoleAdmin:
 		return true
 	case UserRoleUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ReportGroupBy.
+const (
+	ReportGroupByCategory ReportGroupBy = "category"
+	ReportGroupByMonth    ReportGroupBy = "month"
+	ReportGroupByWeek     ReportGroupBy = "week"
+)
+
+// Valid indicates whether the value is a known member of the ReportGroupBy enum.
+func (e ReportGroupBy) Valid() bool {
+	switch e {
+	case ReportGroupByCategory:
+		return true
+	case ReportGroupByMonth:
+		return true
+	case ReportGroupByWeek:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ReportRange.
+const (
+	ReportRangeCustom     ReportRange = "custom"
+	ReportRangeLast30Days ReportRange = "last_30_days"
+	ReportRangeLast7Days  ReportRange = "last_7_days"
+)
+
+// Valid indicates whether the value is a known member of the ReportRange enum.
+func (e ReportRange) Valid() bool {
+	switch e {
+	case ReportRangeCustom:
+		return true
+	case ReportRangeLast30Days:
+		return true
+	case ReportRangeLast7Days:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminGetReportBreakdownParamsRange.
+const (
+	AdminGetReportBreakdownParamsRangeCustom     AdminGetReportBreakdownParamsRange = "custom"
+	AdminGetReportBreakdownParamsRangeLast30Days AdminGetReportBreakdownParamsRange = "last_30_days"
+	AdminGetReportBreakdownParamsRangeLast7Days  AdminGetReportBreakdownParamsRange = "last_7_days"
+)
+
+// Valid indicates whether the value is a known member of the AdminGetReportBreakdownParamsRange enum.
+func (e AdminGetReportBreakdownParamsRange) Valid() bool {
+	switch e {
+	case AdminGetReportBreakdownParamsRangeCustom:
+		return true
+	case AdminGetReportBreakdownParamsRangeLast30Days:
+		return true
+	case AdminGetReportBreakdownParamsRangeLast7Days:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminGetReportBreakdownParamsGroupBy.
+const (
+	AdminGetReportBreakdownParamsGroupByCategory AdminGetReportBreakdownParamsGroupBy = "category"
+	AdminGetReportBreakdownParamsGroupByMonth    AdminGetReportBreakdownParamsGroupBy = "month"
+	AdminGetReportBreakdownParamsGroupByWeek     AdminGetReportBreakdownParamsGroupBy = "week"
+)
+
+// Valid indicates whether the value is a known member of the AdminGetReportBreakdownParamsGroupBy enum.
+func (e AdminGetReportBreakdownParamsGroupBy) Valid() bool {
+	switch e {
+	case AdminGetReportBreakdownParamsGroupByCategory:
+		return true
+	case AdminGetReportBreakdownParamsGroupByMonth:
+		return true
+	case AdminGetReportBreakdownParamsGroupByWeek:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminGetReportSummaryParamsRange.
+const (
+	AdminGetReportSummaryParamsRangeCustom     AdminGetReportSummaryParamsRange = "custom"
+	AdminGetReportSummaryParamsRangeLast30Days AdminGetReportSummaryParamsRange = "last_30_days"
+	AdminGetReportSummaryParamsRangeLast7Days  AdminGetReportSummaryParamsRange = "last_7_days"
+)
+
+// Valid indicates whether the value is a known member of the AdminGetReportSummaryParamsRange enum.
+func (e AdminGetReportSummaryParamsRange) Valid() bool {
+	switch e {
+	case AdminGetReportSummaryParamsRangeCustom:
+		return true
+	case AdminGetReportSummaryParamsRangeLast30Days:
+		return true
+	case AdminGetReportSummaryParamsRangeLast7Days:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetReportBreakdownParamsRange.
+const (
+	GetReportBreakdownParamsRangeCustom     GetReportBreakdownParamsRange = "custom"
+	GetReportBreakdownParamsRangeLast30Days GetReportBreakdownParamsRange = "last_30_days"
+	GetReportBreakdownParamsRangeLast7Days  GetReportBreakdownParamsRange = "last_7_days"
+)
+
+// Valid indicates whether the value is a known member of the GetReportBreakdownParamsRange enum.
+func (e GetReportBreakdownParamsRange) Valid() bool {
+	switch e {
+	case GetReportBreakdownParamsRangeCustom:
+		return true
+	case GetReportBreakdownParamsRangeLast30Days:
+		return true
+	case GetReportBreakdownParamsRangeLast7Days:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetReportBreakdownParamsGroupBy.
+const (
+	GetReportBreakdownParamsGroupByCategory GetReportBreakdownParamsGroupBy = "category"
+	GetReportBreakdownParamsGroupByMonth    GetReportBreakdownParamsGroupBy = "month"
+	GetReportBreakdownParamsGroupByWeek     GetReportBreakdownParamsGroupBy = "week"
+)
+
+// Valid indicates whether the value is a known member of the GetReportBreakdownParamsGroupBy enum.
+func (e GetReportBreakdownParamsGroupBy) Valid() bool {
+	switch e {
+	case GetReportBreakdownParamsGroupByCategory:
+		return true
+	case GetReportBreakdownParamsGroupByMonth:
+		return true
+	case GetReportBreakdownParamsGroupByWeek:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetReportSummaryParamsRange.
+const (
+	GetReportSummaryParamsRangeCustom     GetReportSummaryParamsRange = "custom"
+	GetReportSummaryParamsRangeLast30Days GetReportSummaryParamsRange = "last_30_days"
+	GetReportSummaryParamsRangeLast7Days  GetReportSummaryParamsRange = "last_7_days"
+)
+
+// Valid indicates whether the value is a known member of the GetReportSummaryParamsRange enum.
+func (e GetReportSummaryParamsRange) Valid() bool {
+	switch e {
+	case GetReportSummaryParamsRangeCustom:
+		return true
+	case GetReportSummaryParamsRangeLast30Days:
+		return true
+	case GetReportSummaryParamsRangeLast7Days:
 		return true
 	default:
 		return false
@@ -272,6 +461,68 @@ type RegisterRequest struct {
 	Timezone string `json:"timezone"`
 }
 
+// ReportBreakdown defines model for ReportBreakdown.
+type ReportBreakdown struct {
+	Categories []ReportCategoryTotal  `json:"categories"`
+	GroupBy    ReportBreakdownGroupBy `json:"group_by"`
+	Period     ReportPeriod           `json:"period"`
+	Periods    []ReportPeriodTotal    `json:"periods"`
+}
+
+// ReportBreakdownGroupBy defines model for ReportBreakdown.GroupBy.
+type ReportBreakdownGroupBy string
+
+// ReportBreakdownResponse defines model for ReportBreakdownResponse.
+type ReportBreakdownResponse struct {
+	Data ReportBreakdown `json:"data"`
+}
+
+// ReportCategoryTotal defines model for ReportCategoryTotal.
+type ReportCategoryTotal struct {
+	// Amount Example: 43500.00
+	Amount     Money              `json:"amount"`
+	CategoryId openapi_types.UUID `json:"category_id"`
+	Name       string             `json:"name"`
+	Type       TransactionType    `json:"type"`
+}
+
+// ReportPeriod defines model for ReportPeriod.
+type ReportPeriod struct {
+	EndDate   openapi_types.Date `json:"end_date"`
+	StartDate openapi_types.Date `json:"start_date"`
+}
+
+// ReportPeriodTotal defines model for ReportPeriodTotal.
+type ReportPeriodTotal struct {
+	Difference string `json:"difference"`
+
+	// Expense Example: 43500.00
+	Expense Money `json:"expense"`
+
+	// Income Example: 43500.00
+	Income      Money              `json:"income"`
+	PeriodStart openapi_types.Date `json:"period_start"`
+}
+
+// ReportSummary defines model for ReportSummary.
+type ReportSummary struct {
+	Difference string `json:"difference"`
+
+	// Expense Example: 43500.00
+	Expense Money `json:"expense"`
+
+	// Income Example: 43500.00
+	Income               Money                 `json:"income"`
+	Period               ReportPeriod          `json:"period"`
+	TopExpenseCategories []ReportCategoryTotal `json:"top_expense_categories"`
+	TopIncomeCategories  []ReportCategoryTotal `json:"top_income_categories"`
+}
+
+// ReportSummaryResponse defines model for ReportSummaryResponse.
+type ReportSummaryResponse struct {
+	Data ReportSummary `json:"data"`
+}
+
 // Transaction defines model for Transaction.
 type Transaction struct {
 	// Amount Example: 43500.00
@@ -367,6 +618,18 @@ type IfMatch = string
 // Limit defines model for Limit.
 type Limit = int32
 
+// ReportEndDate defines model for ReportEndDate.
+type ReportEndDate = openapi_types.Date
+
+// ReportGroupBy defines model for ReportGroupBy.
+type ReportGroupBy string
+
+// ReportRange defines model for ReportRange.
+type ReportRange string
+
+// ReportStartDate defines model for ReportStartDate.
+type ReportStartDate = openapi_types.Date
+
 // ResourceId defines model for ResourceId.
 type ResourceId = openapi_types.UUID
 
@@ -427,6 +690,32 @@ type AdminListDailySummariesParams struct {
 	Cursor    *Cursor   `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// AdminGetReportBreakdownParams defines parameters for AdminGetReportBreakdown.
+type AdminGetReportBreakdownParams struct {
+	// Range Preset owner timezone atau custom. custom mewajibkan start_date dan end_date; preset tidak boleh mengirim keduanya.
+	Range     AdminGetReportBreakdownParamsRange   `form:"range" json:"range"`
+	StartDate *ReportStartDate                     `form:"start_date,omitempty" json:"start_date,omitempty"`
+	EndDate   *ReportEndDate                       `form:"end_date,omitempty" json:"end_date,omitempty"`
+	GroupBy   AdminGetReportBreakdownParamsGroupBy `form:"group_by" json:"group_by"`
+}
+
+// AdminGetReportBreakdownParamsRange defines parameters for AdminGetReportBreakdown.
+type AdminGetReportBreakdownParamsRange string
+
+// AdminGetReportBreakdownParamsGroupBy defines parameters for AdminGetReportBreakdown.
+type AdminGetReportBreakdownParamsGroupBy string
+
+// AdminGetReportSummaryParams defines parameters for AdminGetReportSummary.
+type AdminGetReportSummaryParams struct {
+	// Range Preset owner timezone atau custom. custom mewajibkan start_date dan end_date; preset tidak boleh mengirim keduanya.
+	Range     AdminGetReportSummaryParamsRange `form:"range" json:"range"`
+	StartDate *ReportStartDate                 `form:"start_date,omitempty" json:"start_date,omitempty"`
+	EndDate   *ReportEndDate                   `form:"end_date,omitempty" json:"end_date,omitempty"`
+}
+
+// AdminGetReportSummaryParamsRange defines parameters for AdminGetReportSummary.
+type AdminGetReportSummaryParamsRange string
+
 // AdminListTransactionsParams defines parameters for AdminListTransactions.
 type AdminListTransactionsParams struct {
 	StartDate  StartDate           `form:"start_date" json:"start_date"`
@@ -477,6 +766,32 @@ type DeleteMeParams struct {
 	// IfMatch Current profile version, for example `"3"`.
 	IfMatch string `json:"If-Match"`
 }
+
+// GetReportBreakdownParams defines parameters for GetReportBreakdown.
+type GetReportBreakdownParams struct {
+	// Range Preset owner timezone atau custom. custom mewajibkan start_date dan end_date; preset tidak boleh mengirim keduanya.
+	Range     GetReportBreakdownParamsRange   `form:"range" json:"range"`
+	StartDate *ReportStartDate                `form:"start_date,omitempty" json:"start_date,omitempty"`
+	EndDate   *ReportEndDate                  `form:"end_date,omitempty" json:"end_date,omitempty"`
+	GroupBy   GetReportBreakdownParamsGroupBy `form:"group_by" json:"group_by"`
+}
+
+// GetReportBreakdownParamsRange defines parameters for GetReportBreakdown.
+type GetReportBreakdownParamsRange string
+
+// GetReportBreakdownParamsGroupBy defines parameters for GetReportBreakdown.
+type GetReportBreakdownParamsGroupBy string
+
+// GetReportSummaryParams defines parameters for GetReportSummary.
+type GetReportSummaryParams struct {
+	// Range Preset owner timezone atau custom. custom mewajibkan start_date dan end_date; preset tidak boleh mengirim keduanya.
+	Range     GetReportSummaryParamsRange `form:"range" json:"range"`
+	StartDate *ReportStartDate            `form:"start_date,omitempty" json:"start_date,omitempty"`
+	EndDate   *ReportEndDate              `form:"end_date,omitempty" json:"end_date,omitempty"`
+}
+
+// GetReportSummaryParamsRange defines parameters for GetReportSummary.
+type GetReportSummaryParamsRange string
 
 // ListTransactionsParams defines parameters for ListTransactions.
 type ListTransactionsParams struct {
@@ -573,6 +888,12 @@ type ServerInterface interface {
 	// AdminListDailySummaries List daily summaries for a selected user
 	// (GET /api/v1/admin/users/{user_id}/daily-summaries)
 	AdminListDailySummaries(ctx *echo.Context, userId UserId, params AdminListDailySummariesParams) error
+	// AdminGetReportBreakdown Get an active breakdown for a selected user
+	// (GET /api/v1/admin/users/{user_id}/reports/breakdown)
+	AdminGetReportBreakdown(ctx *echo.Context, userId UserId, params AdminGetReportBreakdownParams) error
+	// AdminGetReportSummary Get an active report for a selected user
+	// (GET /api/v1/admin/users/{user_id}/reports/summary)
+	AdminGetReportSummary(ctx *echo.Context, userId UserId, params AdminGetReportSummaryParams) error
 	// AdminListTransactions List transaction history for a selected user
 	// (GET /api/v1/admin/users/{user_id}/transactions)
 	AdminListTransactions(ctx *echo.Context, userId UserId, params AdminListTransactionsParams) error
@@ -633,6 +954,12 @@ type ServerInterface interface {
 	// UpdateMe Update the current profile timezone
 	// (PATCH /api/v1/me)
 	UpdateMe(ctx *echo.Context) error
+	// GetReportBreakdown Get an active transaction breakdown
+	// (GET /api/v1/reports/breakdown)
+	GetReportBreakdown(ctx *echo.Context, params GetReportBreakdownParams) error
+	// GetReportSummary Get an active transaction report
+	// (GET /api/v1/reports/summary)
+	GetReportSummary(ctx *echo.Context, params GetReportSummaryParams) error
 	// ListTransactions List transaction history
 	// (GET /api/v1/transactions)
 	ListTransactions(ctx *echo.Context, params ListTransactionsParams) error
@@ -882,6 +1209,91 @@ func (w *ServerInterfaceWrapper) AdminListDailySummaries(ctx *echo.Context) erro
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.AdminListDailySummaries(ctx, userId, params)
+	return err
+}
+
+// AdminGetReportBreakdown converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminGetReportBreakdown(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetReportBreakdownParams
+	// ------------- Required query parameter "range" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "range", ctx.QueryParams(), &params.Range, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter range: %s", err))
+	}
+
+	// ------------- Optional query parameter "start_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "start_date", ctx.QueryParams(), &params.StartDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start_date: %s", err))
+	}
+
+	// ------------- Optional query parameter "end_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "end_date", ctx.QueryParams(), &params.EndDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end_date: %s", err))
+	}
+
+	// ------------- Required query parameter "group_by" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "group_by", ctx.QueryParams(), &params.GroupBy, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_by: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminGetReportBreakdown(ctx, userId, params)
+	return err
+}
+
+// AdminGetReportSummary converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminGetReportSummary(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetReportSummaryParams
+	// ------------- Required query parameter "range" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "range", ctx.QueryParams(), &params.Range, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter range: %s", err))
+	}
+
+	// ------------- Optional query parameter "start_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "start_date", ctx.QueryParams(), &params.StartDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start_date: %s", err))
+	}
+
+	// ------------- Optional query parameter "end_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "end_date", ctx.QueryParams(), &params.EndDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end_date: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminGetReportSummary(ctx, userId, params)
 	return err
 }
 
@@ -1348,6 +1760,77 @@ func (w *ServerInterfaceWrapper) UpdateMe(ctx *echo.Context) error {
 	return err
 }
 
+// GetReportBreakdown converts echo context to params.
+func (w *ServerInterfaceWrapper) GetReportBreakdown(ctx *echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetReportBreakdownParams
+	// ------------- Required query parameter "range" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "range", ctx.QueryParams(), &params.Range, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter range: %s", err))
+	}
+
+	// ------------- Optional query parameter "start_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "start_date", ctx.QueryParams(), &params.StartDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start_date: %s", err))
+	}
+
+	// ------------- Optional query parameter "end_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "end_date", ctx.QueryParams(), &params.EndDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end_date: %s", err))
+	}
+
+	// ------------- Required query parameter "group_by" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "group_by", ctx.QueryParams(), &params.GroupBy, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_by: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetReportBreakdown(ctx, params)
+	return err
+}
+
+// GetReportSummary converts echo context to params.
+func (w *ServerInterfaceWrapper) GetReportSummary(ctx *echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetReportSummaryParams
+	// ------------- Required query parameter "range" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "range", ctx.QueryParams(), &params.Range, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter range: %s", err))
+	}
+
+	// ------------- Optional query parameter "start_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "start_date", ctx.QueryParams(), &params.StartDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start_date: %s", err))
+	}
+
+	// ------------- Optional query parameter "end_date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "end_date", ctx.QueryParams(), &params.EndDate, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end_date: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetReportSummary(ctx, params)
+	return err
+}
+
 // ListTransactions converts echo context to params.
 func (w *ServerInterfaceWrapper) ListTransactions(ctx *echo.Context) error {
 	var err error
@@ -1612,6 +2095,10 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 	router.PATCH(options.BaseURL+"/api/v1/admin/users/:user_id/transactions/:id", wrapper.AdminUpdateTransaction, options.OperationMiddlewares["adminUpdateTransaction"]...)
 	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/transactions/:id/restore", wrapper.AdminRestoreTransaction, options.OperationMiddlewares["adminRestoreTransaction"]...)
 	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/daily-summaries", wrapper.AdminListDailySummaries, options.OperationMiddlewares["adminListDailySummaries"]...)
+	router.GET(options.BaseURL+"/api/v1/reports/summary", wrapper.GetReportSummary, options.OperationMiddlewares["getReportSummary"]...)
+	router.GET(options.BaseURL+"/api/v1/reports/breakdown", wrapper.GetReportBreakdown, options.OperationMiddlewares["getReportBreakdown"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/reports/summary", wrapper.AdminGetReportSummary, options.OperationMiddlewares["adminGetReportSummary"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/reports/breakdown", wrapper.AdminGetReportBreakdown, options.OperationMiddlewares["adminGetReportBreakdown"]...)
 
 }
 
@@ -1837,6 +2324,168 @@ func (response AdminListDailySummaries403JSONResponse) VisitAdminListDailySummar
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportBreakdownRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Params AdminGetReportBreakdownParams
+}
+
+type AdminGetReportBreakdownResponseObject interface {
+	VisitAdminGetReportBreakdownResponse(w http.ResponseWriter) error
+}
+
+type AdminGetReportBreakdown200JSONResponse ReportBreakdownResponse
+
+func (response AdminGetReportBreakdown200JSONResponse) VisitAdminGetReportBreakdownResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportBreakdown401JSONResponse struct {
+	AuthenticationFailedJSONResponse
+}
+
+func (response AdminGetReportBreakdown401JSONResponse) VisitAdminGetReportBreakdownResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportBreakdown403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminGetReportBreakdown403JSONResponse) VisitAdminGetReportBreakdownResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportBreakdown404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminGetReportBreakdown404JSONResponse) VisitAdminGetReportBreakdownResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportBreakdown422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response AdminGetReportBreakdown422JSONResponse) VisitAdminGetReportBreakdownResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportSummaryRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Params AdminGetReportSummaryParams
+}
+
+type AdminGetReportSummaryResponseObject interface {
+	VisitAdminGetReportSummaryResponse(w http.ResponseWriter) error
+}
+
+type AdminGetReportSummary200JSONResponse ReportSummaryResponse
+
+func (response AdminGetReportSummary200JSONResponse) VisitAdminGetReportSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportSummary401JSONResponse struct {
+	AuthenticationFailedJSONResponse
+}
+
+func (response AdminGetReportSummary401JSONResponse) VisitAdminGetReportSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportSummary403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminGetReportSummary403JSONResponse) VisitAdminGetReportSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportSummary404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminGetReportSummary404JSONResponse) VisitAdminGetReportSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetReportSummary422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response AdminGetReportSummary422JSONResponse) VisitAdminGetReportSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2733,6 +3382,110 @@ func (response UpdateMe422JSONResponse) VisitUpdateMeResponse(w http.ResponseWri
 	return err
 }
 
+type GetReportBreakdownRequestObject struct {
+	Params GetReportBreakdownParams
+}
+
+type GetReportBreakdownResponseObject interface {
+	VisitGetReportBreakdownResponse(w http.ResponseWriter) error
+}
+
+type GetReportBreakdown200JSONResponse ReportBreakdownResponse
+
+func (response GetReportBreakdown200JSONResponse) VisitGetReportBreakdownResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReportBreakdown401JSONResponse struct {
+	AuthenticationFailedJSONResponse
+}
+
+func (response GetReportBreakdown401JSONResponse) VisitGetReportBreakdownResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReportBreakdown422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response GetReportBreakdown422JSONResponse) VisitGetReportBreakdownResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReportSummaryRequestObject struct {
+	Params GetReportSummaryParams
+}
+
+type GetReportSummaryResponseObject interface {
+	VisitGetReportSummaryResponse(w http.ResponseWriter) error
+}
+
+type GetReportSummary200JSONResponse ReportSummaryResponse
+
+func (response GetReportSummary200JSONResponse) VisitGetReportSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReportSummary401JSONResponse struct {
+	AuthenticationFailedJSONResponse
+}
+
+func (response GetReportSummary401JSONResponse) VisitGetReportSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReportSummary422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response GetReportSummary422JSONResponse) VisitGetReportSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListTransactionsRequestObject struct {
 	Params ListTransactionsParams
 }
@@ -3096,6 +3849,12 @@ type StrictServerInterface interface {
 	// AdminListDailySummaries List daily summaries for a selected user
 	// (GET /api/v1/admin/users/{user_id}/daily-summaries)
 	AdminListDailySummaries(ctx context.Context, request AdminListDailySummariesRequestObject) (AdminListDailySummariesResponseObject, error)
+	// AdminGetReportBreakdown Get an active breakdown for a selected user
+	// (GET /api/v1/admin/users/{user_id}/reports/breakdown)
+	AdminGetReportBreakdown(ctx context.Context, request AdminGetReportBreakdownRequestObject) (AdminGetReportBreakdownResponseObject, error)
+	// AdminGetReportSummary Get an active report for a selected user
+	// (GET /api/v1/admin/users/{user_id}/reports/summary)
+	AdminGetReportSummary(ctx context.Context, request AdminGetReportSummaryRequestObject) (AdminGetReportSummaryResponseObject, error)
 	// AdminListTransactions List transaction history for a selected user
 	// (GET /api/v1/admin/users/{user_id}/transactions)
 	AdminListTransactions(ctx context.Context, request AdminListTransactionsRequestObject) (AdminListTransactionsResponseObject, error)
@@ -3156,6 +3915,12 @@ type StrictServerInterface interface {
 	// UpdateMe Update the current profile timezone
 	// (PATCH /api/v1/me)
 	UpdateMe(ctx context.Context, request UpdateMeRequestObject) (UpdateMeResponseObject, error)
+	// GetReportBreakdown Get an active transaction breakdown
+	// (GET /api/v1/reports/breakdown)
+	GetReportBreakdown(ctx context.Context, request GetReportBreakdownRequestObject) (GetReportBreakdownResponseObject, error)
+	// GetReportSummary Get an active transaction report
+	// (GET /api/v1/reports/summary)
+	GetReportSummary(ctx context.Context, request GetReportSummaryRequestObject) (GetReportSummaryResponseObject, error)
 	// ListTransactions List transaction history
 	// (GET /api/v1/transactions)
 	ListTransactions(ctx context.Context, request ListTransactionsRequestObject) (ListTransactionsResponseObject, error)
@@ -3419,6 +4184,58 @@ func (sh *strictHandler) AdminListDailySummaries(ctx *echo.Context, userId UserI
 		return err
 	} else if validResponse, ok := response.(AdminListDailySummariesResponseObject); ok {
 		return validResponse.VisitAdminListDailySummariesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetReportBreakdown operation middleware
+func (sh *strictHandler) AdminGetReportBreakdown(ctx *echo.Context, userId UserId, params AdminGetReportBreakdownParams) error {
+	var request AdminGetReportBreakdownRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetReportBreakdown(ctx.Request().Context(), request.(AdminGetReportBreakdownRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetReportBreakdown")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetReportBreakdownResponseObject); ok {
+		return validResponse.VisitAdminGetReportBreakdownResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetReportSummary operation middleware
+func (sh *strictHandler) AdminGetReportSummary(ctx *echo.Context, userId UserId, params AdminGetReportSummaryParams) error {
+	var request AdminGetReportSummaryRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetReportSummary(ctx.Request().Context(), request.(AdminGetReportSummaryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetReportSummary")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetReportSummaryResponseObject); ok {
+		return validResponse.VisitAdminGetReportSummaryResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -4096,6 +4913,56 @@ func (sh *strictHandler) UpdateMe(ctx *echo.Context) error {
 	return nil
 }
 
+// GetReportBreakdown operation middleware
+func (sh *strictHandler) GetReportBreakdown(ctx *echo.Context, params GetReportBreakdownParams) error {
+	var request GetReportBreakdownRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetReportBreakdown(ctx.Request().Context(), request.(GetReportBreakdownRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetReportBreakdown")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetReportBreakdownResponseObject); ok {
+		return validResponse.VisitGetReportBreakdownResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetReportSummary operation middleware
+func (sh *strictHandler) GetReportSummary(ctx *echo.Context, params GetReportSummaryParams) error {
+	var request GetReportSummaryRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetReportSummary(ctx.Request().Context(), request.(GetReportSummaryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetReportSummary")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetReportSummaryResponseObject); ok {
+		return validResponse.VisitGetReportSummaryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListTransactions operation middleware
 func (sh *strictHandler) ListTransactions(ctx *echo.Context, params ListTransactionsParams) error {
 	var request ListTransactionsRequestObject
@@ -4345,89 +5212,100 @@ func (sh *strictHandler) HealthReady(ctx *echo.Context) error {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"7F15c9s4lv8qKO5U7W4tIytHT3U7NbXlTvpwTzyddZyZP9LZ5Il8ktAiQTYAOtFk9d23cPESeEiWlKTG",
-	"/6RiicQD8H7vwDugT0GUpXnGkEkRnH8KcuCQokSu/3pWcJFx9T/KgvPgjwL5OggDBikG50Fkvg0DES0x",
-	"BfWYXOfqGyE5ZYtgswmDH1j8HCR2jYEsfher78OA4x8F5RgH55IXWB91nvEUZHAe2Ce3qVzOr0BGy5LK",
-	"EiFGXpG5nD8wD/SR2R72BU2p7Jp6or+sDxDjHIpEBuePp2E1acrk40dBGKTwkaZFGpw/nE7DIKXM/lWu",
-	"hzKJC+Sa8jWKrOARXsYl+RzksqJO43FbVhT6ye21vZLAZR9rhHrgEMx5LZB3rqMQyN/dcTEb9bLIMyZQ",
-	"w/aikEtkkkYgacZ+BJqgJh9lTCLTDIU8T+z3Z7+LjKnPKoJ/4jgPzoN/O6uE48x8K85+4Dzj15acIR6j",
-	"iDjN1WDBeYs6mWvyk2ATBt9DfI1/FCjk6WZzyW4hoTHhhjARaybhI8k4MeKrJ/YsY/OERieclt0HElnK",
-	"gnygcqnmxJFJIiRI1FP7MeMzGsfITj83KgjLJMmRp1RKy8NLJpEzSPQop2SjIUsE8lvkBNULekJ/y+SP",
-	"WcHiU+6P0U16d+aKNqGMyCUSKOQy4/SfGBMRZbnh4DVI1Ir0lEJ4k2UkBbZ2uBeTILRWQauIa5R8/eBi",
-	"LlEzsVv39OpprUeR39IIXzO4BZrALMGDrfJnhEQu+5ZpiSuoFtUE9Lb/XYm9pnpiqDrxuS0nUOnAjdta",
-	"416AxEXG1+r/Oc9y5JIaDU7jEXo/DKh4jgkaE2a/nGVZgsCCjbMwn7ZfMx/0L/OGAxMQqenfqMc3YWmq",
-	"xszsFrmgGWs86xwBj7mv8PfGWPbKLOqn7WJqK65IvC1HzGa/YyS1Qrc7+4wjSKwZHYhjqtYEycvahs8h",
-	"ERi2eOC2L4WPL5At5DI4/9Y4Lu7Ph+GB9ra1A3ateqi+1b2gQpZI3MJQDFKDmUpMxdCU3JDVEgLgHNZb",
-	"c9Oj9k1qeELj5rEr3dd5fGJW92F8wL31cLsPzs+BJutXRZqCT1nE1okd8ETDIKbzOXJkkWEOSImcBefB",
-	"/z747zfTB9+9/a/ffpvo/3x6tPmTbwD8mKNlbR8TrzKGGkmURVk69vFthmNQDlHRbixjaLMOKCENHmxJ",
-	"SRjksBhc6Uv1jBfZ9n3fekrz1Zx8lMV+7Z6iELDwfdcirEeonu+k3b2B6KY2aDC3iJtXfTRbVn+LqJAg",
-	"C0OeKQl7E2QrZTFqDsjbcGDpdgwf+RfZgrL91EiUUGTynTMBTbfgtUDynoGkt/iezDNOLljMMxoTUP7j",
-	"r6+IeVs7am5h5vEgDD7gzLOoMMAUaNKQffNJWFdlj7554nk1ByE+ZLxpzssPhzbQkam9UF99z8Z2sRWi",
-	"CIV4J7OVOev4lA/lKN5R/TV+hDRXvua3f34ybYUb/vzE42Wo+c85imVFou23yYIzjEnGkrXmkNn+OmO2",
-	"zb0aq+S449v3CBz5MAwba24M1liubzeN0qxvRPDk8TfT6WQ6DcK6bv+P6f+9efjgu7dGsU/Dhw83/zmk",
-	"51/CwsMhhh/lu6gMibEise6+OTP0L7X+sm89L3k2p8me9lvSFP+ZMWzux4WgcPYLrIBrBXss+10S77fh",
-	"1wZ9B9Eso/XDIOTNMrog/5TMePZBIHcfkEIgAUZ+ljL/Vb0TZdmK4mRQXwwph2tcUCGR77c9R1SDtQEe",
-	"Pvq26RM+8oy3DxSHdWs5qm/vascJj1pNs4LJIRtdemyR9abHnvPK5zsPm5bzNg4xelx9cIvfgdzybB+o",
-	"zeh7Z7YeReIgZ2xJZeJft6y48m60h77vyTyPd94t987I3fo8h/86HNtg82xxGS2wqHf88aGwgZfGdnij",
-	"DA1INnZ8QCTvEoI4tvDuJZol5Ou6dToiMnIygWgb6E6YNOE1AjQDvD7gcbM26klPmzW6d4vkNBYwNpjT",
-	"ZmXN19kKBPj8ndr7d4kHHVnuvnwJOpxzvK/s9bnSKqHqCYjo3Fm0roPm8vn1jufm47gJPEsaYFYWTq06",
-	"ThvHO78beXD76taqZxXWDzDlHo6OtCte3E1RvBaeeXZqiL+buewn1wcCdfd+bMJAYFRwKtev1PIMWRMO",
-	"UHlx9ddM//Wjo//LP26CdgrpCkSxWgEjJkBA9PGNLEHQhCQqjEJyiIHMKSYq90gn5FmxKnIiMc0xIYwm",
-	"QO1Lv/zjhkhgOZAUWZFQQXKOc/qRvDezev+UvPoAiwVy8vqSgCKaIltQTlNi8oXk/YVNa+pk1jkxL5Lf",
-	"iun0caSp6P/ie5LJLAVJdahEs1eLgX68guZSytzkzSibZ9uH0p9vbl6Si5eXROnXJFuQgslipXKryCRd",
-	"gaAhyXW0ICQro0TUJ8gikCCBEaNzVuq5JRUy4+v6RzEwogRpBQLUnnIKbEIu6hsd0xx5Uqi9MLSRxXlG",
-	"mSSQJ3oGk1JTnQdumhcvL2uych48nEwnUwXZLEcGOQ3Og8eT6eSxCc8sNTLOIKdntw/PtCI4U1pBnH2y",
-	"7u/mzKpIC94Fyu3NulAvao5BOqNJuSEkpQldETuUgYuiOiE3wBco9TdqoTShS4IrkSdUUElSTCApKHl9",
-	"/ULv1EzvQgyclhUUsyxeq/UrwdKIuIzdRJT/86yadNgop3rjL7Ox5mBc8tXj6vlHrWkvT32SVQ5tPb15",
-	"2yqkeTSdHixv7E3a+TL3hj8V73U2+8n0cReBcsZnVa2IGla4fFGgSNYG1IEeIAITjCTGxBojCQvFJQup",
-	"6vHg7WaLkb55VI+c2YontZ95Jnpgm84KkBVojbR5QHtdwx5ZAlsDmSGnghIGKWikSppjOVIHPs1ZzHHC",
-	"1lyhkN9n8frgjG4e/DZNIyJ5gZsttD08+CT6kOaeIfZke3egmSUTcOhZ7w61TThaKZ59ovHGYMt5Xp3K",
-	"kQuaK01WQk0aMRMYAQeSFAxWROCSssUCqqeoLIikMaxIDDlIpTBhBQ6opVUhM+BFB+aMHqphbjdRcpWd",
-	"Ht30ZHvFJUtFNpcPzL7EkxaXLni0VEHeFl/+XZRsG9IGvaYonUEERIAsqn2MIYHU1ESV4r0GtigtkOVD",
-	"aYg6NvMnlN07+XXZgfE2YN1m4E8o78C8/VR5OPhkrWRXK35XkNwlk8UMlkZ9t4UyVhLLSJZLmlIhaUSS",
-	"LFpRttDvLZSsAiPW0+pAijn+n0jVN2MNo1T99POoehu3bCPKLGBvUO2qtJUpkRnHdsX9MeHY74cUCV36",
-	"7IP2fG84iKVDpYUdiZYYrTrAd22Wd2T0tY7CXzLsLL+3cGc36njAi1XVzgNDcJdzlMwkJPZ0WLPzsJJ0",
-	"3nW2sl5BCvp8vkACEgrC4JYuQNDyLJpbHUYUTHFWyJ7DVK3oyHugGpCBqsdhhMC4TpURj5q+kBEP2gaa",
-	"oxrUznqvbsOqUWE5I7UNOcgRywxbgm2U89t65y6HrUFhqAVjx0vCVghlQAiMq8eRSeXfqX8WkBDKVkkh",
-	"6HxCfrLm23lmf1GKyoqOVbTAbHOG/TiHBWWaUURImNGkR2Ju6ms8mbycLrDRDJvv0PB0SP/4K9MQXRm6",
-	"bgVRkxQnAAfSEZ6RR+mJhuweMSJjoqg1ae+MyTQDiYpLOlZYxRJjHUZ8qp+4jN05murjofardCSRXMiC",
-	"A6tCBtkHhlwsaR7qmE5IwJxX4/KRkBi0kwLYwkR0aYxpnklkghKJEnIVH0pgVfRGgmrAOJKP1lkIcGJv",
-	"zZfW9bVZuW2UhGOegEH9IQNTIydSe+wI4am6EO4hfDsZ2h2iVEvIC1ETPV+Myp5CXENveQomN9VryO1I",
-	"WuJSlUwiiVI+2iE1ri1TEpT0xqya0nHMsFWd232RKzMvz2lBNqY6oDnHRq8qRnT4OqHaarO91bPGh5nR",
-	"BJouTndEq3efv46g1lip3rKu40JbO7H3i4pvbQnzTrEtbdpMH6Gg7dyerOxvbwzspEbus0bC9rAtu8bD",
-	"dkDi7lbiyw2LbcP4LnGx4yPy84bG9sDh7gGyPZFYyOWZLiHRIPNy/wrTSudwjJEJConWRS5jW69LmZBn",
-	"uk7S9Q6kyJDTFIhtPiiLKsgvr379W0gExqDKL5htKiAfcNZQfqanoHzd9RpsY0p3FB0JQY02sBPjp9kp",
-	"5btio7b9un/Mbn1jx0OS8bJ/w31j9tbVFDwc9qW9d4ns4YiHwZNHj4bfaHft6/e+G36vfslCvQorOH/z",
-	"1ncEKEur1O65zREoREucGqv3i1JWyD5ZYhHMCqnEt+DFsk3LhstWmBTAF2BZWiai3VMK9kpmZBk09qal",
-	"E1hQr5ioOR5HTlptTaMkxXMCeGUXOodUxUM53marPY98+yKtBzXXejr6ig/LvweGUWa6uwDGvt+LmGIF",
-	"vKU9dbI8BUGXxh90VrdRIKhL21r40pUJ5DqTSptTRpWm/R0WLkHvcOceN7ETiTyBCDxm3LL7CwLTCdWu",
-	"2kVlge1mfT1KtA/aek0E7qIEuW3e63UpjN+wKliVAJtREKAR6uDsSpEN3rU30Cy5KbNpLrHgLef0wNbO",
-	"8Fi4bXYvnrjYq1GD7cOtnZ51Hi1uR1jV8l6sO5jvb6bT4feat0r1q2KzFuURS2Ax8O2YXQ9eR5TUXnUV",
-	"05a41eA0bqwpx+7PaqWY0GW9zDG2R6en1UdljNtn1nXAaajY7L729u61t8/aRbd763ZP4meJrdoGwyaH",
-	"2metKq1ePVoVKOquKBPYtY1RRqHazGk3ZLcAdF8cO6I49k7G/iQat78gtwtwXhU5mLq48pbW1vMVE/JX",
-	"97Ex6U09N6MCyhrQcUW1X0Q97c7c7CjAHWJLOGSiustsu0X/KeHuBsMqsUESoKxlfWAlUGxz4F+kCPdZ",
-	"VX2r2P1kmN3lVZS+nMYwq3cD8rh0xJW/0Ha3LIQAkLrNbAsK91W2A1W2n0ftl+mL/dX+/rmIURkGhUuV",
-	"a01ow3QMpBUILICTHLmCtOpOQy4gBXCKSyKXNM3BdwC8r8jtqsi9mzGrMhQ7gG1sWe5VqyDXuLuhc3VN",
-	"7U91H6CCho4BGCC1ShYn5AfXx6kCYVEWZSvrdFQRhKp6Vw29Vbw7Qx6DAL4C1q5x9B/J7it4D1vB+9xb",
-	"unt3lVkr4K1XB4ka5xyon2+V7NaQneKAw5wxDUYFIB0N81X3NHOp5HvgVJinTXxWNyhLpQKrHmXdrM6p",
-	"BEFikNDlOF/hNgZbKsLeQW56rNFNRhfdEXulFXn/W/D4t+C9onK4HxwY5ZJfRFFWMOnzyL+yw9mragU6",
-	"OuAufwezwhri7OV4Yw4EhmvWsYdIZnz7AFCrW+JZgmEZdg2JuwAiJOaKTH2M0NVkwIy27Wy7+gnllfmp",
-	"hCOpiaEwpwOuPs5Y9B40jqMc+TqjLI0ORnV65GmOXJ1taRXutlzrdMsn5MY9WuZwYmXlBHAt+TznKOtx",
-	"cdu64k6BXa77FR7JFWrd53hiV2gIKmbx8UGh8lldfQ8sSe1el2181kzWqLaQq5ENIWXYYWwfSPUzK39x",
-	"P4ZjLZqObSgch812kKUa2Xj/dFVItgZbA97VUTIhP+urU1JMdTzdjtbVS3LfRnLfRnLXNpLO/pERybDa",
-	"z+Qc0Lf1NJ7UFMPNVhVtdzmLBGkPYs28w3CWzNzyRWK60vcLCZzBAigx6NLdHKp9BFZh1Q2yBF6IepzS",
-	"3fXB1mC/FJDChGxd1lcWq3GUfE2UynhKclgnGcRkBSxjVNhJQqqvR6pFJMxdSyASWi9Yc2/PkM8wBlu0",
-	"L2iy0mVrRrF3ZVbum02+vmaTz5exYU7EMl4KmL/k86az2HOnNpQrTwPKuM6T5yChKhwSKgDHbGDG1BeV",
-	"V0jpJhSBXIKN53R1oXxBDSh3i46VHSujeDcu3VPxZ1y+Z6g6wbS81Ea1IVjvEe9fqFml0aVyiBTQSAwc",
-	"NQ/Ubmqq/PXus+dftbV2QSmJHFZLaixxWbPt7LU5C2gMOiutzasdviTfdSC971YZ1a3ymfNKd7ZEJ00v",
-	"1RVmf36pLLyuXlmZcXRNrC7j0tVY7hCsvdFeU3bf8zKi5+VQKajRuFzqHxk6S+gt9oQ8UhVhEEBA1eEt",
-	"Sc4zgYKUF5RaI7ukcZG3kku29RZTd5Fo7frSbYyYnzx6YX7L42gsGv45xZc80+XkVBC1MxNTvzmiRtnz",
-	"I5B9RZyOjiLCUNSTK2aSTS5xhHg9nk0x5sh01xIpJKSgw936f+RlJuSC46v/eRESQSGvNytpsTkAG6/1",
-	"bD8rH5/bHYgoCgIcid7Bo7GzJLfWhGgnS5tjNC9GfvNWqXPz867GEBQ8Cc6DM63m7VhjRVRJpxZLcw6p",
-	"AFEBwPA/ptaDmVQeq53vJvRQq6rYY3tTMiZZAs0+DHPCaRXU1wi0CpT9hCCCkKRVsiAsKZpTmjmU2cRB",
-	"f52nJeuCvz56bh3twlJF0x/fqQ1cy/Jvws6QkesfbB423HC1nFR1C1BuOlAb3Gkocy+5NarStdIwe2sG",
-	"BCZUNdOUBQP9d3fVUvx2Gu0k8PZMflW6od62rbuAjfsw+g5Mh5j21Wfd5KqtvTM92b/V1622C0uweWHM",
-	"bhTbt2Ft3m7+fwA=",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

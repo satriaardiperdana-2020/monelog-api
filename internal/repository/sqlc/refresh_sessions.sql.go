@@ -37,6 +37,7 @@ type CreateRefreshSessionParams struct {
 	ExpiresAt pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
 }
 
+// Create a refresh session after successful login or refresh rotation.
 func (q *Queries) CreateRefreshSession(ctx context.Context, arg CreateRefreshSessionParams) (RefreshSession, error) {
 	row := q.db.QueryRow(ctx, createRefreshSession,
 		arg.ID,
@@ -65,6 +66,7 @@ FROM refresh_sessions
 WHERE token_hash = $1
 `
 
+// Find a refresh session for validation without taking a write lock.
 func (q *Queries) GetRefreshSessionByTokenHash(ctx context.Context, tokenHash string) (RefreshSession, error) {
 	row := q.db.QueryRow(ctx, getRefreshSessionByTokenHash, tokenHash)
 	var i RefreshSession
@@ -88,6 +90,7 @@ WHERE token_hash = $1
 FOR UPDATE
 `
 
+// Find and lock a refresh session before rotating or revoking it.
 func (q *Queries) GetRefreshSessionByTokenHashForUpdate(ctx context.Context, tokenHash string) (RefreshSession, error) {
 	row := q.db.QueryRow(ctx, getRefreshSessionByTokenHashForUpdate, tokenHash)
 	var i RefreshSession
@@ -111,6 +114,7 @@ WHERE user_id = $1
   AND revoked_at IS NULL
 `
 
+// Revoke all active refresh sessions for a user during account deletion or security action.
 func (q *Queries) RevokeAllUserRefreshSessions(ctx context.Context, userID pgtype.UUID) (int64, error) {
 	result, err := q.db.Exec(ctx, revokeAllUserRefreshSessions, userID)
 	if err != nil {
@@ -133,6 +137,7 @@ type RevokeRefreshSessionParams struct {
 	ID         pgtype.UUID `db:"id" json:"id"`
 }
 
+// Revoke one active refresh session and optionally link its replacement.
 func (q *Queries) RevokeRefreshSession(ctx context.Context, arg RevokeRefreshSessionParams) (RefreshSession, error) {
 	row := q.db.QueryRow(ctx, revokeRefreshSession, arg.ReplacedBy, arg.ID)
 	var i RefreshSession
@@ -162,6 +167,7 @@ type RevokeRefreshSessionFamilyParams struct {
 	FamilyID pgtype.UUID `db:"family_id" json:"family_id"`
 }
 
+// Revoke every active session in one refresh-token family during logout or reuse detection.
 func (q *Queries) RevokeRefreshSessionFamily(ctx context.Context, arg RevokeRefreshSessionFamilyParams) (int64, error) {
 	result, err := q.db.Exec(ctx, revokeRefreshSessionFamily, arg.UserID, arg.FamilyID)
 	if err != nil {

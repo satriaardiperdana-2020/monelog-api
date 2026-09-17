@@ -13,6 +13,7 @@ import (
 type Querier interface {
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateInitialAdmin(ctx context.Context, arg CreateInitialAdminParams) (User, error)
+	// Create a refresh session after successful login or refresh rotation.
 	CreateRefreshSession(ctx context.Context, arg CreateRefreshSessionParams) (RefreshSession, error)
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
@@ -23,8 +24,11 @@ type Querier interface {
 	GetCategoryByID(ctx context.Context, arg GetCategoryByIDParams) (Category, error)
 	GetDeletedCategory(ctx context.Context, arg GetDeletedCategoryParams) (Category, error)
 	GetDeletedTransaction(ctx context.Context, arg GetDeletedTransactionParams) (GetDeletedTransactionRow, error)
+	// Find a refresh session for validation without taking a write lock.
 	GetRefreshSessionByTokenHash(ctx context.Context, tokenHash string) (RefreshSession, error)
+	// Find and lock a refresh session before rotating or revoking it.
 	GetRefreshSessionByTokenHashForUpdate(ctx context.Context, tokenHash string) (RefreshSession, error)
+	GetReportSummary(ctx context.Context, arg GetReportSummaryParams) (GetReportSummaryRow, error)
 	GetTransactionByRequestIDForUpdate(ctx context.Context, arg GetTransactionByRequestIDForUpdateParams) (Transaction, error)
 	GetTransactionStateForUpdate(ctx context.Context, arg GetTransactionStateForUpdateParams) (Transaction, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
@@ -36,14 +40,20 @@ type Querier interface {
 	ListDailySummaries(ctx context.Context, arg ListDailySummariesParams) ([]ListDailySummariesRow, error)
 	ListDeletedCategories(ctx context.Context, userID pgtype.UUID) ([]Category, error)
 	ListDeletedTransactions(ctx context.Context, arg ListDeletedTransactionsParams) ([]ListDeletedTransactionsRow, error)
+	ListReportCategoryBreakdown(ctx context.Context, arg ListReportCategoryBreakdownParams) ([]ListReportCategoryBreakdownRow, error)
+	ListReportPeriodBreakdown(ctx context.Context, arg ListReportPeriodBreakdownParams) ([]ListReportPeriodBreakdownRow, error)
+	ListTopReportCategories(ctx context.Context, arg ListTopReportCategoriesParams) ([]ListTopReportCategoriesRow, error)
 	LockInitialAdminBootstrap(ctx context.Context) error
 	LockScopedCategoryForTransaction(ctx context.Context, arg LockScopedCategoryForTransactionParams) (Category, error)
 	LockUsersForUpdate(ctx context.Context, ids []pgtype.UUID) ([]User, error)
 	RestoreCategory(ctx context.Context, arg RestoreCategoryParams) (Category, error)
 	RestoreTransaction(ctx context.Context, arg RestoreTransactionParams) (Transaction, error)
 	RestoreUser(ctx context.Context, arg RestoreUserParams) (User, error)
+	// Revoke all active refresh sessions for a user during account deletion or security action.
 	RevokeAllUserRefreshSessions(ctx context.Context, userID pgtype.UUID) (int64, error)
+	// Revoke one active refresh session and optionally link its replacement.
 	RevokeRefreshSession(ctx context.Context, arg RevokeRefreshSessionParams) (RefreshSession, error)
+	// Revoke every active session in one refresh-token family during logout or reuse detection.
 	RevokeRefreshSessionFamily(ctx context.Context, arg RevokeRefreshSessionFamilyParams) (int64, error)
 	SoftDeleteCategory(ctx context.Context, arg SoftDeleteCategoryParams) (Category, error)
 	SoftDeleteTransaction(ctx context.Context, arg SoftDeleteTransactionParams) (Transaction, error)
