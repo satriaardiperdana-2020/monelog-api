@@ -14,11 +14,11 @@ Backend 001–007 dan 013 selesai sebelum Issue 008 monelog-app.
 | ISSUE-006 | [CRUD transaksi, penghapusan lunak, dan ringkasan harian](issues/ISSUE-006-transactions.md) | monelog-api | 005 | Backlog | [PLAN-006](plans/PLAN-006.md) |
 | ISSUE-007 | [Laporan transaksi aktif](issues/ISSUE-007-reports.md) | monelog-api | 006 | Backlog | [PLAN-007](plans/PLAN-007.md) |
 | ISSUE-013 | [Pengelolaan penuh user dan data oleh admin](issues/ISSUE-013-admin-viewing.md) | monelog-api | 007 | Backlog | [PLAN-013](plans/PLAN-013.md) |
-| ISSUE-008 | [UI pengelolaan pemilik/admin Vue](issues/ISSUE-008-web-mvp.md) | monelog-app | 013 | Backlog | [PLAN-008](plans/PLAN-008.md) |
-| ISSUE-009 | [Ekspor Excel/PDF pemilik/admin](issues/ISSUE-009-exports.md) | monelog-api + monelog-app | 008 | Backlog | [PLAN-009](plans/PLAN-009.md) |
-| ISSUE-010 | [Pengelolaan pemilik/admin Android/iOS](issues/ISSUE-010-mobile-packaging.md) | monelog-app | 009 | Backlog | [PLAN-010](plans/PLAN-010.md) |
-| ISSUE-011 | [Templat pemilik/admin dengan penghapusan lunak](issues/ISSUE-011-templates.md) | monelog-api + monelog-app | 010 | Backlog | [PLAN-011](plans/PLAN-011.md) |
-| ISSUE-012 | [Backup Drive dan restore tervalidasi pemilik/admin](issues/ISSUE-012-drive-backups.md) | monelog-api + monelog-app | 011 | Backlog | [PLAN-012](plans/PLAN-012.md) |
+| ISSUE-008 | [UI pengelolaan pemilik/admin Vue](issues/ISSUE-008-web-mvp.md) | monelog-app | 013 | Backlog | [PLAN-008](../../monelog-app/docs/plans/PLAN-008.md) |
+| ISSUE-009 | [Ekspor Excel/PDF pemilik/admin](issues/ISSUE-009-exports.md) | monelog-api + monelog-app | 008 | Backlog | [PLAN-009](../../monelog-app/docs/plans/PLAN-009.md) |
+| ISSUE-010 | [Pengelolaan pemilik/admin Android/iOS](issues/ISSUE-010-mobile-packaging.md) | monelog-app | 009 | Backlog | [PLAN-010](../../monelog-app/docs/plans/PLAN-010.md) |
+| ISSUE-011 | [Templat pemilik/admin dengan penghapusan lunak](issues/ISSUE-011-templates.md) | monelog-api + monelog-app | 010 | Backlog | [PLAN-011](../../monelog-app/docs/plans/PLAN-011.md) |
+| ISSUE-012 | [Backup Drive dan restore tervalidasi pemilik/admin](issues/ISSUE-012-drive-backups.md) | monelog-api + monelog-app | 011 | Backlog | [PLAN-012](../../monelog-app/docs/plans/PLAN-012.md) |
 
 Issue 013 mempertahankan nama file asli agar tautan tetap berfungsi, tetapi cakupannya adalah pengelolaan admin penuh. ID tetap stabil; gunakan urutan dependensi pada tabel.
 

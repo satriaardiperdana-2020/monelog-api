@@ -57,6 +57,7 @@ func run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 
 	e := echo.New()
 	appmiddleware.Register(e, logger)
+	appmiddleware.RegisterCORS(e, cfg.Auth.AllowedOrigins)
 	handlers.RegisterRoutes(e, healthHandler, authHandler, categoryHandler, transactionHandler, appmiddleware.Authenticate(authService))
 
 	server := &http.Server{

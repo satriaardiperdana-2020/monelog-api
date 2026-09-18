@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/labstack/echo/v5"
 	echomiddleware "github.com/labstack/echo/v5/middleware"
@@ -14,6 +15,23 @@ func Register(e *echo.Echo, logger *slog.Logger) {
 	e.Use(echomiddleware.RecoverWithConfig(echomiddleware.RecoverConfig{
 		DisablePrintStack: true,
 		DisableStackAll:   true,
+	}))
+}
+
+// RegisterCORS permits credentialed browser requests only from configured origins.
+// Auth handlers still enforce their own Origin and CSRF checks.
+func RegisterCORS(e *echo.Echo, allowedOrigins []string) {
+	e.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
+		AllowOrigins:     allowedOrigins,
+		AllowCredentials: true,
+		AllowMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPatch,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
+		AllowHeaders: []string{"Authorization", "Content-Type", "X-CSRF-Token", "If-Match"},
 	}))
 }
 

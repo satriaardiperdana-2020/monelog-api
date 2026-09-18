@@ -59,3 +59,60 @@ func TestRegisterRecoversFromPanic(t *testing.T) {
 		t.Fatalf("response leaked panic value: %s", response.Body.String())
 	}
 }
+
+func TestRegisterCORSAllowsConfiguredCredentialedOrigin(t *testing.T) {
+	e := echo.New()
+	RegisterCORS(e, []string{"http://localhost:5173", "https://localhost"})
+	e.POST("/api/v1/auth/login", func(c *echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	})
+
+	preflight := httptest.NewRequest(http.MethodOptions, "/api/v1/auth/login", nil)
+	preflight.Header.Set("Origin", "https://localhost")
+	preflight.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	preflight.Header.Set("Access-Control-Request-Headers", "content-type,x-csrf-token")
+	response := httptest.NewRecorder()
+	e.ServeHTTP(response, preflight)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("preflight status = %d, want %d", response.Code, http.StatusNoContent)
+	}
+	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "https://localhost" {
+		t.Errorf("preflight allowed origin = %q", got)
+	}
+	if got := response.Header().Get("Access-Control-Allow-Credentials"); got != "true" {
+		t.Errorf("preflight allowed credentials = %q", got)
+	}
+	for _, header := range []string{"content-type", "x-csrf-token"} {
+		if !strings.Contains(strings.ToLower(response.Header().Get("Access-Control-Allow-Headers")), header) {
+			t.Errorf("preflight does not allow %s", header)
+		}
+	}
+
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+	request.Header.Set("Origin", "https://localhost")
+	response = httptest.NewRecorder()
+	e.ServeHTTP(response, request)
+	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "https://localhost" {
+		t.Errorf("POST allowed origin = %q", got)
+	}
+	if got := response.Header().Get("Access-Control-Allow-Credentials"); got != "true" {
+		t.Errorf("POST allowed credentials = %q", got)
+	}
+}
+
+func TestRegisterCORSRejectsUnconfiguredOrigin(t *testing.T) {
+	e := echo.New()
+	RegisterCORS(e, []string{"https://localhost"})
+	e.POST("/api/v1/auth/login", func(c *echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	})
+	request := httptest.NewRequest(http.MethodOptions, "/api/v1/auth/login", nil)
+	request.Header.Set("Origin", "https://untrusted.example")
+	request.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	response := httptest.NewRecorder()
+	e.ServeHTTP(response, request)
+	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("unconfigured origin was allowed: %q", got)
+	}
+}
