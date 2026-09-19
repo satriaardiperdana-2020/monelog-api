@@ -565,6 +565,65 @@ type TransactionResponse struct {
 	Data Transaction `json:"data"`
 }
 
+// TransactionTemplate defines model for TransactionTemplate.
+type TransactionTemplate struct {
+	// Amount Example: 43500.00
+	Amount     Money           `json:"amount"`
+	CategoryId int64           `json:"category_id"`
+	Id         int64           `json:"id"`
+	IsDelete   bool            `json:"isDelete"`
+	Name       string          `json:"name"`
+	Title      string          `json:"title"`
+	Type       TransactionType `json:"type"`
+	UserId     int64           `json:"user_id"`
+	Version    int32           `json:"version"`
+}
+
+// TransactionTemplateApplyResponse defines model for TransactionTemplateApplyResponse.
+type TransactionTemplateApplyResponse struct {
+	Data TransactionTemplateDraft `json:"data"`
+}
+
+// TransactionTemplateCreateRequest defines model for TransactionTemplateCreateRequest.
+type TransactionTemplateCreateRequest struct {
+	// Amount Example: 43500.00
+	Amount     Money           `json:"amount"`
+	CategoryId int64           `json:"category_id"`
+	Name       string          `json:"name"`
+	Title      string          `json:"title"`
+	Type       TransactionType `json:"type"`
+}
+
+// TransactionTemplateDraft defines model for TransactionTemplateDraft.
+type TransactionTemplateDraft struct {
+	// Amount Example: 43500.00
+	Amount     Money           `json:"amount"`
+	CategoryId int64           `json:"category_id"`
+	Title      string          `json:"title"`
+	Type       TransactionType `json:"type"`
+}
+
+// TransactionTemplateListResponse defines model for TransactionTemplateListResponse.
+type TransactionTemplateListResponse struct {
+	Data []TransactionTemplate `json:"data"`
+}
+
+// TransactionTemplateResponse defines model for TransactionTemplateResponse.
+type TransactionTemplateResponse struct {
+	Data TransactionTemplate `json:"data"`
+}
+
+// TransactionTemplateUpdateRequest defines model for TransactionTemplateUpdateRequest.
+type TransactionTemplateUpdateRequest struct {
+	// Amount Example: 43500.00
+	Amount     Money           `json:"amount"`
+	CategoryId int64           `json:"category_id"`
+	Name       string          `json:"name"`
+	Title      string          `json:"title"`
+	Type       TransactionType `json:"type"`
+	Version    int32           `json:"version"`
+}
+
 // TransactionType defines model for TransactionType.
 type TransactionType string
 
@@ -716,6 +775,21 @@ type AdminGetReportSummaryParams struct {
 // AdminGetReportSummaryParamsRange defines parameters for AdminGetReportSummary.
 type AdminGetReportSummaryParamsRange string
 
+// AdminListTransactionTemplatesParams defines parameters for AdminListTransactionTemplates.
+type AdminListTransactionTemplatesParams struct {
+	IsDelete *bool `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
+// AdminDeleteTransactionTemplateParams defines parameters for AdminDeleteTransactionTemplate.
+type AdminDeleteTransactionTemplateParams struct {
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// AdminGetTransactionTemplateParams defines parameters for AdminGetTransactionTemplate.
+type AdminGetTransactionTemplateParams struct {
+	IsDelete *bool `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
 // AdminListTransactionsParams defines parameters for AdminListTransactions.
 type AdminListTransactionsParams struct {
 	StartDate  StartDate        `form:"start_date" json:"start_date"`
@@ -793,6 +867,21 @@ type GetReportSummaryParams struct {
 // GetReportSummaryParamsRange defines parameters for GetReportSummary.
 type GetReportSummaryParamsRange string
 
+// ListTransactionTemplatesParams defines parameters for ListTransactionTemplates.
+type ListTransactionTemplatesParams struct {
+	IsDelete *bool `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
+// DeleteTransactionTemplateParams defines parameters for DeleteTransactionTemplate.
+type DeleteTransactionTemplateParams struct {
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// GetTransactionTemplateParams defines parameters for GetTransactionTemplate.
+type GetTransactionTemplateParams struct {
+	IsDelete *bool `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+}
+
 // ListTransactionsParams defines parameters for ListTransactions.
 type ListTransactionsParams struct {
 	StartDate  StartDate        `form:"start_date" json:"start_date"`
@@ -822,6 +911,15 @@ type AdminUpdateCategoryJSONRequestBody = CategoryUpdateRequest
 
 // AdminRestoreCategoryJSONRequestBody defines body for AdminRestoreCategory for application/json ContentType.
 type AdminRestoreCategoryJSONRequestBody = VersionRequest
+
+// AdminCreateTransactionTemplateJSONRequestBody defines body for AdminCreateTransactionTemplate for application/json ContentType.
+type AdminCreateTransactionTemplateJSONRequestBody = TransactionTemplateCreateRequest
+
+// AdminUpdateTransactionTemplateJSONRequestBody defines body for AdminUpdateTransactionTemplate for application/json ContentType.
+type AdminUpdateTransactionTemplateJSONRequestBody = TransactionTemplateUpdateRequest
+
+// AdminRestoreTransactionTemplateJSONRequestBody defines body for AdminRestoreTransactionTemplate for application/json ContentType.
+type AdminRestoreTransactionTemplateJSONRequestBody = VersionRequest
 
 // AdminCreateTransactionJSONRequestBody defines body for AdminCreateTransaction for application/json ContentType.
 type AdminCreateTransactionJSONRequestBody = TransactionCreateRequest
@@ -855,6 +953,15 @@ type RestoreCategoryJSONRequestBody = VersionRequest
 
 // UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
 type UpdateMeJSONRequestBody = ProfileRequest
+
+// CreateTransactionTemplateJSONRequestBody defines body for CreateTransactionTemplate for application/json ContentType.
+type CreateTransactionTemplateJSONRequestBody = TransactionTemplateCreateRequest
+
+// UpdateTransactionTemplateJSONRequestBody defines body for UpdateTransactionTemplate for application/json ContentType.
+type UpdateTransactionTemplateJSONRequestBody = TransactionTemplateUpdateRequest
+
+// RestoreTransactionTemplateJSONRequestBody defines body for RestoreTransactionTemplate for application/json ContentType.
+type RestoreTransactionTemplateJSONRequestBody = VersionRequest
 
 // CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
 type CreateTransactionJSONRequestBody = TransactionCreateRequest
@@ -894,6 +1001,27 @@ type ServerInterface interface {
 	// AdminGetReportSummary Get an active report for a selected user
 	// (GET /api/v1/admin/users/{user_id}/reports/summary)
 	AdminGetReportSummary(ctx *echo.Context, userId UserId, params AdminGetReportSummaryParams) error
+	// AdminListTransactionTemplates List a selected user's reusable transaction templates
+	// (GET /api/v1/admin/users/{user_id}/templates)
+	AdminListTransactionTemplates(ctx *echo.Context, userId UserId, params AdminListTransactionTemplatesParams) error
+	// AdminCreateTransactionTemplate Create a reusable transaction template for a selected user
+	// (POST /api/v1/admin/users/{user_id}/templates)
+	AdminCreateTransactionTemplate(ctx *echo.Context, userId UserId) error
+	// AdminDeleteTransactionTemplate Soft-delete a selected user's reusable transaction template
+	// (DELETE /api/v1/admin/users/{user_id}/templates/{id})
+	AdminDeleteTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId, params AdminDeleteTransactionTemplateParams) error
+	// AdminGetTransactionTemplate Get a selected user's reusable transaction template
+	// (GET /api/v1/admin/users/{user_id}/templates/{id})
+	AdminGetTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId, params AdminGetTransactionTemplateParams) error
+	// AdminUpdateTransactionTemplate Update a selected user's active reusable transaction template
+	// (PATCH /api/v1/admin/users/{user_id}/templates/{id})
+	AdminUpdateTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId) error
+	// AdminApplyTransactionTemplate Return an unsaved draft from a selected user's active template
+	// (POST /api/v1/admin/users/{user_id}/templates/{id}/apply)
+	AdminApplyTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId) error
+	// AdminRestoreTransactionTemplate Restore a selected user's deleted reusable transaction template
+	// (POST /api/v1/admin/users/{user_id}/templates/{id}/restore)
+	AdminRestoreTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId) error
 	// AdminListTransactions List transaction history for a selected user
 	// (GET /api/v1/admin/users/{user_id}/transactions)
 	AdminListTransactions(ctx *echo.Context, userId UserId, params AdminListTransactionsParams) error
@@ -960,6 +1088,27 @@ type ServerInterface interface {
 	// GetReportSummary Get an active transaction report
 	// (GET /api/v1/reports/summary)
 	GetReportSummary(ctx *echo.Context, params GetReportSummaryParams) error
+	// ListTransactionTemplates List reusable transaction templates
+	// (GET /api/v1/templates)
+	ListTransactionTemplates(ctx *echo.Context, params ListTransactionTemplatesParams) error
+	// CreateTransactionTemplate Create a reusable transaction template
+	// (POST /api/v1/templates)
+	CreateTransactionTemplate(ctx *echo.Context) error
+	// DeleteTransactionTemplate Soft-delete a reusable transaction template
+	// (DELETE /api/v1/templates/{id})
+	DeleteTransactionTemplate(ctx *echo.Context, id ResourceId, params DeleteTransactionTemplateParams) error
+	// GetTransactionTemplate Get a reusable transaction template
+	// (GET /api/v1/templates/{id})
+	GetTransactionTemplate(ctx *echo.Context, id ResourceId, params GetTransactionTemplateParams) error
+	// UpdateTransactionTemplate Update an active reusable transaction template
+	// (PATCH /api/v1/templates/{id})
+	UpdateTransactionTemplate(ctx *echo.Context, id ResourceId) error
+	// ApplyTransactionTemplate Return an unsaved transaction draft from an active template
+	// (POST /api/v1/templates/{id}/apply)
+	ApplyTransactionTemplate(ctx *echo.Context, id ResourceId) error
+	// RestoreTransactionTemplate Restore a deleted reusable transaction template
+	// (POST /api/v1/templates/{id}/restore)
+	RestoreTransactionTemplate(ctx *echo.Context, id ResourceId) error
 	// ListTransactions List transaction history
 	// (GET /api/v1/transactions)
 	ListTransactions(ctx *echo.Context, params ListTransactionsParams) error
@@ -1294,6 +1443,198 @@ func (w *ServerInterfaceWrapper) AdminGetReportSummary(ctx *echo.Context) error 
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.AdminGetReportSummary(ctx, userId, params)
+	return err
+}
+
+// AdminListTransactionTemplates converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminListTransactionTemplates(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListTransactionTemplatesParams
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminListTransactionTemplates(ctx, userId, params)
+	return err
+}
+
+// AdminCreateTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminCreateTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminCreateTransactionTemplate(ctx, userId)
+	return err
+}
+
+// AdminDeleteTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminDeleteTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDeleteTransactionTemplateParams
+
+	headers := ctx.Request().Header
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for If-Match, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter If-Match: %s", err))
+		}
+
+		params.IfMatch = IfMatch
+	} else {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter If-Match is required, but not found"))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminDeleteTransactionTemplate(ctx, userId, id, params)
+	return err
+}
+
+// AdminGetTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminGetTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetTransactionTemplateParams
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminGetTransactionTemplate(ctx, userId, id, params)
+	return err
+}
+
+// AdminUpdateTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminUpdateTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminUpdateTransactionTemplate(ctx, userId, id)
+	return err
+}
+
+// AdminApplyTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminApplyTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminApplyTransactionTemplate(ctx, userId, id)
+	return err
+}
+
+// AdminRestoreTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminRestoreTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminRestoreTransactionTemplate(ctx, userId, id)
 	return err
 }
 
@@ -1831,6 +2172,144 @@ func (w *ServerInterfaceWrapper) GetReportSummary(ctx *echo.Context) error {
 	return err
 }
 
+// ListTransactionTemplates converts echo context to params.
+func (w *ServerInterfaceWrapper) ListTransactionTemplates(ctx *echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTransactionTemplatesParams
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListTransactionTemplates(ctx, params)
+	return err
+}
+
+// CreateTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateTransactionTemplate(ctx *echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CreateTransactionTemplate(ctx)
+	return err
+}
+
+// DeleteTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteTransactionTemplateParams
+
+	headers := ctx.Request().Header
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for If-Match, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter If-Match: %s", err))
+		}
+
+		params.IfMatch = IfMatch
+	} else {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter If-Match is required, but not found"))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTransactionTemplate(ctx, id, params)
+	return err
+}
+
+// GetTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetTransactionTemplateParams
+	// ------------- Optional query parameter "isDelete" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "isDelete", ctx.QueryParams(), &params.IsDelete, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter isDelete: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetTransactionTemplate(ctx, id, params)
+	return err
+}
+
+// UpdateTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdateTransactionTemplate(ctx, id)
+	return err
+}
+
+// ApplyTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) ApplyTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ApplyTransactionTemplate(ctx, id)
+	return err
+}
+
+// RestoreTransactionTemplate converts echo context to params.
+func (w *ServerInterfaceWrapper) RestoreTransactionTemplate(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id ResourceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.RestoreTransactionTemplate(ctx, id)
+	return err
+}
+
 // ListTransactions converts echo context to params.
 func (w *ServerInterfaceWrapper) ListTransactions(ctx *echo.Context) error {
 	var err error
@@ -2081,6 +2560,20 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/categories/:id", wrapper.AdminGetCategory, options.OperationMiddlewares["adminGetCategory"]...)
 	router.PATCH(options.BaseURL+"/api/v1/admin/users/:user_id/categories/:id", wrapper.AdminUpdateCategory, options.OperationMiddlewares["adminUpdateCategory"]...)
 	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/categories/:id/restore", wrapper.AdminRestoreCategory, options.OperationMiddlewares["adminRestoreCategory"]...)
+	router.GET(options.BaseURL+"/api/v1/templates", wrapper.ListTransactionTemplates, options.OperationMiddlewares["listTransactionTemplates"]...)
+	router.POST(options.BaseURL+"/api/v1/templates", wrapper.CreateTransactionTemplate, options.OperationMiddlewares["createTransactionTemplate"]...)
+	router.DELETE(options.BaseURL+"/api/v1/templates/:id", wrapper.DeleteTransactionTemplate, options.OperationMiddlewares["deleteTransactionTemplate"]...)
+	router.GET(options.BaseURL+"/api/v1/templates/:id", wrapper.GetTransactionTemplate, options.OperationMiddlewares["getTransactionTemplate"]...)
+	router.PATCH(options.BaseURL+"/api/v1/templates/:id", wrapper.UpdateTransactionTemplate, options.OperationMiddlewares["updateTransactionTemplate"]...)
+	router.POST(options.BaseURL+"/api/v1/templates/:id/restore", wrapper.RestoreTransactionTemplate, options.OperationMiddlewares["restoreTransactionTemplate"]...)
+	router.POST(options.BaseURL+"/api/v1/templates/:id/apply", wrapper.ApplyTransactionTemplate, options.OperationMiddlewares["applyTransactionTemplate"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/templates", wrapper.AdminListTransactionTemplates, options.OperationMiddlewares["adminListTransactionTemplates"]...)
+	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/templates", wrapper.AdminCreateTransactionTemplate, options.OperationMiddlewares["adminCreateTransactionTemplate"]...)
+	router.DELETE(options.BaseURL+"/api/v1/admin/users/:user_id/templates/:id", wrapper.AdminDeleteTransactionTemplate, options.OperationMiddlewares["adminDeleteTransactionTemplate"]...)
+	router.GET(options.BaseURL+"/api/v1/admin/users/:user_id/templates/:id", wrapper.AdminGetTransactionTemplate, options.OperationMiddlewares["adminGetTransactionTemplate"]...)
+	router.PATCH(options.BaseURL+"/api/v1/admin/users/:user_id/templates/:id", wrapper.AdminUpdateTransactionTemplate, options.OperationMiddlewares["adminUpdateTransactionTemplate"]...)
+	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/templates/:id/restore", wrapper.AdminRestoreTransactionTemplate, options.OperationMiddlewares["adminRestoreTransactionTemplate"]...)
+	router.POST(options.BaseURL+"/api/v1/admin/users/:user_id/templates/:id/apply", wrapper.AdminApplyTransactionTemplate, options.OperationMiddlewares["adminApplyTransactionTemplate"]...)
 	router.GET(options.BaseURL+"/api/v1/transactions", wrapper.ListTransactions, options.OperationMiddlewares["listTransactions"]...)
 	router.POST(options.BaseURL+"/api/v1/transactions", wrapper.CreateTransaction, options.OperationMiddlewares["createTransaction"]...)
 	router.DELETE(options.BaseURL+"/api/v1/transactions/:id", wrapper.DeleteTransaction, options.OperationMiddlewares["deleteTransaction"]...)
@@ -2486,6 +2979,389 @@ func (response AdminGetReportSummary422JSONResponse) VisitAdminGetReportSummaryR
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListTransactionTemplatesRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Params AdminListTransactionTemplatesParams
+}
+
+type AdminListTransactionTemplatesResponseObject interface {
+	VisitAdminListTransactionTemplatesResponse(w http.ResponseWriter) error
+}
+
+type AdminListTransactionTemplates200JSONResponse TransactionTemplateListResponse
+
+func (response AdminListTransactionTemplates200JSONResponse) VisitAdminListTransactionTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminListTransactionTemplates403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListTransactionTemplates403JSONResponse) VisitAdminListTransactionTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateTransactionTemplateRequestObject struct {
+	UserId UserId `json:"user_id"`
+	Body   *AdminCreateTransactionTemplateJSONRequestBody
+}
+
+type AdminCreateTransactionTemplateResponseObject interface {
+	VisitAdminCreateTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type AdminCreateTransactionTemplate201JSONResponse TransactionTemplateResponse
+
+func (response AdminCreateTransactionTemplate201JSONResponse) VisitAdminCreateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminCreateTransactionTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminCreateTransactionTemplate403JSONResponse) VisitAdminCreateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteTransactionTemplateRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Params AdminDeleteTransactionTemplateParams
+}
+
+type AdminDeleteTransactionTemplateResponseObject interface {
+	VisitAdminDeleteTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type AdminDeleteTransactionTemplate204Response struct {
+}
+
+func (response AdminDeleteTransactionTemplate204Response) VisitAdminDeleteTransactionTemplateResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminDeleteTransactionTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminDeleteTransactionTemplate403JSONResponse) VisitAdminDeleteTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminDeleteTransactionTemplate404JSONResponse) VisitAdminDeleteTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminDeleteTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminDeleteTransactionTemplate409JSONResponse) VisitAdminDeleteTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetTransactionTemplateRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Params AdminGetTransactionTemplateParams
+}
+
+type AdminGetTransactionTemplateResponseObject interface {
+	VisitAdminGetTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type AdminGetTransactionTemplate200JSONResponse TransactionTemplateResponse
+
+func (response AdminGetTransactionTemplate200JSONResponse) VisitAdminGetTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetTransactionTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminGetTransactionTemplate403JSONResponse) VisitAdminGetTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminGetTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminGetTransactionTemplate404JSONResponse) VisitAdminGetTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateTransactionTemplateRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Body   *AdminUpdateTransactionTemplateJSONRequestBody
+}
+
+type AdminUpdateTransactionTemplateResponseObject interface {
+	VisitAdminUpdateTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdateTransactionTemplate200JSONResponse TransactionTemplateResponse
+
+func (response AdminUpdateTransactionTemplate200JSONResponse) VisitAdminUpdateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateTransactionTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminUpdateTransactionTemplate403JSONResponse) VisitAdminUpdateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminUpdateTransactionTemplate404JSONResponse) VisitAdminUpdateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminUpdateTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminUpdateTransactionTemplate409JSONResponse) VisitAdminUpdateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminApplyTransactionTemplateRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+}
+
+type AdminApplyTransactionTemplateResponseObject interface {
+	VisitAdminApplyTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type AdminApplyTransactionTemplate200JSONResponse TransactionTemplateApplyResponse
+
+func (response AdminApplyTransactionTemplate200JSONResponse) VisitAdminApplyTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminApplyTransactionTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminApplyTransactionTemplate403JSONResponse) VisitAdminApplyTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminApplyTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminApplyTransactionTemplate404JSONResponse) VisitAdminApplyTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminApplyTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminApplyTransactionTemplate409JSONResponse) VisitAdminApplyTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRestoreTransactionTemplateRequestObject struct {
+	UserId UserId     `json:"user_id"`
+	Id     ResourceId `json:"id"`
+	Body   *AdminRestoreTransactionTemplateJSONRequestBody
+}
+
+type AdminRestoreTransactionTemplateResponseObject interface {
+	VisitAdminRestoreTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type AdminRestoreTransactionTemplate200JSONResponse TransactionTemplateResponse
+
+func (response AdminRestoreTransactionTemplate200JSONResponse) VisitAdminRestoreTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRestoreTransactionTemplate403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminRestoreTransactionTemplate403JSONResponse) VisitAdminRestoreTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRestoreTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminRestoreTransactionTemplate404JSONResponse) VisitAdminRestoreTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AdminRestoreTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminRestoreTransactionTemplate409JSONResponse) VisitAdminRestoreTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3486,6 +4362,340 @@ func (response GetReportSummary422JSONResponse) VisitGetReportSummaryResponse(w 
 	return err
 }
 
+type ListTransactionTemplatesRequestObject struct {
+	Params ListTransactionTemplatesParams
+}
+
+type ListTransactionTemplatesResponseObject interface {
+	VisitListTransactionTemplatesResponse(w http.ResponseWriter) error
+}
+
+type ListTransactionTemplates200JSONResponse TransactionTemplateListResponse
+
+func (response ListTransactionTemplates200JSONResponse) VisitListTransactionTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransactionTemplateRequestObject struct {
+	Body *CreateTransactionTemplateJSONRequestBody
+}
+
+type CreateTransactionTemplateResponseObject interface {
+	VisitCreateTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type CreateTransactionTemplate201JSONResponse TransactionTemplateResponse
+
+func (response CreateTransactionTemplate201JSONResponse) VisitCreateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CreateTransactionTemplate404JSONResponse) VisitCreateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateTransactionTemplate409JSONResponse) VisitCreateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransactionTemplate422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response CreateTransactionTemplate422JSONResponse) VisitCreateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTransactionTemplateRequestObject struct {
+	Id     ResourceId `json:"id"`
+	Params DeleteTransactionTemplateParams
+}
+
+type DeleteTransactionTemplateResponseObject interface {
+	VisitDeleteTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type DeleteTransactionTemplate204Response struct {
+}
+
+func (response DeleteTransactionTemplate204Response) VisitDeleteTransactionTemplateResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteTransactionTemplate404JSONResponse) VisitDeleteTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response DeleteTransactionTemplate409JSONResponse) VisitDeleteTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTransactionTemplateRequestObject struct {
+	Id     ResourceId `json:"id"`
+	Params GetTransactionTemplateParams
+}
+
+type GetTransactionTemplateResponseObject interface {
+	VisitGetTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type GetTransactionTemplate200JSONResponse TransactionTemplateResponse
+
+func (response GetTransactionTemplate200JSONResponse) VisitGetTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetTransactionTemplate404JSONResponse) VisitGetTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransactionTemplateRequestObject struct {
+	Id   ResourceId `json:"id"`
+	Body *UpdateTransactionTemplateJSONRequestBody
+}
+
+type UpdateTransactionTemplateResponseObject interface {
+	VisitUpdateTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type UpdateTransactionTemplate200JSONResponse TransactionTemplateResponse
+
+func (response UpdateTransactionTemplate200JSONResponse) VisitUpdateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateTransactionTemplate404JSONResponse) VisitUpdateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response UpdateTransactionTemplate409JSONResponse) VisitUpdateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTransactionTemplate422JSONResponse struct{ ValidationErrorJSONResponse }
+
+func (response UpdateTransactionTemplate422JSONResponse) VisitUpdateTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyTransactionTemplateRequestObject struct {
+	Id ResourceId `json:"id"`
+}
+
+type ApplyTransactionTemplateResponseObject interface {
+	VisitApplyTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type ApplyTransactionTemplate200JSONResponse TransactionTemplateApplyResponse
+
+func (response ApplyTransactionTemplate200JSONResponse) VisitApplyTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ApplyTransactionTemplate404JSONResponse) VisitApplyTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ApplyTransactionTemplate409JSONResponse) VisitApplyTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreTransactionTemplateRequestObject struct {
+	Id   ResourceId `json:"id"`
+	Body *RestoreTransactionTemplateJSONRequestBody
+}
+
+type RestoreTransactionTemplateResponseObject interface {
+	VisitRestoreTransactionTemplateResponse(w http.ResponseWriter) error
+}
+
+type RestoreTransactionTemplate200JSONResponse TransactionTemplateResponse
+
+func (response RestoreTransactionTemplate200JSONResponse) VisitRestoreTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreTransactionTemplate404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RestoreTransactionTemplate404JSONResponse) VisitRestoreTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreTransactionTemplate409JSONResponse struct{ ConflictJSONResponse }
+
+func (response RestoreTransactionTemplate409JSONResponse) VisitRestoreTransactionTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListTransactionsRequestObject struct {
 	Params ListTransactionsParams
 }
@@ -3855,6 +5065,27 @@ type StrictServerInterface interface {
 	// AdminGetReportSummary Get an active report for a selected user
 	// (GET /api/v1/admin/users/{user_id}/reports/summary)
 	AdminGetReportSummary(ctx context.Context, request AdminGetReportSummaryRequestObject) (AdminGetReportSummaryResponseObject, error)
+	// AdminListTransactionTemplates List a selected user's reusable transaction templates
+	// (GET /api/v1/admin/users/{user_id}/templates)
+	AdminListTransactionTemplates(ctx context.Context, request AdminListTransactionTemplatesRequestObject) (AdminListTransactionTemplatesResponseObject, error)
+	// AdminCreateTransactionTemplate Create a reusable transaction template for a selected user
+	// (POST /api/v1/admin/users/{user_id}/templates)
+	AdminCreateTransactionTemplate(ctx context.Context, request AdminCreateTransactionTemplateRequestObject) (AdminCreateTransactionTemplateResponseObject, error)
+	// AdminDeleteTransactionTemplate Soft-delete a selected user's reusable transaction template
+	// (DELETE /api/v1/admin/users/{user_id}/templates/{id})
+	AdminDeleteTransactionTemplate(ctx context.Context, request AdminDeleteTransactionTemplateRequestObject) (AdminDeleteTransactionTemplateResponseObject, error)
+	// AdminGetTransactionTemplate Get a selected user's reusable transaction template
+	// (GET /api/v1/admin/users/{user_id}/templates/{id})
+	AdminGetTransactionTemplate(ctx context.Context, request AdminGetTransactionTemplateRequestObject) (AdminGetTransactionTemplateResponseObject, error)
+	// AdminUpdateTransactionTemplate Update a selected user's active reusable transaction template
+	// (PATCH /api/v1/admin/users/{user_id}/templates/{id})
+	AdminUpdateTransactionTemplate(ctx context.Context, request AdminUpdateTransactionTemplateRequestObject) (AdminUpdateTransactionTemplateResponseObject, error)
+	// AdminApplyTransactionTemplate Return an unsaved draft from a selected user's active template
+	// (POST /api/v1/admin/users/{user_id}/templates/{id}/apply)
+	AdminApplyTransactionTemplate(ctx context.Context, request AdminApplyTransactionTemplateRequestObject) (AdminApplyTransactionTemplateResponseObject, error)
+	// AdminRestoreTransactionTemplate Restore a selected user's deleted reusable transaction template
+	// (POST /api/v1/admin/users/{user_id}/templates/{id}/restore)
+	AdminRestoreTransactionTemplate(ctx context.Context, request AdminRestoreTransactionTemplateRequestObject) (AdminRestoreTransactionTemplateResponseObject, error)
 	// AdminListTransactions List transaction history for a selected user
 	// (GET /api/v1/admin/users/{user_id}/transactions)
 	AdminListTransactions(ctx context.Context, request AdminListTransactionsRequestObject) (AdminListTransactionsResponseObject, error)
@@ -3921,6 +5152,27 @@ type StrictServerInterface interface {
 	// GetReportSummary Get an active transaction report
 	// (GET /api/v1/reports/summary)
 	GetReportSummary(ctx context.Context, request GetReportSummaryRequestObject) (GetReportSummaryResponseObject, error)
+	// ListTransactionTemplates List reusable transaction templates
+	// (GET /api/v1/templates)
+	ListTransactionTemplates(ctx context.Context, request ListTransactionTemplatesRequestObject) (ListTransactionTemplatesResponseObject, error)
+	// CreateTransactionTemplate Create a reusable transaction template
+	// (POST /api/v1/templates)
+	CreateTransactionTemplate(ctx context.Context, request CreateTransactionTemplateRequestObject) (CreateTransactionTemplateResponseObject, error)
+	// DeleteTransactionTemplate Soft-delete a reusable transaction template
+	// (DELETE /api/v1/templates/{id})
+	DeleteTransactionTemplate(ctx context.Context, request DeleteTransactionTemplateRequestObject) (DeleteTransactionTemplateResponseObject, error)
+	// GetTransactionTemplate Get a reusable transaction template
+	// (GET /api/v1/templates/{id})
+	GetTransactionTemplate(ctx context.Context, request GetTransactionTemplateRequestObject) (GetTransactionTemplateResponseObject, error)
+	// UpdateTransactionTemplate Update an active reusable transaction template
+	// (PATCH /api/v1/templates/{id})
+	UpdateTransactionTemplate(ctx context.Context, request UpdateTransactionTemplateRequestObject) (UpdateTransactionTemplateResponseObject, error)
+	// ApplyTransactionTemplate Return an unsaved transaction draft from an active template
+	// (POST /api/v1/templates/{id}/apply)
+	ApplyTransactionTemplate(ctx context.Context, request ApplyTransactionTemplateRequestObject) (ApplyTransactionTemplateResponseObject, error)
+	// RestoreTransactionTemplate Restore a deleted reusable transaction template
+	// (POST /api/v1/templates/{id}/restore)
+	RestoreTransactionTemplate(ctx context.Context, request RestoreTransactionTemplateRequestObject) (RestoreTransactionTemplateResponseObject, error)
 	// ListTransactions List transaction history
 	// (GET /api/v1/transactions)
 	ListTransactions(ctx context.Context, request ListTransactionsRequestObject) (ListTransactionsResponseObject, error)
@@ -4236,6 +5488,237 @@ func (sh *strictHandler) AdminGetReportSummary(ctx *echo.Context, userId UserId,
 		return err
 	} else if validResponse, ok := response.(AdminGetReportSummaryResponseObject); ok {
 		return validResponse.VisitAdminGetReportSummaryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListTransactionTemplates operation middleware
+func (sh *strictHandler) AdminListTransactionTemplates(ctx *echo.Context, userId UserId, params AdminListTransactionTemplatesParams) error {
+	var request AdminListTransactionTemplatesRequestObject
+
+	request.UserId = userId
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListTransactionTemplates(ctx.Request().Context(), request.(AdminListTransactionTemplatesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListTransactionTemplates")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListTransactionTemplatesResponseObject); ok {
+		return validResponse.VisitAdminListTransactionTemplatesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateTransactionTemplate operation middleware
+func (sh *strictHandler) AdminCreateTransactionTemplate(ctx *echo.Context, userId UserId) error {
+	var request AdminCreateTransactionTemplateRequestObject
+
+	request.UserId = userId
+
+	var body AdminCreateTransactionTemplateJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateTransactionTemplate(ctx.Request().Context(), request.(AdminCreateTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateTransactionTemplateResponseObject); ok {
+		return validResponse.VisitAdminCreateTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeleteTransactionTemplate operation middleware
+func (sh *strictHandler) AdminDeleteTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId, params AdminDeleteTransactionTemplateParams) error {
+	var request AdminDeleteTransactionTemplateRequestObject
+
+	request.UserId = userId
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteTransactionTemplate(ctx.Request().Context(), request.(AdminDeleteTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeleteTransactionTemplateResponseObject); ok {
+		return validResponse.VisitAdminDeleteTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetTransactionTemplate operation middleware
+func (sh *strictHandler) AdminGetTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId, params AdminGetTransactionTemplateParams) error {
+	var request AdminGetTransactionTemplateRequestObject
+
+	request.UserId = userId
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetTransactionTemplate(ctx.Request().Context(), request.(AdminGetTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetTransactionTemplateResponseObject); ok {
+		return validResponse.VisitAdminGetTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateTransactionTemplate operation middleware
+func (sh *strictHandler) AdminUpdateTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId) error {
+	var request AdminUpdateTransactionTemplateRequestObject
+
+	request.UserId = userId
+	request.Id = id
+
+	var body AdminUpdateTransactionTemplateJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateTransactionTemplate(ctx.Request().Context(), request.(AdminUpdateTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateTransactionTemplateResponseObject); ok {
+		return validResponse.VisitAdminUpdateTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminApplyTransactionTemplate operation middleware
+func (sh *strictHandler) AdminApplyTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId) error {
+	var request AdminApplyTransactionTemplateRequestObject
+
+	request.UserId = userId
+	request.Id = id
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminApplyTransactionTemplate(ctx.Request().Context(), request.(AdminApplyTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminApplyTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminApplyTransactionTemplateResponseObject); ok {
+		return validResponse.VisitAdminApplyTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminRestoreTransactionTemplate operation middleware
+func (sh *strictHandler) AdminRestoreTransactionTemplate(ctx *echo.Context, userId UserId, id ResourceId) error {
+	var request AdminRestoreTransactionTemplateRequestObject
+
+	request.UserId = userId
+	request.Id = id
+
+	var body AdminRestoreTransactionTemplateJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminRestoreTransactionTemplate(ctx.Request().Context(), request.(AdminRestoreTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminRestoreTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminRestoreTransactionTemplateResponseObject); ok {
+		return validResponse.VisitAdminRestoreTransactionTemplateResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -4963,6 +6446,229 @@ func (sh *strictHandler) GetReportSummary(ctx *echo.Context, params GetReportSum
 	return nil
 }
 
+// ListTransactionTemplates operation middleware
+func (sh *strictHandler) ListTransactionTemplates(ctx *echo.Context, params ListTransactionTemplatesParams) error {
+	var request ListTransactionTemplatesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListTransactionTemplates(ctx.Request().Context(), request.(ListTransactionTemplatesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListTransactionTemplates")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListTransactionTemplatesResponseObject); ok {
+		return validResponse.VisitListTransactionTemplatesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateTransactionTemplate operation middleware
+func (sh *strictHandler) CreateTransactionTemplate(ctx *echo.Context) error {
+	var request CreateTransactionTemplateRequestObject
+
+	var body CreateTransactionTemplateJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateTransactionTemplate(ctx.Request().Context(), request.(CreateTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateTransactionTemplateResponseObject); ok {
+		return validResponse.VisitCreateTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteTransactionTemplate operation middleware
+func (sh *strictHandler) DeleteTransactionTemplate(ctx *echo.Context, id ResourceId, params DeleteTransactionTemplateParams) error {
+	var request DeleteTransactionTemplateRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteTransactionTemplate(ctx.Request().Context(), request.(DeleteTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteTransactionTemplateResponseObject); ok {
+		return validResponse.VisitDeleteTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetTransactionTemplate operation middleware
+func (sh *strictHandler) GetTransactionTemplate(ctx *echo.Context, id ResourceId, params GetTransactionTemplateParams) error {
+	var request GetTransactionTemplateRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTransactionTemplate(ctx.Request().Context(), request.(GetTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetTransactionTemplateResponseObject); ok {
+		return validResponse.VisitGetTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateTransactionTemplate operation middleware
+func (sh *strictHandler) UpdateTransactionTemplate(ctx *echo.Context, id ResourceId) error {
+	var request UpdateTransactionTemplateRequestObject
+
+	request.Id = id
+
+	var body UpdateTransactionTemplateJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateTransactionTemplate(ctx.Request().Context(), request.(UpdateTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateTransactionTemplateResponseObject); ok {
+		return validResponse.VisitUpdateTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ApplyTransactionTemplate operation middleware
+func (sh *strictHandler) ApplyTransactionTemplate(ctx *echo.Context, id ResourceId) error {
+	var request ApplyTransactionTemplateRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ApplyTransactionTemplate(ctx.Request().Context(), request.(ApplyTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApplyTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ApplyTransactionTemplateResponseObject); ok {
+		return validResponse.VisitApplyTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// RestoreTransactionTemplate operation middleware
+func (sh *strictHandler) RestoreTransactionTemplate(ctx *echo.Context, id ResourceId) error {
+	var request RestoreTransactionTemplateRequestObject
+
+	request.Id = id
+
+	var body RestoreTransactionTemplateJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.RestoreTransactionTemplate(ctx.Request().Context(), request.(RestoreTransactionTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RestoreTransactionTemplate")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(RestoreTransactionTemplateResponseObject); ok {
+		return validResponse.VisitRestoreTransactionTemplateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListTransactions operation middleware
 func (sh *strictHandler) ListTransactions(ctx *echo.Context, params ListTransactionsParams) error {
 	var request ListTransactionsRequestObject
@@ -5212,101 +6918,111 @@ func (sh *strictHandler) HealthReady(ctx *echo.Context) error {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"D7f/NwA=",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

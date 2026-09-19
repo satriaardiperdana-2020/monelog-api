@@ -54,11 +54,12 @@ func run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 	authHandler := handlers.NewAuth(authService, cfg.Auth.AllowedOrigins, appmiddleware.NewLoginRateLimiter())
 	categoryHandler := handlers.NewCategories(service.NewCategories(pool))
 	transactionHandler := handlers.NewTransactions(service.NewTransactions(pool))
+	templateHandler := handlers.NewTemplates(service.NewTemplates(pool))
 
 	e := echo.New()
 	appmiddleware.Register(e, logger)
 	appmiddleware.RegisterCORS(e, cfg.Auth.AllowedOrigins)
-	handlers.RegisterRoutes(e, healthHandler, authHandler, categoryHandler, transactionHandler, appmiddleware.Authenticate(authService))
+	handlers.RegisterRoutes(e, healthHandler, authHandler, categoryHandler, transactionHandler, templateHandler, appmiddleware.Authenticate(authService))
 
 	server := &http.Server{
 		Addr:              cfg.HTTP.Addr,

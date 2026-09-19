@@ -67,6 +67,19 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	}
 	ownerCategoryID := ownerCategory.ID
 
+	template, err := queries.CreateTransactionTemplate(ctx, db.CreateTransactionTemplateParams{
+		UserID: ownerID, CategoryID: ownerCategoryID, Type: "expense", Name: " Lunch template ", Amount: testNumeric(43500, 0), Title: " Template lunch ",
+	})
+	if err != nil {
+		t.Fatalf("create transaction template: %v", err)
+	}
+	if template.Name != "Lunch template" || template.Title != "Template lunch" || template.IsDelete || template.Version != 1 {
+		t.Fatalf("unexpected template defaults: %+v", template)
+	}
+	if active, err := queries.ListActiveTransactionTemplates(ctx, ownerID); err != nil || len(active) != 1 || active[0].ID != template.ID {
+		t.Fatalf("list active templates=%+v err=%v", active, err)
+	}
+
 	actorCategory, err := queries.CreateCategory(ctx, db.CreateCategoryParams{
 		UserID: actorID, Type: "expense", Name: "Food",
 	})
@@ -74,6 +87,34 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 		t.Fatalf("create actor category: %v", err)
 	}
 	actorCategoryID := actorCategory.ID
+
+	if _, err := queries.CreateTransactionTemplate(ctx, db.CreateTransactionTemplateParams{
+		UserID: ownerID, CategoryID: actorCategoryID, Type: "expense", Name: "Foreign template", Amount: testNumeric(1, 0), Title: "Foreign template",
+	}); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("cross-owner category should not create a template, got %v", err)
+	}
+	if _, err := queries.CreateTransactionTemplate(ctx, db.CreateTransactionTemplateParams{
+		UserID: ownerID, CategoryID: ownerCategoryID, Type: "income", Name: "Wrong type template", Amount: testNumeric(1, 0), Title: "Wrong type template",
+	}); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("incompatible category should not create a template, got %v", err)
+	}
+	deletedTemplate, err := queries.SoftDeleteTransactionTemplate(ctx, db.SoftDeleteTransactionTemplateParams{ID: template.ID, UserID: ownerID, ExpectedVersion: 1})
+	if err != nil || !deletedTemplate.IsDelete || deletedTemplate.Version != 2 {
+		t.Fatalf("soft delete template=%+v err=%v", deletedTemplate, err)
+	}
+	if active, err := queries.ListActiveTransactionTemplates(ctx, ownerID); err != nil || len(active) != 0 {
+		t.Fatalf("deleted template remained active=%+v err=%v", active, err)
+	}
+	if trashTemplates, err := queries.ListDeletedTransactionTemplates(ctx, ownerID); err != nil || len(trashTemplates) != 1 || trashTemplates[0].ID != template.ID {
+		t.Fatalf("list deleted templates=%+v err=%v", trashTemplates, err)
+	}
+	if _, err := queries.RestoreTransactionTemplate(ctx, db.RestoreTransactionTemplateParams{ID: template.ID, UserID: ownerID, ExpectedVersion: 1}); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("stale template restore should affect no row, got %v", err)
+	}
+	restoredTemplate, err := queries.RestoreTransactionTemplate(ctx, db.RestoreTransactionTemplateParams{ID: template.ID, UserID: ownerID, ExpectedVersion: 2})
+	if err != nil || restoredTemplate.IsDelete || restoredTemplate.Version != 3 {
+		t.Fatalf("restore template=%+v err=%v", restoredTemplate, err)
+	}
 
 	requestID := int64(6)
 	transaction, err := queries.CreateTransaction(ctx, db.CreateTransactionParams{

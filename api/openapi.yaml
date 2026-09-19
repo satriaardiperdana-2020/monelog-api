@@ -14,12 +14,16 @@ tags:
     description: Mengelola kategori income dan expense milik pengguna.
   - name: Transactions
     description: Mencatat dan membaca transaksi pengguna, termasuk Trash dan pemulihan.
+  - name: Templates
+    description: Mengelola templat input transaksi yang dapat digunakan ulang tanpa membuat transaksi otomatis.
   - name: Daily summaries
     description: Menyediakan total income, expense, dan selisih per hari untuk main page atau navigasi tanggal.
   - name: Admin categories
     description: Operasi kategori admin pada user_id yang dipilih secara eksplisit.
   - name: Admin transactions
     description: Operasi transaksi admin pada user_id yang dipilih secara eksplisit.
+  - name: Admin templates
+    description: Operasi templat admin pada user_id yang dipilih secara eksplisit.
   - name: Admin daily summaries
     description: Ringkasan harian admin untuk user_id yang dipilih secara eksplisit.
   - name: Reports
@@ -356,6 +360,151 @@ paths:
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionRequest'}}}}
       responses:
         '200': {description: Category restored., content: {application/json: {schema: {$ref: '#/components/schemas/CategoryResponse'}}}}
+  /api/v1/templates:
+    get:
+      tags: [Templates]
+      operationId: listTransactionTemplates
+      summary: List reusable transaction templates
+      parameters:
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Templates., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateListResponse'}}}}
+    post:
+      tags: [Templates]
+      operationId: createTransactionTemplate
+      summary: Create a reusable transaction template
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateCreateRequest'}}}}
+      responses:
+        '201': {description: Template created., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateResponse'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/v1/templates/{id}:
+    parameters: [{$ref: '#/components/parameters/ResourceId'}]
+    get:
+      tags: [Templates]
+      operationId: getTransactionTemplate
+      summary: Get a reusable transaction template
+      parameters:
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Template., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateResponse'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Templates]
+      operationId: updateTransactionTemplate
+      summary: Update an active reusable transaction template
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateUpdateRequest'}}}}
+      responses:
+        '200': {description: Updated template., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateResponse'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [Templates]
+      operationId: deleteTransactionTemplate
+      summary: Soft-delete a reusable transaction template
+      parameters: [{$ref: '#/components/parameters/IfMatch'}]
+      responses:
+        '204': {description: Template soft-deleted.}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/templates/{id}/restore:
+    parameters: [{$ref: '#/components/parameters/ResourceId'}]
+    post:
+      tags: [Templates]
+      operationId: restoreTransactionTemplate
+      summary: Restore a deleted reusable transaction template
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionRequest'}}}}
+      responses:
+        '200': {description: Restored template., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateResponse'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/templates/{id}/apply:
+    parameters: [{$ref: '#/components/parameters/ResourceId'}]
+    post:
+      tags: [Templates]
+      operationId: applyTransactionTemplate
+      summary: Return an unsaved transaction draft from an active template
+      description: Tidak membuat atau mengubah transaksi, total harian, laporan, maupun template.
+      responses:
+        '200': {description: Unsaved transaction draft., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateApplyResponse'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/admin/users/{user_id}/templates:
+    parameters: [{$ref: '#/components/parameters/UserId'}]
+    get:
+      tags: [Admin templates]
+      operationId: adminListTransactionTemplates
+      summary: List a selected user's reusable transaction templates
+      parameters:
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Templates., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateListResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Admin templates]
+      operationId: adminCreateTransactionTemplate
+      summary: Create a reusable transaction template for a selected user
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateCreateRequest'}}}}
+      responses:
+        '201': {description: Template created., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/v1/admin/users/{user_id}/templates/{id}:
+    parameters: [{$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/ResourceId'}]
+    get:
+      tags: [Admin templates]
+      operationId: adminGetTransactionTemplate
+      summary: Get a selected user's reusable transaction template
+      parameters:
+        - {name: isDelete, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Template., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Admin templates]
+      operationId: adminUpdateTransactionTemplate
+      summary: Update a selected user's active reusable transaction template
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateUpdateRequest'}}}}
+      responses:
+        '200': {description: Updated template., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Admin templates]
+      operationId: adminDeleteTransactionTemplate
+      summary: Soft-delete a selected user's reusable transaction template
+      parameters: [{$ref: '#/components/parameters/IfMatch'}]
+      responses:
+        '204': {description: Template soft-deleted.}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/admin/users/{user_id}/templates/{id}/restore:
+    parameters: [{$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/ResourceId'}]
+    post:
+      tags: [Admin templates]
+      operationId: adminRestoreTransactionTemplate
+      summary: Restore a selected user's deleted reusable transaction template
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionRequest'}}}}
+      responses:
+        '200': {description: Restored template., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/admin/users/{user_id}/templates/{id}/apply:
+    parameters: [{$ref: '#/components/parameters/UserId'}, {$ref: '#/components/parameters/ResourceId'}]
+    post:
+      tags: [Admin templates]
+      operationId: adminApplyTransactionTemplate
+      summary: Return an unsaved draft from a selected user's active template
+      responses:
+        '200': {description: Unsaved transaction draft., content: {application/json: {schema: {$ref: '#/components/schemas/TransactionTemplateApplyResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
   /api/v1/transactions:
     get:
       tags: [Transactions]
@@ -665,6 +814,51 @@ components:
         version: {type: integer, format: int32}
     CategoryResponse: {type: object, required: [data], properties: {data: {$ref: '#/components/schemas/Category'}}}
     CategoryListResponse: {type: object, required: [data], properties: {data: {type: array, items: {$ref: '#/components/schemas/Category'}}}}
+    TransactionTemplateCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, category_id, type, amount, title]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 80}
+        category_id: {type: integer, format: int64, minimum: 1}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        amount: {$ref: '#/components/schemas/Money'}
+        title: {type: string, minLength: 1, maxLength: 200}
+    TransactionTemplateUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, category_id, type, amount, title, version]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 80}
+        category_id: {type: integer, format: int64, minimum: 1}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        amount: {$ref: '#/components/schemas/Money'}
+        title: {type: string, minLength: 1, maxLength: 200}
+        version: {type: integer, format: int32, minimum: 1}
+    TransactionTemplate:
+      type: object
+      required: [id, user_id, category_id, type, name, amount, title, isDelete, version]
+      properties:
+        id: {type: integer, format: int64, minimum: 1}
+        user_id: {type: integer, format: int64, minimum: 1}
+        category_id: {type: integer, format: int64, minimum: 1}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        name: {type: string}
+        amount: {$ref: '#/components/schemas/Money'}
+        title: {type: string}
+        isDelete: {type: boolean}
+        version: {type: integer, format: int32}
+    TransactionTemplateDraft:
+      type: object
+      required: [category_id, type, amount, title]
+      properties:
+        category_id: {type: integer, format: int64, minimum: 1}
+        type: {$ref: '#/components/schemas/TransactionType'}
+        amount: {$ref: '#/components/schemas/Money'}
+        title: {type: string}
+    TransactionTemplateResponse: {type: object, required: [data], properties: {data: {$ref: '#/components/schemas/TransactionTemplate'}}}
+    TransactionTemplateListResponse: {type: object, required: [data], properties: {data: {type: array, items: {$ref: '#/components/schemas/TransactionTemplate'}}}}
+    TransactionTemplateApplyResponse: {type: object, required: [data], properties: {data: {$ref: '#/components/schemas/TransactionTemplateDraft'}}}
     TransactionCreateRequest:
       type: object
       additionalProperties: false

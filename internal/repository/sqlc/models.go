@@ -61,6 +61,20 @@ type Transaction struct {
 	UpdatedAt       pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
+type TransactionTemplate struct {
+	ID         int64              `db:"id" json:"id"`
+	UserID     int64              `db:"user_id" json:"user_id"`
+	CategoryID int64              `db:"category_id" json:"category_id"`
+	Type       string             `db:"type" json:"type"`
+	Name       string             `db:"name" json:"name"`
+	Amount     pgtype.Numeric     `db:"amount" json:"amount"`
+	Title      string             `db:"title" json:"title"`
+	IsDelete   bool               `db:"is_delete" json:"is_delete"`
+	Version    int32              `db:"version" json:"version"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
 type User struct {
 	ID           int64              `db:"id" json:"id"`
 	Email        string             `db:"email" json:"email"`

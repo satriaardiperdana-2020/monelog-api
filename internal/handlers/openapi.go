@@ -12,12 +12,13 @@ type openAPIServer struct {
 	auth         *Auth
 	categories   *Categories
 	transactions *Transactions
+	templates    *Templates
 }
 
 var _ api.ServerInterface = (*openAPIServer)(nil)
 
-func newOpenAPIServer(health *Health, auth *Auth, categories *Categories, transactions *Transactions) *openAPIServer {
-	return &openAPIServer{health: health, auth: auth, categories: categories, transactions: transactions}
+func newOpenAPIServer(health *Health, auth *Auth, categories *Categories, transactions *Transactions, templates *Templates) *openAPIServer {
+	return &openAPIServer{health: health, auth: auth, categories: categories, transactions: transactions, templates: templates}
 }
 
 func (s *openAPIServer) HealthLive(c *echo.Context) error  { return s.health.Live(c) }
@@ -66,6 +67,49 @@ func (s *openAPIServer) AdminDeleteCategory(c *echo.Context, owner api.UserId, i
 }
 func (s *openAPIServer) AdminRestoreCategory(c *echo.Context, owner api.UserId, id api.ResourceId) error {
 	return s.categories.AdminRestore(c, owner, id)
+}
+
+func (s *openAPIServer) ListTransactionTemplates(c *echo.Context, p api.ListTransactionTemplatesParams) error {
+	return s.templates.List(c, p)
+}
+func (s *openAPIServer) CreateTransactionTemplate(c *echo.Context) error {
+	return s.templates.Create(c)
+}
+func (s *openAPIServer) GetTransactionTemplate(c *echo.Context, id api.ResourceId, p api.GetTransactionTemplateParams) error {
+	return s.templates.Get(c, id, p)
+}
+func (s *openAPIServer) UpdateTransactionTemplate(c *echo.Context, id api.ResourceId) error {
+	return s.templates.Update(c, id)
+}
+func (s *openAPIServer) DeleteTransactionTemplate(c *echo.Context, id api.ResourceId, p api.DeleteTransactionTemplateParams) error {
+	return s.templates.Delete(c, id, p.IfMatch)
+}
+func (s *openAPIServer) RestoreTransactionTemplate(c *echo.Context, id api.ResourceId) error {
+	return s.templates.Restore(c, id)
+}
+func (s *openAPIServer) ApplyTransactionTemplate(c *echo.Context, id api.ResourceId) error {
+	return s.templates.Apply(c, id)
+}
+func (s *openAPIServer) AdminListTransactionTemplates(c *echo.Context, owner api.UserId, p api.AdminListTransactionTemplatesParams) error {
+	return s.templates.AdminList(c, owner, p)
+}
+func (s *openAPIServer) AdminCreateTransactionTemplate(c *echo.Context, owner api.UserId) error {
+	return s.templates.AdminCreate(c, owner)
+}
+func (s *openAPIServer) AdminGetTransactionTemplate(c *echo.Context, owner api.UserId, id api.ResourceId, p api.AdminGetTransactionTemplateParams) error {
+	return s.templates.AdminGet(c, owner, id, p)
+}
+func (s *openAPIServer) AdminUpdateTransactionTemplate(c *echo.Context, owner api.UserId, id api.ResourceId) error {
+	return s.templates.AdminUpdate(c, owner, id)
+}
+func (s *openAPIServer) AdminDeleteTransactionTemplate(c *echo.Context, owner api.UserId, id api.ResourceId, p api.AdminDeleteTransactionTemplateParams) error {
+	return s.templates.AdminDelete(c, owner, id, p.IfMatch)
+}
+func (s *openAPIServer) AdminRestoreTransactionTemplate(c *echo.Context, owner api.UserId, id api.ResourceId) error {
+	return s.templates.AdminRestore(c, owner, id)
+}
+func (s *openAPIServer) AdminApplyTransactionTemplate(c *echo.Context, owner api.UserId, id api.ResourceId) error {
+	return s.templates.AdminApply(c, owner, id)
 }
 
 func (s *openAPIServer) ListTransactions(c *echo.Context, p api.ListTransactionsParams) error {
