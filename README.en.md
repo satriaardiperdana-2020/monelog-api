@@ -117,7 +117,7 @@ curl --location 'http://127.0.0.1:8080/api/v1/categories' \
 curl --location 'http://127.0.0.1:8080/api/v1/transactions' \
   --header "Authorization: Bearer $ACCESS_TOKEN" \
   --header 'Content-Type: application/json' \
-  --data '{"transaction_date":"2026-09-17","type":"income","category_id":"<category-uuid>","amount":"15000000.00","title":"September salary","client_request_id":"<request-uuid>"}'
+  --data '{"transaction_date":"2026-09-17","type":"income","category_id":1,"amount":"15000000.00","title":"September salary","client_request_id":1001}'
 
 # List active transaction history for a date range; repeat with page.next_cursor for the next page.
 curl --location 'http://127.0.0.1:8080/api/v1/transactions?start_date=2026-09-01&end_date=2026-09-30&limit=30' \

@@ -56,7 +56,7 @@ Tambahkan schema/parameter reusable berikut:
 - List transaksi: `start_date` dan `end_date` wajib, `type`, `category_id`, `isDelete` default false, `limit` default 30 maksimum 100, dan `cursor` opsional. Rentang inklusif maksimal 366 hari.
 - Ringkasan harian: `start_date`, `end_date`, `limit`, dan `cursor`; tidak menerima `isDelete`, tipe, atau kategori. Setiap item berisi `date`, string `income`, string `expense`, dan string `difference`. Hari kosong tidak dibuat sebagai bucket; rentang tanpa transaksi mengembalikan `data: []`.
 - Navigasi hari memakai cursor `daily-summaries`; memilih satu tanggal memanggil list transaksi dengan `start_date=end_date=<tanggal>`, sehingga tidak diperlukan endpoint detail hari kedua.
-- Dokumentasikan 400 untuk JSON/UUID/query/cursor/`If-Match` yang rusak atau field terlarang; 401 untuk auth; 403 untuk route admin oleh non-admin; 404 untuk resource/kategori di luar owner; 409 untuk idempotency mismatch, lifecycle/version stale, target tidak aktif, atau kategori terhapus; 422 untuk title/amount/type/date/rentang yang tidak valid; 500 untuk kegagalan internal; 503 bila audit wajib tidak dapat disimpan.
+- Dokumentasikan 400 untuk JSON/ID integer/query/cursor/`If-Match` yang rusak atau field terlarang; 401 untuk auth; 403 untuk route admin oleh non-admin; 404 untuk resource/kategori di luar owner; 409 untuk idempotency mismatch, lifecycle/version stale, target tidak aktif, atau kategori terhapus; 422 untuk title/amount/type/date/rentang yang tidak valid; 500 untuk kegagalan internal; 503 bila audit wajib tidak dapat disimpan.
 
 ## Model domain, uang, tanggal, dan cursor
 
@@ -78,7 +78,7 @@ Aturan validasi service:
 5. Type harus `income` atau `expense`.
 6. Category harus berada pada owner yang sama, type harus sama, dan `is_delete` harus false untuk create/update/restore. Category owner lain atau tidak ada menjadi 404; type salah menjadi 422; category terhapus menjadi 409.
 7. `version` harus positif. Create/update body menolak semua field tambahan sehingga owner dan lifecycle tidak dapat diinjeksi.
-8. Canonical create payload terdiri dari version marker, owner UUID canonical, date canonical, lowercase type tervalidasi, category UUID canonical, amount dua digit, dan title hasil trim. Hash dengan SHA-256 hex; jangan masukkan actor atau urutan JSON. `client_request_id` adalah key terpisah dalam unique `(user_id, client_request_id)`.
+8. Canonical create payload terdiri dari version marker, owner ID, date canonical, lowercase type tervalidasi, category ID, amount dua digit, dan title hasil trim. Hash dengan SHA-256 hex; jangan masukkan actor atau urutan JSON. `client_request_id` adalah key terpisah dalam unique `(user_id, client_request_id)`.
 
 Cursor menyimpan `v`, endpoint, actor, mode, owner, filter tanggal/tipe/kategori, state `isDelete`, dan keyset terakhir. Decoder harus membandingkan seluruh binding dengan request saat ini sebelum query. Cursor aktif menyimpan `(transaction_date, created_at, id)`, Trash menyimpan `(updated_at, id)`, dan daily summary menyimpan `date`. Cursor tidak pernah mengganti predicate owner pada SQL.
 
@@ -104,11 +104,11 @@ Repository menyediakan metode sepadan dengan nama `List`, `Get`, `Create`, `Upda
 
 Semua create/update/delete/restore menjalankan satu transaksi PostgreSQL:
 
-1. Lock actor dan owner melalui `LockUsersForUpdate`, yang sudah mengurutkan UUID. Personal hanya perlu satu ID; admin memakai actor dan owner tanpa duplikasi.
+1. Lock actor dan owner melalui `LockUsersForUpdate`, yang sudah mengurutkan ID. Personal hanya perlu satu ID; admin memakai actor dan owner tanpa duplikasi.
 2. Periksa actor masih aktif. Untuk mode admin, periksa role database saat ini masih `admin`; periksa owner ada dan aktif untuk semua write.
 3. Untuk create/update/restore, lock kategori owner dengan query `FOR UPDATE`, lalu periksa type dan `is_delete=false`. Urutan selalu users dahulu, category kemudian, transaction row/insert terakhir agar race dengan delete category tidak melewati validasi.
 4. Jalankan insert atau mutasi dengan predicate `id`, `user_id`, expected `version`, dan expected `is_delete`.
-5. Untuk mode admin, insert `admin_access_events` dengan `resource_type=transaction`, action `create|update|delete|restore`, actor/target/resource/version/replay metadata aman, dan request ID yang diteruskan handler dari middleware Echo. Jangan membuat UUID audit baru bila request sudah memiliki `X-Request-ID`, serta jangan simpan title, amount, atau payload.
+5. Untuk mode admin, insert `admin_access_events` dengan `resource_type=transaction`, action `create|update|delete|restore`, actor/target/resource/version/replay metadata aman, dan request ID yang diteruskan handler dari middleware Echo. Jangan membuat request ID baru bila request sudah memiliki `X-Request-ID`, serta jangan simpan title, amount, atau payload.
 6. Commit mutasi dan audit bersama. Kegagalan audit membatalkan mutasi dan dipetakan ke 503.
 
 Create memakai `INSERT ... ON CONFLICT (user_id, client_request_id) DO NOTHING RETURNING ...`. Jika insert tidak mengembalikan baris, ambil row `(owner, client_request_id) FOR UPDATE`: hash sama dan row aktif menghasilkan replay 200 terhadap resource hasil create asli dengan ID/`client_request_id` yang sama; hash berbeda atau row sudah terhapus menghasilkan 409. `request_hash` tetap hash payload create awal ketika transaksi kemudian diedit. Test idempotensi wajib mencakup dua create bersamaan agar hanya satu ID tersimpan.
@@ -141,7 +141,7 @@ Tambahkan `internal/handlers/transactions.go` dan `internal/handlers/transaction
 
 - Handler memakai generated query/path/header types dan `decodeJSON` yang menolak unknown fields.
 - `personalScope` selalu menyalin actor dari middleware menjadi actor sekaligus owner.
-- `adminScope` selalu memakai actor middleware dan UUID `{user_id}` path sebagai owner; tidak ada fallback ke body/query.
+- `adminScope` selalu memakai actor middleware dan BIGINT `{user_id}` path sebagai owner; tidak ada fallback ke body/query.
 - Handler mengambil request ID yang sudah dibuat middleware RequestID milik Echo dari context/header dan memasukkannya ke scope/call metadata untuk audit; repository tidak membuat identitas request pengganti.
 - Map hasil create `Created=true` ke 201 dan replay ke 200; delete mengembalikan 204 tanpa body; list selalu mengembalikan array non-nil dan `page.next_cursor` null pada akhir.
 - Format amount/total hanya melalui `Money.String()`. Timestamp audit/resource keluar sebagai UTC RFC3339 dan date sebagai `YYYY-MM-DD`.
@@ -162,7 +162,7 @@ Jangan memasang route manual di luar generated OpenAPI router.
 `internal/service/money_test.go`, `internal/service/transaction_cursor_test.go`, dan `internal/service/transactions_test.go` mencakup:
 
 - parsing/format uang tanpa float dan seluruh batas;
-- title trim/panjang, UUID, type, strict date, future date pada `Asia/Jakarta` dan `UTC`, timezone invalid;
+- title trim/panjang, ID integer, type, strict date, future date pada `Asia/Jakarta` dan `UTC`, timezone invalid;
 - canonical hash stabil untuk JSON/order/whitespace amount-title yang ekuivalen dan berbeda untuk perubahan field;
 - cursor rusak serta reuse lintas actor/mode/owner/filter/active-Trash/endpoint;
 - personal scope tidak dapat memilih owner lain dan mode admin memerlukan role admin.

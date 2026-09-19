@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
 	"github.com/satriaardiperdana-2020/monelog-api/internal/service"
@@ -23,7 +22,7 @@ func (f fakeAuthenticator) AuthenticateAccess(context.Context, string) (service.
 
 func TestAuthenticateLoadsActorAndNoStore(t *testing.T) {
 	e := echo.New()
-	actor := service.Actor{UserID: uuid.New(), Role: service.RoleAdmin}
+	actor := service.Actor{UserID: 1, Role: service.RoleAdmin}
 	e.GET("/protected", func(c *echo.Context) error {
 		got, ok := Actor(c.Request().Context())
 		if !ok || got != actor {

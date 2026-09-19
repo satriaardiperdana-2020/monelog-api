@@ -7,30 +7,22 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createCategory = `-- name: CreateCategory :one
-INSERT INTO categories (id, user_id, type, name)
-VALUES ($1, $2, $3, btrim($4))
+INSERT INTO categories (user_id, type, name)
+VALUES ($1, $2, btrim($3))
 RETURNING id, user_id, type, name, is_delete, version, created_at, updated_at
 `
 
 type CreateCategoryParams struct {
-	ID     pgtype.UUID `db:"id" json:"id"`
-	UserID pgtype.UUID `db:"user_id" json:"user_id"`
-	Type   string      `db:"type" json:"type"`
-	Name   string      `db:"name" json:"name"`
+	UserID int64  `db:"user_id" json:"user_id"`
+	Type   string `db:"type" json:"type"`
+	Name   string `db:"name" json:"name"`
 }
 
 func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error) {
-	row := q.db.QueryRow(ctx, createCategory,
-		arg.ID,
-		arg.UserID,
-		arg.Type,
-		arg.Name,
-	)
+	row := q.db.QueryRow(ctx, createCategory, arg.UserID, arg.Type, arg.Name)
 	var i Category
 	err := row.Scan(
 		&i.ID,
@@ -54,8 +46,8 @@ WHERE id = $1
 `
 
 type GetActiveCategoryParams struct {
-	ID     pgtype.UUID `db:"id" json:"id"`
-	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	ID     int64 `db:"id" json:"id"`
+	UserID int64 `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) GetActiveCategory(ctx context.Context, arg GetActiveCategoryParams) (Category, error) {
@@ -82,8 +74,8 @@ WHERE id = $1
 `
 
 type GetCategoryByIDParams struct {
-	ID     pgtype.UUID `db:"id" json:"id"`
-	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	ID     int64 `db:"id" json:"id"`
+	UserID int64 `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) GetCategoryByID(ctx context.Context, arg GetCategoryByIDParams) (Category, error) {
@@ -111,8 +103,8 @@ WHERE id = $1
 `
 
 type GetDeletedCategoryParams struct {
-	ID     pgtype.UUID `db:"id" json:"id"`
-	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	ID     int64 `db:"id" json:"id"`
+	UserID int64 `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) GetDeletedCategory(ctx context.Context, arg GetDeletedCategoryParams) (Category, error) {
@@ -139,7 +131,7 @@ WHERE user_id = $1
 ORDER BY type, lower(name), id
 `
 
-func (q *Queries) ListActiveCategories(ctx context.Context, userID pgtype.UUID) ([]Category, error) {
+func (q *Queries) ListActiveCategories(ctx context.Context, userID int64) ([]Category, error) {
 	rows, err := q.db.Query(ctx, listActiveCategories, userID)
 	if err != nil {
 		return nil, err
@@ -176,7 +168,7 @@ WHERE user_id = $1
 ORDER BY updated_at DESC, id DESC
 `
 
-func (q *Queries) ListDeletedCategories(ctx context.Context, userID pgtype.UUID) ([]Category, error) {
+func (q *Queries) ListDeletedCategories(ctx context.Context, userID int64) ([]Category, error) {
 	rows, err := q.db.Query(ctx, listDeletedCategories, userID)
 	if err != nil {
 		return nil, err
@@ -218,9 +210,9 @@ RETURNING id, user_id, type, name, is_delete, version, created_at, updated_at
 `
 
 type RestoreCategoryParams struct {
-	ID              pgtype.UUID `db:"id" json:"id"`
-	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
-	ExpectedVersion int32       `db:"expected_version" json:"expected_version"`
+	ID              int64 `db:"id" json:"id"`
+	UserID          int64 `db:"user_id" json:"user_id"`
+	ExpectedVersion int32 `db:"expected_version" json:"expected_version"`
 }
 
 func (q *Queries) RestoreCategory(ctx context.Context, arg RestoreCategoryParams) (Category, error) {
@@ -252,9 +244,9 @@ RETURNING id, user_id, type, name, is_delete, version, created_at, updated_at
 `
 
 type SoftDeleteCategoryParams struct {
-	ID              pgtype.UUID `db:"id" json:"id"`
-	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
-	ExpectedVersion int32       `db:"expected_version" json:"expected_version"`
+	ID              int64 `db:"id" json:"id"`
+	UserID          int64 `db:"user_id" json:"user_id"`
+	ExpectedVersion int32 `db:"expected_version" json:"expected_version"`
 }
 
 func (q *Queries) SoftDeleteCategory(ctx context.Context, arg SoftDeleteCategoryParams) (Category, error) {
@@ -286,10 +278,10 @@ RETURNING id, user_id, type, name, is_delete, version, created_at, updated_at
 `
 
 type UpdateCategoryParams struct {
-	Name            string      `db:"name" json:"name"`
-	ID              pgtype.UUID `db:"id" json:"id"`
-	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
-	ExpectedVersion int32       `db:"expected_version" json:"expected_version"`
+	Name            string `db:"name" json:"name"`
+	ID              int64  `db:"id" json:"id"`
+	UserID          int64  `db:"user_id" json:"user_id"`
+	ExpectedVersion int32  `db:"expected_version" json:"expected_version"`
 }
 
 func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error) {

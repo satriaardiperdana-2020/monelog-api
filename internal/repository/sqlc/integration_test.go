@@ -28,10 +28,7 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	queries := db.New(pool)
 	ctx := context.Background()
 
-	ownerID := testUUID(1)
-	actorID := testUUID(2)
 	owner, err := queries.CreateUser(ctx, db.CreateUserParams{
-		ID:           ownerID,
 		Email:        " Owner@Example.com ",
 		PasswordHash: "owner-password-hash",
 		Timezone:     "Asia/Jakarta",
@@ -43,9 +40,9 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	if owner.Email != "owner@example.com" || owner.Role != "user" || owner.IsDelete || owner.Version != 1 {
 		t.Fatalf("unexpected owner defaults: %+v", owner)
 	}
+	ownerID := owner.ID
 
 	actor, err := queries.CreateUser(ctx, db.CreateUserParams{
-		ID:           actorID,
 		Email:        "actor@example.com",
 		PasswordHash: "actor-password-hash",
 		Timezone:     "Asia/Jakarta",
@@ -57,10 +54,10 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	if actor.Role != "user" {
 		t.Fatalf("registration query bypassed role default: %q", actor.Role)
 	}
+	actorID := actor.ID
 
-	ownerCategoryID := testUUID(3)
 	ownerCategory, err := queries.CreateCategory(ctx, db.CreateCategoryParams{
-		ID: ownerCategoryID, UserID: ownerID, Type: "expense", Name: " Food ",
+		UserID: ownerID, Type: "expense", Name: " Food ",
 	})
 	if err != nil {
 		t.Fatalf("create owner category: %v", err)
@@ -68,18 +65,18 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	if ownerCategory.Name != "Food" || ownerCategory.IsDelete || ownerCategory.Version != 1 {
 		t.Fatalf("unexpected category defaults: %+v", ownerCategory)
 	}
+	ownerCategoryID := ownerCategory.ID
 
-	actorCategoryID := testUUID(4)
-	if _, err := queries.CreateCategory(ctx, db.CreateCategoryParams{
-		ID: actorCategoryID, UserID: actorID, Type: "expense", Name: "Food",
-	}); err != nil {
+	actorCategory, err := queries.CreateCategory(ctx, db.CreateCategoryParams{
+		UserID: actorID, Type: "expense", Name: "Food",
+	})
+	if err != nil {
 		t.Fatalf("create actor category: %v", err)
 	}
+	actorCategoryID := actorCategory.ID
 
-	transactionID := testUUID(5)
-	requestID := testUUID(6)
+	requestID := int64(6)
 	transaction, err := queries.CreateTransaction(ctx, db.CreateTransactionParams{
-		ID:              transactionID,
 		UserID:          ownerID,
 		CategoryID:      ownerCategoryID,
 		Type:            "expense",
@@ -96,19 +93,19 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	if transaction.Title != "Lunch" || transaction.IsDelete || transaction.Version != 1 {
 		t.Fatalf("unexpected transaction defaults: %+v", transaction)
 	}
-	if transaction.UserID.Bytes != ownerID.Bytes || transaction.CreatedBy.Bytes != actorID.Bytes || transaction.UpdatedBy.Bytes != actorID.Bytes {
+	transactionID := transaction.ID
+	if transaction.UserID != ownerID || transaction.CreatedBy != actorID || transaction.UpdatedBy != actorID {
 		t.Fatalf("owner/actor attribution was not preserved: %+v", transaction)
 	}
 
 	_, err = queries.CreateTransaction(ctx, db.CreateTransactionParams{
-		ID:              testUUID(7),
 		UserID:          ownerID,
 		CategoryID:      actorCategoryID,
 		Type:            "expense",
 		Amount:          testNumeric(1, 0),
 		TransactionDate: testDate(2026, time.September, 16),
 		Title:           "Wrong owner",
-		ClientRequestID: testUUID(8),
+		ClientRequestID: 8,
 		RequestHash:     "wrong-owner-hash",
 		ActorUserID:     actorID,
 	})
@@ -117,7 +114,6 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	}
 
 	_, err = queries.CreateTransaction(ctx, db.CreateTransactionParams{
-		ID:              testUUID(9),
 		UserID:          ownerID,
 		CategoryID:      ownerCategoryID,
 		Type:            "expense",
@@ -133,14 +129,13 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	}
 
 	_, err = queries.CreateTransaction(ctx, db.CreateTransactionParams{
-		ID:              testUUID(10),
 		UserID:          ownerID,
 		CategoryID:      ownerCategoryID,
 		Type:            "expense",
 		Amount:          testNumeric(0, 0),
 		TransactionDate: testDate(2026, time.September, 16),
 		Title:           "Invalid amount",
-		ClientRequestID: testUUID(11),
+		ClientRequestID: 11,
 		RequestHash:     "invalid-amount-hash",
 		ActorUserID:     actorID,
 	})
@@ -178,7 +173,7 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	}
 
 	if _, err := queries.CreateCategory(ctx, db.CreateCategoryParams{
-		ID: testUUID(12), UserID: ownerID, Type: "expense", Name: "food",
+		UserID: ownerID, Type: "expense", Name: "food",
 	}); err == nil {
 		t.Fatal("case-insensitive duplicate category name was accepted")
 	} else {
@@ -186,11 +181,10 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	}
 
 	event, err := queries.InsertAdminAccessEvent(ctx, db.InsertAdminAccessEventParams{
-		ID:           testUUID(13),
 		ActorUserID:  actorID,
-		TargetUserID: ownerID,
+		TargetUserID: &ownerID,
 		ResourceType: "transaction",
-		ResourceID:   transactionID,
+		ResourceID:   &transactionID,
 		Action:       "restore",
 		Outcome:      "success",
 		RequestID:    "request-14",
@@ -199,14 +193,14 @@ func TestSchemaAndScopedLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("insert audit event: %v", err)
 	}
-	if event.ActorUserID.Bytes != actorID.Bytes || event.TargetUserID.Bytes != ownerID.Bytes {
+	if event.ActorUserID != actorID || event.TargetUserID == nil || *event.TargetUserID != ownerID {
 		t.Fatalf("audit actor/target attribution was not preserved: %+v", event)
 	}
 
+	familyID := int64(16)
 	if _, err := queries.CreateRefreshSession(ctx, db.CreateRefreshSessionParams{
-		ID:        testUUID(15),
 		UserID:    ownerID,
-		FamilyID:  testUUID(16),
+		FamilyID:  &familyID,
 		TokenHash: "refresh-token-hash",
 		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(time.Hour), Valid: true},
 	}); err != nil {
@@ -282,12 +276,6 @@ func openMigratedTestPool(t *testing.T) *pgxpool.Pool {
 	}
 
 	return pool
-}
-
-func testUUID(lastByte byte) pgtype.UUID {
-	var bytes [16]byte
-	bytes[15] = lastByte
-	return pgtype.UUID{Bytes: bytes, Valid: true}
 }
 
 func testNumeric(value int64, exponent int32) pgtype.Numeric {

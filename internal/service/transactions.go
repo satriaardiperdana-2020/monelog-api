@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,13 +23,13 @@ var ErrUnavailable = errors.New("service unavailable")
 
 type TransactionScope struct {
 	Actor     Actor
-	Owner     uuid.UUID
+	Owner     int64
 	Admin     bool
 	RequestID string
 }
 
 type Transaction struct {
-	ID, UserID, CategoryID, ClientRequestID, CreatedBy, UpdatedBy uuid.UUID
+	ID, UserID, CategoryID, ClientRequestID, CreatedBy, UpdatedBy int64
 	Type, CategoryName, Title, Amount                             string
 	TransactionDate, CreatedAt, UpdatedAt                         time.Time
 	IsDelete                                                      bool
@@ -38,17 +39,17 @@ type Transaction struct {
 type TransactionInput struct {
 	TransactionDate string
 	Type            string
-	CategoryID      uuid.UUID
+	CategoryID      int64
 	Amount          string
 	Title           string
-	ClientRequestID uuid.UUID
+	ClientRequestID int64
 	Version         int32
 }
 
 type TransactionFilter struct {
 	StartDate, EndDate string
 	Type               string
-	CategoryID         *uuid.UUID
+	CategoryID         *int64
 	Deleted            bool
 	Limit              int32
 	Cursor             string
@@ -79,7 +80,7 @@ type ReportFilter struct {
 }
 
 type ReportCategoryTotal struct {
-	CategoryID         uuid.UUID
+	CategoryID         int64
 	Name, Type, Amount string
 }
 
@@ -132,7 +133,7 @@ func (s *Transactions) List(ctx context.Context, scope TransactionScope, filter 
 		return TransactionPage{}, ErrValidation
 	}
 	if filter.CategoryID != nil {
-		category, err := s.queries.GetCategoryByID(ctx, db.GetCategoryByIDParams{ID: toPGUUID(*filter.CategoryID), UserID: toPGUUID(scope.Owner)})
+		category, err := s.queries.GetCategoryByID(ctx, db.GetCategoryByIDParams{ID: *filter.CategoryID, UserID: scope.Owner})
 		if errors.Is(err, pgx.ErrNoRows) {
 			return TransactionPage{}, ErrNotFound
 		} else if err != nil {
@@ -146,19 +147,19 @@ func (s *Transactions) List(ctx context.Context, scope TransactionScope, filter 
 	if err != nil || !cursorMatches(cursor, scope, filter, "transactions") {
 		return TransactionPage{}, ErrValidation
 	}
-	paramsActive := db.ListActiveTransactionsParams{UserID: toPGUUID(scope.Owner), StartDate: pgDate(start), EndDate: pgDate(end), FilterType: filter.Type, PageSize: limit + 1}
-	paramsDeleted := db.ListDeletedTransactionsParams{UserID: toPGUUID(scope.Owner), StartDate: pgDate(start), EndDate: pgDate(end), FilterType: filter.Type, PageSize: limit + 1}
+	paramsActive := db.ListActiveTransactionsParams{UserID: scope.Owner, StartDate: pgDate(start), EndDate: pgDate(end), FilterType: filter.Type, PageSize: limit + 1}
+	paramsDeleted := db.ListDeletedTransactionsParams{UserID: scope.Owner, StartDate: pgDate(start), EndDate: pgDate(end), FilterType: filter.Type, PageSize: limit + 1}
 	if filter.CategoryID != nil {
 		paramsActive.HasCategory, paramsDeleted.HasCategory = true, true
-		paramsActive.CategoryID, paramsDeleted.CategoryID = toPGUUID(*filter.CategoryID), toPGUUID(*filter.CategoryID)
+		paramsActive.CategoryID, paramsDeleted.CategoryID = *filter.CategoryID, *filter.CategoryID
 	}
 	if cursor != nil {
 		paramsActive.HasCursor, paramsDeleted.HasCursor = true, true
 		paramsActive.CursorDate = pgDate(mustDate(cursor.Date))
 		paramsActive.CursorCreatedAt = pgtype.Timestamptz{Time: mustTimestamp(cursor.Timestamp), Valid: true}
-		paramsActive.CursorID = toPGUUID(uuid.MustParse(cursor.ID))
+		paramsActive.CursorID = mustInt64(cursor.ID)
 		paramsDeleted.CursorUpdatedAt = pgtype.Timestamptz{Time: mustTimestamp(cursor.Timestamp), Valid: true}
-		paramsDeleted.CursorID = toPGUUID(uuid.MustParse(cursor.ID))
+		paramsDeleted.CursorID = mustInt64(cursor.ID)
 	}
 	items := make([]Transaction, 0, limit)
 	if filter.Deleted {
@@ -188,15 +189,15 @@ func (s *Transactions) List(ctx context.Context, scope TransactionScope, filter 
 	}
 	page := paginateTransactions(items, limit, scope, filter)
 	if scope.Admin {
-		if err := s.auditRead(ctx, scope, "list", uuid.Nil); err != nil {
+		if err := s.auditRead(ctx, scope, "list", 0); err != nil {
 			return TransactionPage{}, err
 		}
 	}
 	return page, nil
 }
 
-func (s *Transactions) Get(ctx context.Context, scope TransactionScope, id uuid.UUID, deleted bool) (Transaction, error) {
-	if id == uuid.Nil {
+func (s *Transactions) Get(ctx context.Context, scope TransactionScope, id int64, deleted bool) (Transaction, error) {
+	if id <= 0 {
 		return Transaction{}, ErrValidation
 	}
 	if err := s.validateReadScope(ctx, scope); err != nil {
@@ -205,13 +206,13 @@ func (s *Transactions) Get(ctx context.Context, scope TransactionScope, id uuid.
 	var item Transaction
 	var err error
 	if deleted {
-		row, e := s.queries.GetDeletedTransaction(ctx, db.GetDeletedTransactionParams{ID: toPGUUID(id), UserID: toPGUUID(scope.Owner)})
+		row, e := s.queries.GetDeletedTransaction(ctx, db.GetDeletedTransactionParams{ID: id, UserID: scope.Owner})
 		err = e
 		if e == nil {
 			item, err = transactionFromDeletedRowForGet(row)
 		}
 	} else {
-		row, e := s.queries.GetActiveTransaction(ctx, db.GetActiveTransactionParams{ID: toPGUUID(id), UserID: toPGUUID(scope.Owner)})
+		row, e := s.queries.GetActiveTransaction(ctx, db.GetActiveTransactionParams{ID: id, UserID: scope.Owner})
 		err = e
 		if e == nil {
 			item, err = transactionFromActiveRowForGet(row)
@@ -253,10 +254,10 @@ func (s *Transactions) Create(ctx context.Context, scope TransactionScope, input
 		return CreateTransactionResult{}, err
 	}
 	hash := canonicalTransactionHash(scope.Owner, validated)
-	created, err := q.CreateTransaction(ctx, db.CreateTransactionParams{ID: toPGUUID(uuid.New()), UserID: toPGUUID(scope.Owner), CategoryID: toPGUUID(validated.categoryID), Type: validated.kind, Amount: validated.amount.Numeric(), TransactionDate: pgDate(validated.date), Title: validated.title, ClientRequestID: toPGUUID(input.ClientRequestID), RequestHash: hash, ActorUserID: toPGUUID(scope.Actor.UserID)})
+	created, err := q.CreateTransaction(ctx, db.CreateTransactionParams{UserID: scope.Owner, CategoryID: validated.categoryID, Type: validated.kind, Amount: validated.amount.Numeric(), TransactionDate: pgDate(validated.date), Title: validated.title, ClientRequestID: input.ClientRequestID, RequestHash: hash, ActorUserID: scope.Actor.UserID})
 	wasCreated := err == nil
 	if errors.Is(err, pgx.ErrNoRows) {
-		created, err = q.GetTransactionByRequestIDForUpdate(ctx, db.GetTransactionByRequestIDForUpdateParams{UserID: toPGUUID(scope.Owner), ClientRequestID: toPGUUID(input.ClientRequestID)})
+		created, err = q.GetTransactionByRequestIDForUpdate(ctx, db.GetTransactionByRequestIDForUpdateParams{UserID: scope.Owner, ClientRequestID: input.ClientRequestID})
 		if err == nil && (created.RequestHash != hash || created.IsDelete) {
 			return CreateTransactionResult{}, ErrConflict
 		}
@@ -265,21 +266,21 @@ func (s *Transactions) Create(ctx context.Context, scope TransactionScope, input
 		return CreateTransactionResult{}, err
 	}
 	if scope.Admin {
-		if err := insertAudit(ctx, q, scope, created.ID, "create"); err != nil {
+		if err := insertAudit(ctx, q, scope, &created.ID, "create"); err != nil {
 			return CreateTransactionResult{}, ErrUnavailable
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return CreateTransactionResult{}, err
 	}
-	item, err := s.Get(ctx, scope, fromPGUUID(created.ID), false)
+	item, err := s.Get(ctx, scope, created.ID, false)
 	if err != nil {
 		return CreateTransactionResult{}, err
 	}
 	return CreateTransactionResult{Transaction: item, Created: wasCreated}, nil
 }
 
-func (s *Transactions) Update(ctx context.Context, scope TransactionScope, id uuid.UUID, input TransactionInput) (Transaction, error) {
+func (s *Transactions) Update(ctx context.Context, scope TransactionScope, id int64, input TransactionInput) (Transaction, error) {
 	validated, err := s.validateInput(scope.Owner, input, true)
 	if err != nil {
 		return Transaction{}, err
@@ -297,7 +298,7 @@ func (s *Transactions) Update(ctx context.Context, scope TransactionScope, id uu
 	if err := validateOwnerDate(owner.Timezone, validated.date, s.now()); err != nil {
 		return Transaction{}, err
 	}
-	state, err := q.GetTransactionStateForUpdate(ctx, db.GetTransactionStateForUpdateParams{ID: toPGUUID(id), UserID: toPGUUID(scope.Owner)})
+	state, err := q.GetTransactionStateForUpdate(ctx, db.GetTransactionStateForUpdateParams{ID: id, UserID: scope.Owner})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Transaction{}, ErrNotFound
 	}
@@ -310,7 +311,7 @@ func (s *Transactions) Update(ctx context.Context, scope TransactionScope, id uu
 	if err := validateLockedCategory(ctx, q, scope.Owner, validated.categoryID, validated.kind); err != nil {
 		return Transaction{}, err
 	}
-	updated, err := q.UpdateTransaction(ctx, db.UpdateTransactionParams{CategoryID: toPGUUID(validated.categoryID), Type: validated.kind, Amount: validated.amount.Numeric(), TransactionDate: pgDate(validated.date), Title: validated.title, ActorUserID: toPGUUID(scope.Actor.UserID), ID: toPGUUID(id), UserID: toPGUUID(scope.Owner), ExpectedVersion: input.Version})
+	updated, err := q.UpdateTransaction(ctx, db.UpdateTransactionParams{CategoryID: validated.categoryID, Type: validated.kind, Amount: validated.amount.Numeric(), TransactionDate: pgDate(validated.date), Title: validated.title, ActorUserID: scope.Actor.UserID, ID: id, UserID: scope.Owner, ExpectedVersion: input.Version})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Transaction{}, ErrConflict
 	}
@@ -318,7 +319,7 @@ func (s *Transactions) Update(ctx context.Context, scope TransactionScope, id uu
 		return Transaction{}, err
 	}
 	if scope.Admin {
-		if err := insertAudit(ctx, q, scope, updated.ID, "update"); err != nil {
+		if err := insertAudit(ctx, q, scope, &updated.ID, "update"); err != nil {
 			return Transaction{}, ErrUnavailable
 		}
 	}
@@ -328,8 +329,8 @@ func (s *Transactions) Update(ctx context.Context, scope TransactionScope, id uu
 	return s.Get(ctx, scope, id, false)
 }
 
-func (s *Transactions) SoftDeleteTransaction(ctx context.Context, scope TransactionScope, id uuid.UUID, version int32) error {
-	if id == uuid.Nil || version < 1 {
+func (s *Transactions) SoftDeleteTransaction(ctx context.Context, scope TransactionScope, id int64, version int32) error {
+	if id <= 0 || version < 1 {
 		return ErrValidation
 	}
 	tx, err := s.pool.Begin(ctx)
@@ -341,7 +342,7 @@ func (s *Transactions) SoftDeleteTransaction(ctx context.Context, scope Transact
 	if _, err := validateWriteUsers(ctx, q, scope); err != nil {
 		return err
 	}
-	state, err := q.GetTransactionStateForUpdate(ctx, db.GetTransactionStateForUpdateParams{ID: toPGUUID(id), UserID: toPGUUID(scope.Owner)})
+	state, err := q.GetTransactionStateForUpdate(ctx, db.GetTransactionStateForUpdateParams{ID: id, UserID: scope.Owner})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -351,7 +352,7 @@ func (s *Transactions) SoftDeleteTransaction(ctx context.Context, scope Transact
 	if state.IsDelete || state.Version != version {
 		return ErrConflict
 	}
-	updated, err := q.SoftDeleteTransaction(ctx, db.SoftDeleteTransactionParams{ActorUserID: toPGUUID(scope.Actor.UserID), ID: toPGUUID(id), UserID: toPGUUID(scope.Owner), ExpectedVersion: version})
+	updated, err := q.SoftDeleteTransaction(ctx, db.SoftDeleteTransactionParams{ActorUserID: scope.Actor.UserID, ID: id, UserID: scope.Owner, ExpectedVersion: version})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrConflict
 	}
@@ -359,15 +360,15 @@ func (s *Transactions) SoftDeleteTransaction(ctx context.Context, scope Transact
 		return err
 	}
 	if scope.Admin {
-		if err := insertAudit(ctx, q, scope, updated.ID, "delete"); err != nil {
+		if err := insertAudit(ctx, q, scope, &updated.ID, "delete"); err != nil {
 			return ErrUnavailable
 		}
 	}
 	return tx.Commit(ctx)
 }
 
-func (s *Transactions) RestoreTransaction(ctx context.Context, scope TransactionScope, id uuid.UUID, version int32) (Transaction, error) {
-	if id == uuid.Nil || version < 1 {
+func (s *Transactions) RestoreTransaction(ctx context.Context, scope TransactionScope, id int64, version int32) (Transaction, error) {
+	if id <= 0 || version < 1 {
 		return Transaction{}, ErrValidation
 	}
 	tx, err := s.pool.Begin(ctx)
@@ -379,7 +380,7 @@ func (s *Transactions) RestoreTransaction(ctx context.Context, scope Transaction
 	if _, err := validateWriteUsers(ctx, q, scope); err != nil {
 		return Transaction{}, err
 	}
-	state, err := q.GetTransactionStateForUpdate(ctx, db.GetTransactionStateForUpdateParams{ID: toPGUUID(id), UserID: toPGUUID(scope.Owner)})
+	state, err := q.GetTransactionStateForUpdate(ctx, db.GetTransactionStateForUpdateParams{ID: id, UserID: scope.Owner})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Transaction{}, ErrNotFound
 	}
@@ -389,10 +390,10 @@ func (s *Transactions) RestoreTransaction(ctx context.Context, scope Transaction
 	if !state.IsDelete || state.Version != version {
 		return Transaction{}, ErrConflict
 	}
-	if err := validateLockedCategory(ctx, q, scope.Owner, fromPGUUID(state.CategoryID), state.Type); err != nil {
+	if err := validateLockedCategory(ctx, q, scope.Owner, state.CategoryID, state.Type); err != nil {
 		return Transaction{}, err
 	}
-	updated, err := q.RestoreTransaction(ctx, db.RestoreTransactionParams{ActorUserID: toPGUUID(scope.Actor.UserID), ID: toPGUUID(id), UserID: toPGUUID(scope.Owner), ExpectedVersion: version})
+	updated, err := q.RestoreTransaction(ctx, db.RestoreTransactionParams{ActorUserID: scope.Actor.UserID, ID: id, UserID: scope.Owner, ExpectedVersion: version})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Transaction{}, ErrConflict
 	}
@@ -400,7 +401,7 @@ func (s *Transactions) RestoreTransaction(ctx context.Context, scope Transaction
 		return Transaction{}, err
 	}
 	if scope.Admin {
-		if err := insertAudit(ctx, q, scope, updated.ID, "restore"); err != nil {
+		if err := insertAudit(ctx, q, scope, &updated.ID, "restore"); err != nil {
 			return Transaction{}, ErrUnavailable
 		}
 	}
@@ -427,7 +428,7 @@ func (s *Transactions) ListDailySummaries(ctx context.Context, scope Transaction
 	if pageSize < 1 {
 		return DailySummaryPage{}, ErrValidation
 	}
-	params := db.ListDailySummariesParams{UserID: toPGUUID(scope.Owner), StartDate: pgDate(start), EndDate: pgDate(end), PageSize: pageSize + 1}
+	params := db.ListDailySummariesParams{UserID: scope.Owner, StartDate: pgDate(start), EndDate: pgDate(end), PageSize: pageSize + 1}
 	if cursor != nil {
 		params.HasCursor = true
 		params.CursorDate = pgDate(mustDate(cursor.Date))
@@ -452,11 +453,11 @@ func (s *Transactions) ListDailySummaries(ctx context.Context, scope Transaction
 	if len(items) > int(pageSize) {
 		items = items[:pageSize]
 		last := items[len(items)-1]
-		encoded := encodeCursor(cursorFor(scope, filter, "daily", last.Date, time.Time{}, uuid.Nil))
+		encoded := encodeCursor(cursorFor(scope, filter, "daily", last.Date, time.Time{}, 0))
 		next = &encoded
 	}
 	if scope.Admin {
-		if err := s.auditRead(ctx, scope, "daily_summary", uuid.Nil); err != nil {
+		if err := s.auditRead(ctx, scope, "daily_summary", 0); err != nil {
 			return DailySummaryPage{}, err
 		}
 	}
@@ -474,7 +475,7 @@ func (s *Transactions) resolveReportRange(ctx context.Context, scope Transaction
 	if filter.StartDate != "" || filter.EndDate != "" || (filter.Range != "last_7_days" && filter.Range != "last_30_days") {
 		return time.Time{}, time.Time{}, ErrValidation
 	}
-	owner, err := s.queries.GetUserByID(ctx, toPGUUID(scope.Owner))
+	owner, err := s.queries.GetUserByID(ctx, scope.Owner)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return time.Time{}, time.Time{}, ErrNotFound
 	}
@@ -503,7 +504,7 @@ func (s *Transactions) GetReportSummary(ctx context.Context, scope TransactionSc
 	if err != nil {
 		return ReportSummary{}, err
 	}
-	args := db.GetReportSummaryParams{UserID: toPGUUID(scope.Owner), StartDate: pgDate(start), EndDate: pgDate(end)}
+	args := db.GetReportSummaryParams{UserID: scope.Owner, StartDate: pgDate(start), EndDate: pgDate(end)}
 	row, err := s.queries.GetReportSummary(ctx, args)
 	if err != nil {
 		return ReportSummary{}, err
@@ -526,7 +527,7 @@ func (s *Transactions) GetReportSummary(ctx context.Context, scope TransactionSc
 		if e != nil {
 			return ReportSummary{}, e
 		}
-		value := ReportCategoryTotal{CategoryID: fromPGUUID(item.CategoryID), Name: item.Name, Type: item.Type, Amount: amount.String()}
+		value := ReportCategoryTotal{CategoryID: item.CategoryID, Name: item.Name, Type: item.Type, Amount: amount.String()}
 		if item.Type == CategoryTypeIncome {
 			result.TopIncomeCategories = append(result.TopIncomeCategories, value)
 		} else {
@@ -534,7 +535,7 @@ func (s *Transactions) GetReportSummary(ctx context.Context, scope TransactionSc
 		}
 	}
 	if scope.Admin {
-		if err := s.auditRead(ctx, scope, "report_summary", uuid.Nil); err != nil {
+		if err := s.auditRead(ctx, scope, "report_summary", 0); err != nil {
 			return ReportSummary{}, err
 		}
 	}
@@ -552,7 +553,7 @@ func (s *Transactions) GetReportBreakdown(ctx context.Context, scope Transaction
 	if err != nil {
 		return ReportBreakdown{}, err
 	}
-	args := db.ListReportPeriodBreakdownParams{GroupBy: filter.GroupBy, UserID: toPGUUID(scope.Owner), StartDate: pgDate(start), EndDate: pgDate(end)}
+	args := db.ListReportPeriodBreakdownParams{GroupBy: filter.GroupBy, UserID: scope.Owner, StartDate: pgDate(start), EndDate: pgDate(end)}
 	result := ReportBreakdown{StartDate: start, EndDate: end, GroupBy: filter.GroupBy, Periods: []ReportPeriodTotal{}, Categories: []ReportCategoryTotal{}}
 	if filter.GroupBy == "category" {
 		rows, e := s.queries.ListReportCategoryBreakdown(ctx, db.ListReportCategoryBreakdownParams{UserID: args.UserID, StartDate: args.StartDate, EndDate: args.EndDate})
@@ -564,7 +565,7 @@ func (s *Transactions) GetReportBreakdown(ctx context.Context, scope Transaction
 			if e != nil {
 				return ReportBreakdown{}, e
 			}
-			result.Categories = append(result.Categories, ReportCategoryTotal{CategoryID: fromPGUUID(item.CategoryID), Name: item.Name, Type: item.Type, Amount: amount.String()})
+			result.Categories = append(result.Categories, ReportCategoryTotal{CategoryID: item.CategoryID, Name: item.Name, Type: item.Type, Amount: amount.String()})
 		}
 	} else {
 		rows, e := s.queries.ListReportPeriodBreakdown(ctx, args)
@@ -584,7 +585,7 @@ func (s *Transactions) GetReportBreakdown(ctx context.Context, scope Transaction
 		}
 	}
 	if scope.Admin {
-		if err := s.auditRead(ctx, scope, "report_breakdown", uuid.Nil); err != nil {
+		if err := s.auditRead(ctx, scope, "report_breakdown", 0); err != nil {
 			return ReportBreakdown{}, err
 		}
 	}
@@ -594,14 +595,14 @@ func (s *Transactions) GetReportBreakdown(ctx context.Context, scope Transaction
 type validatedTransaction struct {
 	date       time.Time
 	kind       string
-	categoryID uuid.UUID
+	categoryID int64
 	amount     Money
 	title      string
 }
 
-func (s *Transactions) validateInput(owner uuid.UUID, input TransactionInput, update bool) (validatedTransaction, error) {
+func (s *Transactions) validateInput(owner int64, input TransactionInput, update bool) (validatedTransaction, error) {
 	date, err := parseDate(input.TransactionDate)
-	if err != nil || !validCategoryType(input.Type) || input.CategoryID == uuid.Nil || owner == uuid.Nil || (!update && input.ClientRequestID == uuid.Nil) || (update && input.Version < 1) {
+	if err != nil || !validCategoryType(input.Type) || input.CategoryID <= 0 || owner <= 0 || (!update && input.ClientRequestID <= 0) || (update && input.Version < 1) {
 		return validatedTransaction{}, ErrValidation
 	}
 	amount, err := ParseMoney(input.Amount)
@@ -616,7 +617,7 @@ func (s *Transactions) validateInput(owner uuid.UUID, input TransactionInput, up
 }
 
 func (s *Transactions) validateReadScope(ctx context.Context, scope TransactionScope) error {
-	if scope.Actor.UserID == uuid.Nil || scope.Owner == uuid.Nil {
+	if scope.Actor.UserID <= 0 || scope.Owner <= 0 {
 		return ErrValidation
 	}
 	if !scope.Admin {
@@ -628,7 +629,7 @@ func (s *Transactions) validateReadScope(ctx context.Context, scope TransactionS
 	if scope.Actor.Role != RoleAdmin {
 		return ErrForbidden
 	}
-	if _, err := s.queries.GetUserByID(ctx, toPGUUID(scope.Owner)); errors.Is(err, pgx.ErrNoRows) {
+	if _, err := s.queries.GetUserByID(ctx, scope.Owner); errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	} else {
 		return err
@@ -636,12 +637,12 @@ func (s *Transactions) validateReadScope(ctx context.Context, scope TransactionS
 }
 
 func validateWriteUsers(ctx context.Context, q *db.Queries, scope TransactionScope) (db.User, error) {
-	if scope.Actor.UserID == uuid.Nil || scope.Owner == uuid.Nil || (!scope.Admin && scope.Actor.UserID != scope.Owner) || (scope.Admin && scope.Actor.Role != RoleAdmin) {
+	if scope.Actor.UserID <= 0 || scope.Owner <= 0 || (!scope.Admin && scope.Actor.UserID != scope.Owner) || (scope.Admin && scope.Actor.Role != RoleAdmin) {
 		return db.User{}, ErrForbidden
 	}
-	ids := []pgtype.UUID{toPGUUID(scope.Actor.UserID)}
+	ids := []int64{scope.Actor.UserID}
 	if scope.Owner != scope.Actor.UserID {
-		ids = append(ids, toPGUUID(scope.Owner))
+		ids = append(ids, scope.Owner)
 	}
 	users, err := q.LockUsersForUpdate(ctx, ids)
 	if err != nil {
@@ -650,7 +651,7 @@ func validateWriteUsers(ctx context.Context, q *db.Queries, scope TransactionSco
 	var owner db.User
 	actorOK := false
 	for _, user := range users {
-		id := fromPGUUID(user.ID)
+		id := user.ID
 		if id == scope.Actor.UserID && !user.IsDelete && (!scope.Admin || user.Role == RoleAdmin) {
 			actorOK = true
 		}
@@ -661,7 +662,7 @@ func validateWriteUsers(ctx context.Context, q *db.Queries, scope TransactionSco
 	if !actorOK {
 		return db.User{}, ErrAuthentication
 	}
-	if !owner.ID.Valid {
+	if owner.ID == 0 {
 		return db.User{}, ErrNotFound
 	}
 	if owner.IsDelete {
@@ -670,8 +671,8 @@ func validateWriteUsers(ctx context.Context, q *db.Queries, scope TransactionSco
 	return owner, nil
 }
 
-func validateLockedCategory(ctx context.Context, q *db.Queries, owner, categoryID uuid.UUID, kind string) error {
-	category, err := q.LockScopedCategoryForTransaction(ctx, db.LockScopedCategoryForTransactionParams{CategoryID: toPGUUID(categoryID), UserID: toPGUUID(owner)})
+func validateLockedCategory(ctx context.Context, q *db.Queries, owner, categoryID int64, kind string) error {
+	category, err := q.LockScopedCategoryForTransaction(ctx, db.LockScopedCategoryForTransactionParams{CategoryID: categoryID, UserID: owner})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -727,8 +728,8 @@ func normalizeLimit(limit int32) int32 {
 	}
 	return limit
 }
-func canonicalTransactionHash(owner uuid.UUID, value validatedTransaction) string {
-	canonical := fmt.Sprintf("v1|%s|%s|%s|%s|%s|%s", owner, value.date.Format(time.DateOnly), value.kind, value.categoryID, value.amount.String(), value.title)
+func canonicalTransactionHash(owner int64, value validatedTransaction) string {
+	canonical := fmt.Sprintf("v1|%d|%s|%s|%d|%s|%s", owner, value.date.Format(time.DateOnly), value.kind, value.categoryID, value.amount.String(), value.title)
 	sum := sha256.Sum256([]byte(canonical))
 	return hex.EncodeToString(sum[:])
 }
@@ -738,7 +739,7 @@ func transactionFromDB(item db.Transaction, categoryName string) (Transaction, e
 	if err != nil {
 		return Transaction{}, err
 	}
-	return Transaction{ID: fromPGUUID(item.ID), UserID: fromPGUUID(item.UserID), CategoryID: fromPGUUID(item.CategoryID), Type: item.Type, CategoryName: categoryName, Amount: amount.String(), TransactionDate: item.TransactionDate.Time, Title: item.Title, ClientRequestID: fromPGUUID(item.ClientRequestID), CreatedBy: fromPGUUID(item.CreatedBy), UpdatedBy: fromPGUUID(item.UpdatedBy), IsDelete: item.IsDelete, Version: item.Version, CreatedAt: item.CreatedAt.Time, UpdatedAt: item.UpdatedAt.Time}, nil
+	return Transaction{ID: item.ID, UserID: item.UserID, CategoryID: item.CategoryID, Type: item.Type, CategoryName: categoryName, Amount: amount.String(), TransactionDate: item.TransactionDate.Time, Title: item.Title, ClientRequestID: item.ClientRequestID, CreatedBy: item.CreatedBy, UpdatedBy: item.UpdatedBy, IsDelete: item.IsDelete, Version: item.Version, CreatedAt: item.CreatedAt.Time, UpdatedAt: item.UpdatedAt.Time}, nil
 }
 func transactionFromActiveRow(row db.ListActiveTransactionsRow) (Transaction, error) {
 	return transactionFromDB(db.Transaction{ID: row.ID, UserID: row.UserID, CategoryID: row.CategoryID, Type: row.Type, Amount: row.Amount, TransactionDate: row.TransactionDate, Title: row.Title, ClientRequestID: row.ClientRequestID, RequestHash: row.RequestHash, CreatedBy: row.CreatedBy, UpdatedBy: row.UpdatedBy, IsDelete: row.IsDelete, Version: row.Version, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}, row.CategoryName)
@@ -761,12 +762,12 @@ func paginateTransactions(items []Transaction, limit int32, scope TransactionSco
 	}
 	return TransactionPage{Items: items, NextCursor: next}
 }
-func cursorFor(scope TransactionScope, filter TransactionFilter, kind string, date, timestamp time.Time, id uuid.UUID) transactionCursor {
+func cursorFor(scope TransactionScope, filter TransactionFilter, kind string, date, timestamp time.Time, id int64) transactionCursor {
 	category := ""
 	if filter.CategoryID != nil {
-		category = filter.CategoryID.String()
+		category = strconv.FormatInt(*filter.CategoryID, 10)
 	}
-	return transactionCursor{Version: 1, Kind: kind, Actor: scope.Actor.UserID.String(), Owner: scope.Owner.String(), Type: filter.Type, Category: category, Start: filter.StartDate, End: filter.EndDate, Deleted: filter.Deleted, Admin: scope.Admin, Date: date.Format(time.DateOnly), Timestamp: timestamp.UTC().Format(time.RFC3339Nano), ID: id.String()}
+	return transactionCursor{Version: 1, Kind: kind, Actor: strconv.FormatInt(scope.Actor.UserID, 10), Owner: strconv.FormatInt(scope.Owner, 10), Type: filter.Type, Category: category, Start: filter.StartDate, End: filter.EndDate, Deleted: filter.Deleted, Admin: scope.Admin, Date: date.Format(time.DateOnly), Timestamp: timestamp.UTC().Format(time.RFC3339Nano), ID: strconv.FormatInt(id, 10)}
 }
 func encodeCursor(cursor transactionCursor) string {
 	raw, _ := json.Marshal(cursor)
@@ -792,9 +793,9 @@ func cursorMatches(cursor *transactionCursor, scope TransactionScope, filter Tra
 	}
 	category := ""
 	if filter.CategoryID != nil {
-		category = filter.CategoryID.String()
+		category = strconv.FormatInt(*filter.CategoryID, 10)
 	}
-	if cursor.Kind != kind || cursor.Actor != scope.Actor.UserID.String() || cursor.Owner != scope.Owner.String() || cursor.Admin != scope.Admin || cursor.Type != filter.Type || cursor.Category != category || cursor.Start != filter.StartDate || cursor.End != filter.EndDate || cursor.Deleted != filter.Deleted {
+	if cursor.Kind != kind || cursor.Actor != strconv.FormatInt(scope.Actor.UserID, 10) || cursor.Owner != strconv.FormatInt(scope.Owner, 10) || cursor.Admin != scope.Admin || cursor.Type != filter.Type || cursor.Category != category || cursor.Start != filter.StartDate || cursor.End != filter.EndDate || cursor.Deleted != filter.Deleted {
 		return false
 	}
 	if _, err := parseDate(cursor.Date); err != nil {
@@ -804,7 +805,7 @@ func cursorMatches(cursor *transactionCursor, scope TransactionScope, filter Tra
 		if _, err := time.Parse(time.RFC3339Nano, cursor.Timestamp); err != nil {
 			return false
 		}
-		if _, err := uuid.Parse(cursor.ID); err != nil {
+		if id, err := strconv.ParseInt(cursor.ID, 10, 64); err != nil || id <= 0 {
 			return false
 		}
 	}
@@ -816,34 +817,39 @@ func mustTimestamp(value string) time.Time {
 	return timestamp
 }
 
-func insertAudit(ctx context.Context, q *db.Queries, scope TransactionScope, resourceID pgtype.UUID, action string) error {
+func mustInt64(value string) int64 {
+	id, _ := strconv.ParseInt(value, 10, 64)
+	return id
+}
+
+func insertAudit(ctx context.Context, q *db.Queries, scope TransactionScope, resourceID *int64, action string) error {
 	requestID := scope.RequestID
 	if requestID == "" {
 		requestID = uuid.NewString()
 	}
-	_, err := q.InsertAdminAccessEvent(ctx, db.InsertAdminAccessEventParams{ID: toPGUUID(uuid.New()), ActorUserID: toPGUUID(scope.Actor.UserID), TargetUserID: toPGUUID(scope.Owner), ResourceType: "transaction", ResourceID: resourceID, Action: action, Outcome: "success", RequestID: requestID, SafeMetadata: []byte(`{}`)})
+	_, err := q.InsertAdminAccessEvent(ctx, db.InsertAdminAccessEventParams{ActorUserID: scope.Actor.UserID, TargetUserID: &scope.Owner, ResourceType: "transaction", ResourceID: resourceID, Action: action, Outcome: "success", RequestID: requestID, SafeMetadata: []byte(`{}`)})
 	return err
 }
-func (s *Transactions) auditRead(ctx context.Context, scope TransactionScope, action string, resourceID uuid.UUID) error {
+func (s *Transactions) auditRead(ctx context.Context, scope TransactionScope, action string, resourceID int64) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return ErrUnavailable
 	}
 	defer tx.Rollback(ctx)
 	q := s.queries.WithTx(tx)
-	actor, err := q.GetActiveUserByID(ctx, toPGUUID(scope.Actor.UserID))
+	actor, err := q.GetActiveUserByID(ctx, scope.Actor.UserID)
 	if err != nil || actor.Role != RoleAdmin {
 		return ErrForbidden
 	}
-	if _, err := q.GetUserByID(ctx, toPGUUID(scope.Owner)); err != nil {
+	if _, err := q.GetUserByID(ctx, scope.Owner); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotFound
 		}
 		return ErrUnavailable
 	}
-	resource := pgtype.UUID{}
-	if resourceID != uuid.Nil {
-		resource = toPGUUID(resourceID)
+	var resource *int64
+	if resourceID != 0 {
+		resource = &resourceID
 	}
 	if err := insertAudit(ctx, q, scope, resource, action); err != nil {
 		return ErrUnavailable

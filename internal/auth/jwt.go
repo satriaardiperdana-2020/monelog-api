@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -39,14 +40,14 @@ func NewJWT(key []byte, issuer, audience string, lifetime time.Duration) (*JWT, 
 	return &JWT{key: append([]byte(nil), key...), issuer: issuer, audience: audience, lifetime: lifetime, now: time.Now}, nil
 }
 
-func (j *JWT) Issue(subject uuid.UUID) (string, time.Time, error) {
+func (j *JWT) Issue(subject int64) (string, time.Time, error) {
 	issuedAt := j.now().UTC()
 	expiresAt := issuedAt.Add(j.lifetime)
 	claims := AccessClaims{
 		TokenType: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    j.issuer,
-			Subject:   subject.String(),
+			Subject:   strconv.FormatInt(subject, 10),
 			Audience:  jwt.ClaimStrings{j.audience},
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(issuedAt),
@@ -61,7 +62,7 @@ func (j *JWT) Issue(subject uuid.UUID) (string, time.Time, error) {
 	return signed, expiresAt, nil
 }
 
-func (j *JWT) Validate(raw string) (uuid.UUID, error) {
+func (j *JWT) Validate(raw string) (int64, error) {
 	claims := AccessClaims{}
 	token, err := jwt.ParseWithClaims(raw, &claims, func(token *jwt.Token) (any, error) {
 		if token.Method != jwt.SigningMethodHS256 || token.Header["alg"] != jwt.SigningMethodHS256.Alg() {
@@ -70,19 +71,19 @@ func (j *JWT) Validate(raw string) (uuid.UUID, error) {
 		return j.key, nil
 	}, jwt.WithIssuer(j.issuer), jwt.WithAudience(j.audience), jwt.WithExpirationRequired(), jwt.WithIssuedAt(), jwt.WithLeeway(30*time.Second), jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil || token == nil || !token.Valid || claims.TokenType != "access" || claims.Role != "" || claims.ExpiresAt == nil || claims.IssuedAt == nil || claims.ID == "" {
-		return uuid.Nil, ErrInvalidAccessToken
+		return 0, ErrInvalidAccessToken
 	}
-	subject, err := uuid.Parse(claims.Subject)
-	if err != nil || subject == uuid.Nil {
-		return uuid.Nil, ErrInvalidAccessToken
+	subject, err := strconv.ParseInt(claims.Subject, 10, 64)
+	if err != nil || subject <= 0 {
+		return 0, ErrInvalidAccessToken
 	}
 	if id, err := uuid.Parse(claims.ID); err != nil || id == uuid.Nil {
-		return uuid.Nil, ErrInvalidAccessToken
+		return 0, ErrInvalidAccessToken
 	}
 	issuedAt := claims.IssuedAt.Time
 	expiresAt := claims.ExpiresAt.Time
 	if expiresAt.Before(issuedAt) || expiresAt.Equal(issuedAt) || expiresAt.After(issuedAt.Add(j.lifetime+30*time.Second)) || issuedAt.After(j.now().Add(30*time.Second)) {
-		return uuid.Nil, ErrInvalidAccessToken
+		return 0, ErrInvalidAccessToken
 	}
 	return subject, nil
 }

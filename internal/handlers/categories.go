@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
 	api "github.com/satriaardiperdana-2020/monelog-api/internal/api"
@@ -15,11 +14,11 @@ import (
 
 type categoryService interface {
 	List(context.Context, service.CategoryScope, string, bool) ([]service.Category, error)
-	Get(context.Context, service.CategoryScope, uuid.UUID, bool) (service.Category, error)
+	Get(context.Context, service.CategoryScope, int64, bool) (service.Category, error)
 	Create(context.Context, service.CategoryScope, string, string) (service.Category, error)
-	Update(context.Context, service.CategoryScope, uuid.UUID, string, int32) (service.Category, error)
-	Archive(context.Context, service.CategoryScope, uuid.UUID, int32) error
-	Restore(context.Context, service.CategoryScope, uuid.UUID, int32) (service.Category, error)
+	Update(context.Context, service.CategoryScope, int64, string, int32) (service.Category, error)
+	Archive(context.Context, service.CategoryScope, int64, int32) error
+	Restore(context.Context, service.CategoryScope, int64, int32) (service.Category, error)
 }
 
 // Categories exposes personal and explicitly-scoped admin category routes.
@@ -54,7 +53,7 @@ func (h *Categories) Create(c *echo.Context) error {
 	return c.JSON(http.StatusCreated, map[string]any{"data": categoryResponse(item)})
 }
 
-func (h *Categories) Get(c *echo.Context, id uuid.UUID, params api.GetCategoryParams) error {
+func (h *Categories) Get(c *echo.Context, id int64, params api.GetCategoryParams) error {
 	deleted := params.IsDelete != nil && *params.IsDelete
 	item, err := h.service.Get(c.Request().Context(), h.personalScope(c), id, deleted)
 	if err != nil {
@@ -63,7 +62,7 @@ func (h *Categories) Get(c *echo.Context, id uuid.UUID, params api.GetCategoryPa
 	return c.JSON(http.StatusOK, map[string]any{"data": categoryResponse(item)})
 }
 
-func (h *Categories) Update(c *echo.Context, id uuid.UUID) error {
+func (h *Categories) Update(c *echo.Context, id int64) error {
 	var request categoryUpdateRequest
 	if err := decodeJSON(c, &request); err != nil {
 		return categoryBadRequest(c)
@@ -75,7 +74,7 @@ func (h *Categories) Update(c *echo.Context, id uuid.UUID) error {
 	return c.JSON(http.StatusOK, map[string]any{"data": categoryResponse(item)})
 }
 
-func (h *Categories) Delete(c *echo.Context, id uuid.UUID, ifMatch string) error {
+func (h *Categories) Delete(c *echo.Context, id int64, ifMatch string) error {
 	version, err := ifMatchVersion(ifMatch)
 	if err != nil {
 		return categoryBadRequest(c)
@@ -86,7 +85,7 @@ func (h *Categories) Delete(c *echo.Context, id uuid.UUID, ifMatch string) error
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *Categories) Restore(c *echo.Context, id uuid.UUID) error {
+func (h *Categories) Restore(c *echo.Context, id int64) error {
 	var request categoryRestoreRequest
 	if err := decodeJSON(c, &request); err != nil {
 		return categoryBadRequest(c)
@@ -98,7 +97,7 @@ func (h *Categories) Restore(c *echo.Context, id uuid.UUID) error {
 	return c.JSON(http.StatusOK, map[string]any{"data": categoryResponse(item)})
 }
 
-func (h *Categories) AdminList(c *echo.Context, owner uuid.UUID, params api.AdminListCategoriesParams) error {
+func (h *Categories) AdminList(c *echo.Context, owner int64, params api.AdminListCategoriesParams) error {
 	categoryType := ""
 	if params.Type != nil {
 		categoryType = string(*params.Type)
@@ -111,7 +110,7 @@ func (h *Categories) AdminList(c *echo.Context, owner uuid.UUID, params api.Admi
 	return c.JSON(http.StatusOK, map[string]any{"data": categoryResponses(items)})
 }
 
-func (h *Categories) AdminCreate(c *echo.Context, owner uuid.UUID) error {
+func (h *Categories) AdminCreate(c *echo.Context, owner int64) error {
 	var request categoryCreateRequest
 	if err := decodeJSON(c, &request); err != nil {
 		return categoryBadRequest(c)
@@ -123,7 +122,7 @@ func (h *Categories) AdminCreate(c *echo.Context, owner uuid.UUID) error {
 	return c.JSON(http.StatusCreated, map[string]any{"data": categoryResponse(item)})
 }
 
-func (h *Categories) AdminGet(c *echo.Context, owner, id uuid.UUID, params api.AdminGetCategoryParams) error {
+func (h *Categories) AdminGet(c *echo.Context, owner, id int64, params api.AdminGetCategoryParams) error {
 	deleted := params.IsDelete != nil && *params.IsDelete
 	item, err := h.service.Get(c.Request().Context(), h.adminScope(c, owner), id, deleted)
 	if err != nil {
@@ -132,7 +131,7 @@ func (h *Categories) AdminGet(c *echo.Context, owner, id uuid.UUID, params api.A
 	return c.JSON(http.StatusOK, map[string]any{"data": categoryResponse(item)})
 }
 
-func (h *Categories) AdminUpdate(c *echo.Context, owner, id uuid.UUID) error {
+func (h *Categories) AdminUpdate(c *echo.Context, owner, id int64) error {
 	var request categoryUpdateRequest
 	if err := decodeJSON(c, &request); err != nil {
 		return categoryBadRequest(c)
@@ -144,7 +143,7 @@ func (h *Categories) AdminUpdate(c *echo.Context, owner, id uuid.UUID) error {
 	return c.JSON(http.StatusOK, map[string]any{"data": categoryResponse(item)})
 }
 
-func (h *Categories) AdminDelete(c *echo.Context, owner, id uuid.UUID, ifMatch string) error {
+func (h *Categories) AdminDelete(c *echo.Context, owner, id int64, ifMatch string) error {
 	version, err := ifMatchVersion(ifMatch)
 	if err != nil {
 		return categoryBadRequest(c)
@@ -155,7 +154,7 @@ func (h *Categories) AdminDelete(c *echo.Context, owner, id uuid.UUID, ifMatch s
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *Categories) AdminRestore(c *echo.Context, owner, id uuid.UUID) error {
+func (h *Categories) AdminRestore(c *echo.Context, owner, id int64) error {
 	var request categoryRestoreRequest
 	if err := decodeJSON(c, &request); err != nil {
 		return categoryBadRequest(c)
@@ -172,7 +171,7 @@ func (h *Categories) personalScope(c *echo.Context) service.CategoryScope {
 	return service.CategoryScope{Actor: actor, Owner: actor.UserID}
 }
 
-func (h *Categories) adminScope(c *echo.Context, owner uuid.UUID) service.CategoryScope {
+func (h *Categories) adminScope(c *echo.Context, owner int64) service.CategoryScope {
 	actor, _ := middleware.Actor(c.Request().Context())
 	return service.CategoryScope{Actor: actor, Owner: owner, Admin: true}
 }
@@ -213,8 +212,8 @@ type categoryRestoreRequest struct {
 }
 
 type categoryPayload struct {
-	ID       string `json:"id"`
-	UserID   string `json:"user_id"`
+	ID       int64  `json:"id"`
+	UserID   int64  `json:"user_id"`
 	Type     string `json:"type"`
 	Name     string `json:"name"`
 	IsDelete bool   `json:"isDelete"`
@@ -222,7 +221,7 @@ type categoryPayload struct {
 }
 
 func categoryResponse(item service.Category) categoryPayload {
-	return categoryPayload{ID: item.ID.String(), UserID: item.UserID.String(), Type: item.Type, Name: item.Name, IsDelete: item.IsDelete, Version: item.Version}
+	return categoryPayload{ID: item.ID, UserID: item.UserID, Type: item.Type, Name: item.Name, IsDelete: item.IsDelete, Version: item.Version}
 }
 
 func categoryResponses(items []service.Category) []categoryPayload {

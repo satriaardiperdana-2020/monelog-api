@@ -67,8 +67,8 @@ func TestCategoryLifecycleAndOwnership(t *testing.T) {
 	if _, err := categories.Create(ctx, adminScope, CategoryTypeIncome, "Admin owned"); err != nil {
 		t.Fatalf("admin create: %v", err)
 	}
-	events, err := authService.queries.ListAdminAccessEventsByTarget(ctx, db.ListAdminAccessEventsByTargetParams{TargetUserID: toPGUUID(other.ID), PageSize: 10})
-	if err != nil || len(events) != 1 || events[0].ActorUserID.Bytes != toPGUUID(admin.ID).Bytes || events[0].Action != "create" {
+	events, err := authService.queries.ListAdminAccessEventsByTarget(ctx, db.ListAdminAccessEventsByTargetParams{TargetUserID: &other.ID, PageSize: 10})
+	if err != nil || len(events) != 1 || events[0].ActorUserID != admin.ID || events[0].Action != "create" {
 		t.Fatalf("admin audit events=%+v err=%v", events, err)
 	}
 }

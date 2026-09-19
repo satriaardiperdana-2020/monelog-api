@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
 	"github.com/satriaardiperdana-2020/monelog-api/internal/service"
@@ -51,7 +50,7 @@ func RequireAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 // Actor returns the database-backed actor inserted by Authenticate.
 func Actor(ctx context.Context) (service.Actor, bool) {
 	actor, ok := ctx.Value(actorContextKey{}).(service.Actor)
-	return actor, ok && actor.UserID != uuid.Nil
+	return actor, ok && actor.UserID > 0
 }
 
 func bearerToken(value string) (string, bool) {

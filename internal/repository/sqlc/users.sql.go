@@ -7,18 +7,15 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createInitialAdmin = `-- name: CreateInitialAdmin :one
-INSERT INTO users (id, email, password_hash, role, timezone, currency)
+INSERT INTO users (email, password_hash, role, timezone, currency)
 SELECT
-    $1,
-    lower(btrim($2)),
-    $3,
+    lower(btrim($1)),
+    $2,
     'admin',
-    $4,
+    $3,
     'IDR'
 WHERE NOT EXISTS (
     SELECT 1
@@ -30,19 +27,13 @@ RETURNING id, email, password_hash, role, timezone, currency, is_delete, version
 `
 
 type CreateInitialAdminParams struct {
-	ID           pgtype.UUID `db:"id" json:"id"`
-	Email        string      `db:"email" json:"email"`
-	PasswordHash string      `db:"password_hash" json:"password_hash"`
-	Timezone     string      `db:"timezone" json:"timezone"`
+	Email        string `db:"email" json:"email"`
+	PasswordHash string `db:"password_hash" json:"password_hash"`
+	Timezone     string `db:"timezone" json:"timezone"`
 }
 
 func (q *Queries) CreateInitialAdmin(ctx context.Context, arg CreateInitialAdminParams) (User, error) {
-	row := q.db.QueryRow(ctx, createInitialAdmin,
-		arg.ID,
-		arg.Email,
-		arg.PasswordHash,
-		arg.Timezone,
-	)
+	row := q.db.QueryRow(ctx, createInitialAdmin, arg.Email, arg.PasswordHash, arg.Timezone)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -60,28 +51,25 @@ func (q *Queries) CreateInitialAdmin(ctx context.Context, arg CreateInitialAdmin
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, email, password_hash, timezone, currency)
+INSERT INTO users (email, password_hash, timezone, currency)
 VALUES (
-    $1,
-    lower(btrim($2)),
+    lower(btrim($1)),
+    $2,
     $3,
-    $4,
-    $5
+    $4
 )
 RETURNING id, email, password_hash, role, timezone, currency, is_delete, version, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID           pgtype.UUID `db:"id" json:"id"`
-	Email        string      `db:"email" json:"email"`
-	PasswordHash string      `db:"password_hash" json:"password_hash"`
-	Timezone     string      `db:"timezone" json:"timezone"`
-	Currency     string      `db:"currency" json:"currency"`
+	Email        string `db:"email" json:"email"`
+	PasswordHash string `db:"password_hash" json:"password_hash"`
+	Timezone     string `db:"timezone" json:"timezone"`
+	Currency     string `db:"currency" json:"currency"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser,
-		arg.ID,
 		arg.Email,
 		arg.PasswordHash,
 		arg.Timezone,
@@ -135,7 +123,7 @@ WHERE id = $1
   AND is_delete = FALSE
 `
 
-func (q *Queries) GetActiveUserByID(ctx context.Context, id pgtype.UUID) (User, error) {
+func (q *Queries) GetActiveUserByID(ctx context.Context, id int64) (User, error) {
 	row := q.db.QueryRow(ctx, getActiveUserByID, id)
 	var i User
 	err := row.Scan(
@@ -159,7 +147,7 @@ FROM users
 WHERE id = $1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error) {
+func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
 	var i User
 	err := row.Scan(
@@ -189,12 +177,12 @@ func (q *Queries) LockInitialAdminBootstrap(ctx context.Context) error {
 const lockUsersForUpdate = `-- name: LockUsersForUpdate :many
 SELECT id, email, password_hash, role, timezone, currency, is_delete, version, created_at, updated_at
 FROM users
-WHERE id = ANY($1::uuid[])
+WHERE id = ANY($1::bigint[])
 ORDER BY id
 FOR UPDATE
 `
 
-func (q *Queries) LockUsersForUpdate(ctx context.Context, ids []pgtype.UUID) ([]User, error) {
+func (q *Queries) LockUsersForUpdate(ctx context.Context, ids []int64) ([]User, error) {
 	rows, err := q.db.Query(ctx, lockUsersForUpdate, ids)
 	if err != nil {
 		return nil, err
@@ -237,8 +225,8 @@ RETURNING id, email, password_hash, role, timezone, currency, is_delete, version
 `
 
 type RestoreUserParams struct {
-	ID              pgtype.UUID `db:"id" json:"id"`
-	ExpectedVersion int32       `db:"expected_version" json:"expected_version"`
+	ID              int64 `db:"id" json:"id"`
+	ExpectedVersion int32 `db:"expected_version" json:"expected_version"`
 }
 
 func (q *Queries) RestoreUser(ctx context.Context, arg RestoreUserParams) (User, error) {
@@ -271,8 +259,8 @@ RETURNING id, email, password_hash, role, timezone, currency, is_delete, version
 `
 
 type SoftDeleteUserParams struct {
-	ID              pgtype.UUID `db:"id" json:"id"`
-	ExpectedVersion int32       `db:"expected_version" json:"expected_version"`
+	ID              int64 `db:"id" json:"id"`
+	ExpectedVersion int32 `db:"expected_version" json:"expected_version"`
 }
 
 func (q *Queries) SoftDeleteUser(ctx context.Context, arg SoftDeleteUserParams) (User, error) {
@@ -307,11 +295,11 @@ RETURNING id, email, password_hash, role, timezone, currency, is_delete, version
 `
 
 type UpdateUserProfileParams struct {
-	Email           string      `db:"email" json:"email"`
-	Timezone        string      `db:"timezone" json:"timezone"`
-	Currency        string      `db:"currency" json:"currency"`
-	ID              pgtype.UUID `db:"id" json:"id"`
-	ExpectedVersion int32       `db:"expected_version" json:"expected_version"`
+	Email           string `db:"email" json:"email"`
+	Timezone        string `db:"timezone" json:"timezone"`
+	Currency        string `db:"currency" json:"currency"`
+	ID              int64  `db:"id" json:"id"`
+	ExpectedVersion int32  `db:"expected_version" json:"expected_version"`
 }
 
 func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error) {

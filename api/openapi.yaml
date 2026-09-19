@@ -366,7 +366,7 @@ paths:
         - {$ref: '#/components/parameters/StartDate'}
         - {$ref: '#/components/parameters/EndDate'}
         - {name: type, in: query, schema: {$ref: '#/components/schemas/TransactionType'}}
-        - {name: category_id, in: query, schema: {type: string, format: uuid}}
+        - {name: category_id, in: query, schema: {type: integer, format: int64, minimum: 1}}
         - {name: isDelete, in: query, schema: {type: boolean, default: false}}
         - {$ref: '#/components/parameters/Limit'}
         - {$ref: '#/components/parameters/Cursor'}
@@ -456,7 +456,7 @@ paths:
         - {$ref: '#/components/parameters/StartDate'}
         - {$ref: '#/components/parameters/EndDate'}
         - {name: type, in: query, schema: {$ref: '#/components/schemas/TransactionType'}}
-        - {name: category_id, in: query, schema: {type: string, format: uuid}}
+        - {name: category_id, in: query, schema: {type: integer, format: int64, minimum: 1}}
         - {name: isDelete, in: query, schema: {type: boolean, default: false}}
         - {$ref: '#/components/parameters/Limit'}
         - {$ref: '#/components/parameters/Cursor'}
@@ -599,8 +599,8 @@ paths:
         '422': {$ref: '#/components/responses/ValidationError'}
 components:
   parameters:
-    ResourceId: {name: id, in: path, required: true, schema: {type: string, format: uuid}}
-    UserId: {name: user_id, in: path, required: true, schema: {type: string, format: uuid}}
+    ResourceId: {name: id, in: path, required: true, schema: {type: integer, format: int64, minimum: 1}}
+    UserId: {name: user_id, in: path, required: true, schema: {type: integer, format: int64, minimum: 1}}
     IfMatch: {name: If-Match, in: header, required: true, schema: {type: string}}
     StartDate: {name: start_date, in: query, required: true, schema: {type: string, format: date}}
     EndDate: {name: end_date, in: query, required: true, schema: {type: string, format: date}}
@@ -657,8 +657,8 @@ components:
       type: object
       required: [id, user_id, type, name, isDelete, version]
       properties:
-        id: {type: string, format: uuid}
-        user_id: {type: string, format: uuid}
+        id: {type: integer, format: int64, minimum: 1}
+        user_id: {type: integer, format: int64, minimum: 1}
         type: {$ref: '#/components/schemas/TransactionType'}
         name: {type: string}
         isDelete: {type: boolean}
@@ -672,10 +672,10 @@ components:
       properties:
         transaction_date: {type: string, format: date}
         type: {$ref: '#/components/schemas/TransactionType'}
-        category_id: {type: string, format: uuid}
+        category_id: {type: integer, format: int64, minimum: 1}
         amount: {$ref: '#/components/schemas/Money'}
         title: {type: string, minLength: 1, maxLength: 200}
-        client_request_id: {type: string, format: uuid}
+        client_request_id: {type: integer, format: int64, minimum: 1}
     TransactionUpdateRequest:
       type: object
       additionalProperties: false
@@ -683,7 +683,7 @@ components:
       properties:
         transaction_date: {type: string, format: date}
         type: {$ref: '#/components/schemas/TransactionType'}
-        category_id: {type: string, format: uuid}
+        category_id: {type: integer, format: int64, minimum: 1}
         amount: {$ref: '#/components/schemas/Money'}
         title: {type: string, minLength: 1, maxLength: 200}
         version: {type: integer, format: int32, minimum: 1}
@@ -691,17 +691,17 @@ components:
       type: object
       required: [id, user_id, category_id, category_name, transaction_date, type, amount, title, client_request_id, created_by, updated_by, isDelete, version, created_at, updated_at]
       properties:
-        id: {type: string, format: uuid}
-        user_id: {type: string, format: uuid}
-        category_id: {type: string, format: uuid}
+        id: {type: integer, format: int64, minimum: 1}
+        user_id: {type: integer, format: int64, minimum: 1}
+        category_id: {type: integer, format: int64, minimum: 1}
         category_name: {type: string}
         transaction_date: {type: string, format: date}
         type: {$ref: '#/components/schemas/TransactionType'}
         amount: {$ref: '#/components/schemas/Money'}
         title: {type: string}
-        client_request_id: {type: string, format: uuid}
-        created_by: {type: string, format: uuid}
-        updated_by: {type: string, format: uuid}
+        client_request_id: {type: integer, format: int64, minimum: 1}
+        created_by: {type: integer, format: int64, minimum: 1}
+        updated_by: {type: integer, format: int64, minimum: 1}
         isDelete: {type: boolean}
         version: {type: integer, format: int32}
         created_at: {type: string, format: date-time}
@@ -741,7 +741,7 @@ components:
       type: object
       required: [category_id, name, type, amount]
       properties:
-        category_id: {type: string, format: uuid}
+        category_id: {type: integer, format: int64, minimum: 1}
         name: {type: string}
         type: {$ref: '#/components/schemas/TransactionType'}
         amount: {$ref: '#/components/schemas/Money'}
@@ -847,8 +847,9 @@ components:
       required: [id, email, role, timezone, currency, isDelete, version]
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
+          minimum: 1
         email:
           type: string
           format: email

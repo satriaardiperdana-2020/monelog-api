@@ -84,7 +84,7 @@ Akun dengan is_delete=true menolak semua request terlindungi, termasuk dengan ac
 
 ## Transaksi, otorisasi, dan audit
 
-Request baca memeriksa state/peran aktor sebelum mencari target. Semua mutasi bisnis membuka transaksi DB, mengunci baris akun aktor/target dalam urutan UUID stabil, memeriksa ulang otorisasi dan aktivitas target, lalu memvalidasi/memperbarui resource dan menyimpan audit sebelum commit.
+Request baca memeriksa state/peran aktor sebelum mencari target. Semua mutasi bisnis membuka transaksi DB, mengunci baris akun aktor/target dalam urutan ID stabil, memeriksa ulang otorisasi dan aktivitas target, lalu memvalidasi/memperbarui resource dan menyimpan audit sebelum commit.
 Perubahan akun/peran mengikuti aturan lock yang sama; penghapusan/demotion yang tersimpan bersamaan tidak dapat dilewati oleh mutasi dengan pemeriksaan lama.
 Gunakan metode bernama seperti CreateTransaction(scope), SoftDeleteTransaction(scope,version), dan RestoreTransaction(scope,version); jangan memakai assignment owner atau role yang dikendalikan client secara generik.
 Tindakan admin mencatat actor versus owner, operasi, metadata resource/version yang aman, dan hasil. Mutasi admin serta insert audit atomik; kegagalan audit melakukan rollback. Baca admin wajib menyimpan audit sebelum respons.

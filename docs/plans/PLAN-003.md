@@ -31,15 +31,15 @@ ISSUE-003 mengirim registrasi, login, refresh, logout, `/me`, middleware actor/r
 
 - Gunakan JWT HMAC-SHA-256 saja. `AUTH_JWT_HMAC_KEY` adalah secret base64 yang didekode menjadi minimal 32 byte; tidak ada fallback/dev key dan nilai tidak pernah dicatat.
 - Issue ini menambahkan `AUTH_JWT_ISSUER` dan `AUTH_JWT_AUDIENCE` sebagai konfigurasi wajib. Access token berlaku maksimum 24 jam.
-- Token bertipe `access` berisi `iss`, `aud`, `sub`, `exp`, `iat`, dan `jti`. `sub` dan `jti` adalah UUID v4; role tidak menjadi sumber otorisasi JWT.
-- Validator menerima hanya header `alg=HS256` dan menolak `none`, algoritma lain, key kosong, signature tidak sah, issuer/audience tidak tepat, subject atau token ID bukan UUID, `exp`/`iat` hilang, `iat` di masa depan, `exp <= iat`, atau lifetime lebih dari 24 jam ditambah clock skew 30 detik.
+- Token bertipe `access` berisi `iss`, `aud`, `sub`, `exp`, `iat`, dan `jti`. `sub` adalah ID user BIGINT positif dan `jti` adalah UUID v4; role tidak menjadi sumber otorisasi JWT.
+- Validator menerima hanya header `alg=HS256` dan menolak `none`, algoritma lain, key kosong, signature tidak sah, issuer/audience tidak tepat, subject bukan BIGINT positif atau token ID bukan UUID, `exp`/`iat` hilang, `iat` di masa depan, `exp <= iat`, atau lifetime lebih dari 24 jam ditambah clock skew 30 detik.
 - Middleware mengambil user aktif saat ini dari database untuk setiap Bearer request dan menaruh `{userID, role}` dalam context. `is_delete=true` menghasilkan 401 meskipun JWT masih berlaku. Guard admin memakai role database saat ini, sehingga demotion berikutnya tidak dapat memakai klaim lama.
 
 ### Refresh token dan replay
 
 - Refresh secret adalah 32 byte acak dari `crypto/rand`, dienkode base64url tanpa padding. Masa berlaku setiap refresh session tepat 30 hari dari penerbitan.
 - Sebelum disimpan atau dicari, hash `SHA-256` dibuat atas representasi secret yang diterima dan disimpan sebagai string hex. Secret mentah tidak disimpan atau dicatat.
-- Login membuat session ID dan family ID UUID baru. Refresh sukses berjalan dalam satu transaksi: lock session menurut hash, lock user, validasi session aktif/belum kedaluwarsa dan user aktif, buat session pengganti dengan family ID sama, lalu revoke session lama dengan `replaced_by` sebelum commit.
+- Login membuat session ID serial dan family ID BIGINT baru. Refresh sukses berjalan dalam satu transaksi: lock session menurut hash, lock user, validasi session aktif/belum kedaluwarsa dan user aktif, buat session pengganti dengan family ID sama, lalu revoke session lama dengan `replaced_by` sebelum commit.
 - Secret yang cocok dengan session ter-revoke adalah replay. Dalam transaksi yang sama revoke seluruh family, lalu kembalikan kegagalan refresh generik. Secret yang hanya expired tetap gagal generik dan family aktifnya juga dicabut sebagai tindakan pertahanan. Race dua refresh pada secret sama harus membuat paling banyak satu rotasi sukses; request lain mendeteksi replay dan mencabut family.
 - Logout menemukan session dari hash lalu mencabut seluruh family dalam transaksi. Secret tidak dikenal tetap menghasilkan 204 agar keberadaan session tidak bocor. Penghapusan akun dan perubahan role di masa depan memanggil `RevokeAllUserRefreshSessions` dalam transaksi perubahan akun yang sama.
 

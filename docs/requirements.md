@@ -77,7 +77,7 @@ Admin juga memiliki kontrol create/update/role/delete/restore pengguna. Identita
 - Pengeluaran 500000.00 + 43500.00 + 226000.00 menghasilkan pengeluaran harian 769500.00.
 - Hari/laporan kosong mengembalikan total nol dan daftar kosong.
 - Save yang gagal mempertahankan input; pengiriman ganda tidak membuat transaksi ganda.
-- Pengguna biasa A tidak dapat mengakses/mengubah data B atau memanggil route admin, meskipun mengetahui UUID.
+- Pengguna biasa A tidak dapat mengakses/mengubah data B atau memanggil route admin, meskipun mengetahui ID-nya.
 - Admin C dapat membuat/mengedit/menghapus/memulihkan catatan A dan B melalui route berscope masing-masing; laporan pengguna terpilih mengikuti setiap perubahan.
 - Delete mengatur isDelete=true dan menaikkan versi tanpa menghapus baris. Detail aktif mengembalikan 404; Trash menampilkannya. Restore mengatur false dan memasukkan kembali jumlah tepat satu kali.
 - Admin menargetkan A dengan catatan/kategori milik B mendapat 404, bukan pergantian pemilik diam-diam.

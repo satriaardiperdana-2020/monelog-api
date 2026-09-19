@@ -79,7 +79,7 @@ Bootstrap first admin through an explicit operator command; no hardcoded account
 Current account is_delete=true denies all protected requests, including requests with old access JWTs. Role changes/account deletion revoke refresh sessions; committed demotion blocks new admin requests.
 
 ## Transactions, authorization and audit
-Read requests check current actor state/role before target lookup. All business mutations open a DB transaction, lock involved actor/target account rows in stable UUID order, recheck authorization and target activity, then validate/update the resource and persist audit before commit.
+Read requests check current actor state/role before target lookup. All business mutations open a DB transaction, lock involved actor/target account rows in stable ID order, recheck authorization and target activity, then validate/update the resource and persist audit before commit.
 Account/role changes participate in the same locking rules; concurrent committed deletion/demotion cannot be bypassed by a stale mutation check.
 Use named methods such as CreateTransaction(scope), SoftDeleteTransaction(scope,version), RestoreTransaction(scope,version); no generic client-controlled owner or role assignment.
 Admin actions log actor versus owner, operation, safe resource/version metadata and outcome. Admin mutation plus audit insert is atomic; audit failure rolls back. Admin reads require audit persistence before responding.

@@ -1,7 +1,6 @@
 -- name: CreateUser :one
-INSERT INTO users (id, email, password_hash, timezone, currency)
+INSERT INTO users (email, password_hash, timezone, currency)
 VALUES (
-    sqlc.arg(id),
     lower(btrim(sqlc.arg(email))),
     sqlc.arg(password_hash),
     sqlc.arg(timezone),
@@ -13,9 +12,8 @@ RETURNING *;
 SELECT pg_advisory_xact_lock(931503);
 
 -- name: CreateInitialAdmin :one
-INSERT INTO users (id, email, password_hash, role, timezone, currency)
+INSERT INTO users (email, password_hash, role, timezone, currency)
 SELECT
-    sqlc.arg(id),
     lower(btrim(sqlc.arg(email))),
     sqlc.arg(password_hash),
     'admin',
@@ -49,7 +47,7 @@ WHERE email = lower(btrim(sqlc.arg(email)))
 -- name: LockUsersForUpdate :many
 SELECT *
 FROM users
-WHERE id = ANY(sqlc.arg(ids)::uuid[])
+WHERE id = ANY(sqlc.arg(ids)::bigint[])
 ORDER BY id
 FOR UPDATE;
 

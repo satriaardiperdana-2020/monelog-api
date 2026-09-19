@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -32,7 +31,7 @@ var (
 
 // User is the safe user representation returned by authentication services.
 type User struct {
-	ID       uuid.UUID
+	ID       int64
 	Email    string
 	Role     string
 	Timezone string
@@ -43,7 +42,7 @@ type User struct {
 
 // Actor represents the currently authenticated database-backed identity.
 type Actor struct {
-	UserID uuid.UUID
+	UserID int64
 	Role   string
 }
 
@@ -126,12 +125,12 @@ func (a *Auth) Register(ctx context.Context, input RegisterInput) (User, error) 
 	}
 	defer tx.Rollback(ctx)
 	q := a.queries.WithTx(tx)
-	created, err := q.CreateUser(ctx, db.CreateUserParams{ID: toPGUUID(uuid.New()), Email: email, PasswordHash: passwordHash, Timezone: timezone, Currency: "IDR"})
+	created, err := q.CreateUser(ctx, db.CreateUserParams{Email: email, PasswordHash: passwordHash, Timezone: timezone, Currency: "IDR"})
 	if err != nil {
 		return User{}, translateWriteError(err)
 	}
 	for _, seed := range defaultCategories {
-		if _, err := q.CreateCategory(ctx, db.CreateCategoryParams{ID: toPGUUID(uuid.New()), UserID: created.ID, Type: seed.Type, Name: seed.Name}); err != nil {
+		if _, err := q.CreateCategory(ctx, db.CreateCategoryParams{UserID: created.ID, Type: seed.Type, Name: seed.Name}); err != nil {
 			return User{}, fmt.Errorf("seed default categories: %w", err)
 		}
 	}
@@ -160,14 +159,14 @@ func (a *Auth) Login(ctx context.Context, input LoginInput) (Session, error) {
 	}
 	defer tx.Rollback(ctx)
 	q := a.queries.WithTx(tx)
-	lockedUsers, err := q.LockUsersForUpdate(ctx, []pgtype.UUID{user.ID})
+	lockedUsers, err := q.LockUsersForUpdate(ctx, []int64{user.ID})
 	if err != nil {
 		return Session{}, fmt.Errorf("lock login user: %w", err)
 	}
 	if len(lockedUsers) != 1 || lockedUsers[0].IsDelete {
 		return Session{}, ErrAuthentication
 	}
-	created, err := a.createSessionWithQueries(ctx, q, lockedUsers[0], toPGUUID(uuid.New()))
+	created, err := a.createSessionWithQueries(ctx, q, lockedUsers[0], nil)
 	if err != nil {
 		return Session{}, err
 	}
@@ -194,7 +193,7 @@ func (a *Auth) Refresh(ctx context.Context, refreshToken string) (Session, error
 		}
 		return Session{}, fmt.Errorf("load refresh session: %w", err)
 	}
-	lockedUsers, err := q.LockUsersForUpdate(ctx, []pgtype.UUID{session.UserID})
+	lockedUsers, err := q.LockUsersForUpdate(ctx, []int64{session.UserID})
 	if err != nil {
 		return Session{}, fmt.Errorf("lock refresh user: %w", err)
 	}
@@ -216,11 +215,11 @@ func (a *Auth) Refresh(ctx context.Context, refreshToken string) (Session, error
 		return Session{}, ErrAuthentication
 	}
 
-	result, err := a.createSessionWithQueries(ctx, q, lockedUsers[0], session.FamilyID)
+	result, err := a.createSessionWithQueries(ctx, q, lockedUsers[0], &session.FamilyID)
 	if err != nil {
 		return Session{}, err
 	}
-	if _, err := q.RevokeRefreshSession(ctx, db.RevokeRefreshSessionParams{ID: session.ID, ReplacedBy: toPGUUID(result.sessionID)}); err != nil {
+	if _, err := q.RevokeRefreshSession(ctx, db.RevokeRefreshSessionParams{ID: session.ID, ReplacedBy: &result.sessionID}); err != nil {
 		return Session{}, fmt.Errorf("revoke rotated session: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -258,7 +257,7 @@ func (a *Auth) AuthenticateAccess(ctx context.Context, rawToken string) (Actor, 
 	if err != nil {
 		return Actor{}, ErrAuthentication
 	}
-	user, err := a.queries.GetActiveUserByID(ctx, toPGUUID(userID))
+	user, err := a.queries.GetActiveUserByID(ctx, userID)
 	if err != nil {
 		return Actor{}, ErrAuthentication
 	}
@@ -266,7 +265,7 @@ func (a *Auth) AuthenticateAccess(ctx context.Context, rawToken string) (Actor, 
 }
 
 func (a *Auth) Me(ctx context.Context, actor Actor) (User, error) {
-	user, err := a.queries.GetActiveUserByID(ctx, toPGUUID(actor.UserID))
+	user, err := a.queries.GetActiveUserByID(ctx, actor.UserID)
 	if err != nil {
 		return User{}, ErrAuthentication
 	}
@@ -278,7 +277,7 @@ func (a *Auth) UpdateProfile(ctx context.Context, actor Actor, timezone string, 
 	if err != nil || expectedVersion <= 0 {
 		return User{}, ErrValidation
 	}
-	current, err := a.queries.GetActiveUserByID(ctx, toPGUUID(actor.UserID))
+	current, err := a.queries.GetActiveUserByID(ctx, actor.UserID)
 	if err != nil {
 		return User{}, ErrAuthentication
 	}
@@ -299,7 +298,7 @@ func (a *Auth) DeleteMe(ctx context.Context, actor Actor, expectedVersion int32)
 	}
 	defer tx.Rollback(ctx)
 	q := a.queries.WithTx(tx)
-	users, err := q.LockUsersForUpdate(ctx, []pgtype.UUID{toPGUUID(actor.UserID)})
+	users, err := q.LockUsersForUpdate(ctx, []int64{actor.UserID})
 	if err != nil {
 		return fmt.Errorf("lock account: %w", err)
 	}
@@ -340,7 +339,7 @@ func (a *Auth) BootstrapInitialAdmin(ctx context.Context, input RegisterInput) (
 	if err := q.LockInitialAdminBootstrap(ctx); err != nil {
 		return User{}, fmt.Errorf("lock bootstrap: %w", err)
 	}
-	created, err := q.CreateInitialAdmin(ctx, db.CreateInitialAdminParams{ID: toPGUUID(uuid.New()), Email: email, PasswordHash: hash, Timezone: timezone})
+	created, err := q.CreateInitialAdmin(ctx, db.CreateInitialAdminParams{Email: email, PasswordHash: hash, Timezone: timezone})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return User{}, ErrConflict
@@ -355,23 +354,23 @@ func (a *Auth) BootstrapInitialAdmin(ctx context.Context, input RegisterInput) (
 
 type createdSession struct {
 	Session
-	sessionID uuid.UUID
+	sessionID int64
 }
 
-func (a *Auth) createSessionWithQueries(ctx context.Context, q *db.Queries, user db.User, familyID pgtype.UUID) (createdSession, error) {
+func (a *Auth) createSessionWithQueries(ctx context.Context, q *db.Queries, user db.User, familyID *int64) (createdSession, error) {
 	refreshToken, err := appauth.NewRefreshSecret()
 	if err != nil {
 		return createdSession{}, err
 	}
-	sessionID := uuid.New()
-	if _, err := q.CreateRefreshSession(ctx, db.CreateRefreshSessionParams{ID: toPGUUID(sessionID), UserID: user.ID, FamilyID: familyID, TokenHash: appauth.HashRefreshSecret(refreshToken), ExpiresAt: pgtype.Timestamptz{Time: a.now().Add(30 * 24 * time.Hour), Valid: true}}); err != nil {
+	created, err := q.CreateRefreshSession(ctx, db.CreateRefreshSessionParams{UserID: user.ID, FamilyID: familyID, TokenHash: appauth.HashRefreshSecret(refreshToken), ExpiresAt: pgtype.Timestamptz{Time: a.now().Add(30 * 24 * time.Hour), Valid: true}})
+	if err != nil {
 		return createdSession{}, fmt.Errorf("create refresh session: %w", err)
 	}
-	accessToken, expiresAt, err := a.jwt.Issue(fromPGUUID(user.ID))
+	accessToken, expiresAt, err := a.jwt.Issue(user.ID)
 	if err != nil {
 		return createdSession{}, err
 	}
-	return createdSession{Session: Session{AccessToken: accessToken, ExpiresAt: expiresAt, RefreshToken: refreshToken}, sessionID: sessionID}, nil
+	return createdSession{Session: Session{AccessToken: accessToken, ExpiresAt: expiresAt, RefreshToken: refreshToken}, sessionID: created.ID}, nil
 }
 
 func ValidateTimezone(value string) (string, error) {
@@ -399,15 +398,7 @@ func normalizeEmail(value string) (string, error) {
 }
 
 func safeUser(user db.User) User {
-	return User{ID: fromPGUUID(user.ID), Email: user.Email, Role: user.Role, Timezone: user.Timezone, Currency: user.Currency, IsDelete: user.IsDelete, Version: user.Version}
-}
-
-func toPGUUID(value uuid.UUID) pgtype.UUID {
-	return pgtype.UUID{Bytes: [16]byte(value), Valid: true}
-}
-
-func fromPGUUID(value pgtype.UUID) uuid.UUID {
-	return uuid.UUID(value.Bytes)
+	return User{ID: user.ID, Email: user.Email, Role: user.Role, Timezone: user.Timezone, Currency: user.Currency, IsDelete: user.IsDelete, Version: user.Version}
 }
 
 func translateWriteError(err error) error {

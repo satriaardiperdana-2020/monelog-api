@@ -67,7 +67,7 @@ Google operations additionally need a valid OAuth connection for the target's Dr
 Backup formats preserve isDelete flags but exclude roles, password/session/provider secrets and audit records. Restore validates/remaps all rows to the authorized target and cannot grant roles. Role changes use the dedicated admin endpoint.
 
 ## Audit
-Log actor, target, action, resource UUID, outcome, request ID, UTC time and safe changed-field names/version metadata.
+Log actor, target, action, resource ID, outcome, request ID, UTC time and safe changed-field names/version metadata.
 Successful admin writes commit the data mutation and its audit event in one database transaction. Audit failure rolls back writes; successful reads persist an event before responding.
 Audit events are append-only; admins may inspect them, not rewrite history as part of business CRUD. Record role-change old/new values without secret payloads.
 External jobs atomically persist authorization, job and audit before provider calls. Retry and external failure use explicit job states, not a claim of database rollback of remote work.

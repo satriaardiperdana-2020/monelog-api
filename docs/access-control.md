@@ -75,7 +75,7 @@ Format backup mempertahankan flag isDelete, tetapi mengecualikan role, password/
 
 ## Audit
 
-Catat aktor, target, tindakan, UUID resource, hasil, request ID, waktu UTC, serta nama field/version yang aman.
+Catat aktor, target, tindakan, ID resource, hasil, request ID, waktu UTC, serta nama field/version yang aman.
 Write admin yang berhasil melakukan commit mutasi data dan event audit dalam satu transaksi database. Kegagalan audit membatalkan write; pembacaan yang berhasil menyimpan event sebelum respons.
 Event audit hanya dapat ditambahkan; admin boleh memeriksanya, bukan menulis ulang sejarah melalui CRUD bisnis. Catat nilai role lama/baru tanpa payload rahasia.
 Job eksternal menyimpan otorisasi, job, dan audit secara atomik sebelum memanggil provider. Retry dan kegagalan eksternal memakai state job eksplisit, bukan klaim rollback database atas pekerjaan remote.

@@ -4,7 +4,7 @@ Base /api/v1. Protected operations use Bearer access JWTs and server-side author
 This is a design guide; Issue 004 produces validated api/openapi.yaml and generated interfaces before domain implementation.
 JSON names are snake_case except the explicitly requested isDelete boolean. Go IsDelete maps to SQL is_delete.
 Money uses exact decimal strings, e.g. "43500.00"; unsigned amounts match ^[0-9]+\.[0-9]{2}$, while difference may be negative.
-Dates YYYY-MM-DD, timestamps UTC RFC3339, IDs opaque UUIDs.
+Dates use YYYY-MM-DD, timestamps use UTC RFC3339, and IDs are positive 64-bit integers.
 
 ## Authorization
 Personal paths always scope owner to actor. Admin paths require current active admin and scope data to the explicit target user.
@@ -86,10 +86,10 @@ POST /admin/users/6b3ab04b-22cb-4777-b3ec-15f3247b123d/transactions
 {
   "transaction_date": "2026-09-08",
   "type": "expense",
-  "category_id": "bda088ec-2694-473c-997d-cb93161456f1",
+  "category_id": 1,
   "amount": "43500.00",
   "title": "Groceries",
-  "client_request_id": "22f60b83-db97-48f7-b591-b403b93c4c12"
+  "client_request_id": 1001
 }
 ```
 Illustrative 201 response:
@@ -100,7 +100,7 @@ Illustrative 201 response:
     "user_id": "6b3ab04b-22cb-4777-b3ec-15f3247b123d",
     "transaction_date": "2026-09-08",
     "type": "expense",
-    "category_id": "bda088ec-2694-473c-997d-cb93161456f1",
+    "category_id": 1,
     "amount": "43500.00",
     "title": "Groceries",
     "isDelete": false,
