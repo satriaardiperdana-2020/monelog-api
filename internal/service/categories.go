@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,13 +23,13 @@ var ErrForbidden = errors.New("forbidden")
 // CategoryScope carries server-derived actor and owner identities.
 type CategoryScope struct {
 	Actor Actor
-	Owner uuid.UUID
+	Owner int64
 	Admin bool
 }
 
 type Category struct {
-	ID       uuid.UUID
-	UserID   uuid.UUID
+	ID       int64
+	UserID   int64
 	Type     string
 	Name     string
 	IsDelete bool
@@ -66,7 +65,10 @@ func (s *Categories) List(ctx context.Context, scope CategoryScope, categoryType
 	return result, nil
 }
 
-func (s *Categories) Get(ctx context.Context, scope CategoryScope, id uuid.UUID, deleted bool) (Category, error) {
+func (s *Categories) Get(ctx context.Context, scope CategoryScope, id int64, deleted bool) (Category, error) {
+	if id <= 0 {
+		return Category{}, ErrValidation
+	}
 	if err := s.validateScope(ctx, scope); err != nil {
 		return Category{}, err
 	}
@@ -85,12 +87,11 @@ func (s *Categories) Create(ctx context.Context, scope CategoryScope, categoryTy
 	if err != nil || !validCategoryType(categoryType) {
 		return Category{}, ErrValidation
 	}
-	id := uuid.New()
 	var item db.Category
 	if scope.Admin {
-		item, err = s.repository.CreateAdmin(ctx, id, scope.Actor.UserID, scope.Owner, categoryType, name)
+		item, err = s.repository.CreateAdmin(ctx, scope.Actor.UserID, scope.Owner, categoryType, name)
 	} else {
-		item, err = s.repository.Create(ctx, id, scope.Owner, categoryType, name)
+		item, err = s.repository.Create(ctx, scope.Owner, categoryType, name)
 	}
 	if err != nil {
 		return Category{}, classifyCategoryError(err)
@@ -98,12 +99,12 @@ func (s *Categories) Create(ctx context.Context, scope CategoryScope, categoryTy
 	return categoryFromDB(item), nil
 }
 
-func (s *Categories) Update(ctx context.Context, scope CategoryScope, id uuid.UUID, name string, version int32) (Category, error) {
+func (s *Categories) Update(ctx context.Context, scope CategoryScope, id int64, name string, version int32) (Category, error) {
 	if err := s.validateScope(ctx, scope); err != nil {
 		return Category{}, err
 	}
 	name, err := validateCategoryName(name)
-	if err != nil || version <= 0 {
+	if err != nil || id <= 0 || version <= 0 {
 		return Category{}, ErrValidation
 	}
 	if _, err := s.repository.Get(ctx, id, scope.Owner, false); err != nil {
@@ -124,11 +125,11 @@ func (s *Categories) Update(ctx context.Context, scope CategoryScope, id uuid.UU
 	return categoryFromDB(item), nil
 }
 
-func (s *Categories) Archive(ctx context.Context, scope CategoryScope, id uuid.UUID, version int32) error {
+func (s *Categories) Archive(ctx context.Context, scope CategoryScope, id int64, version int32) error {
 	if err := s.validateScope(ctx, scope); err != nil {
 		return err
 	}
-	if version <= 0 {
+	if id <= 0 || version <= 0 {
 		return ErrValidation
 	}
 	if _, err := s.repository.Get(ctx, id, scope.Owner, false); err != nil {
@@ -148,11 +149,11 @@ func (s *Categories) Archive(ctx context.Context, scope CategoryScope, id uuid.U
 	return classifyCategoryError(err)
 }
 
-func (s *Categories) Restore(ctx context.Context, scope CategoryScope, id uuid.UUID, version int32) (Category, error) {
+func (s *Categories) Restore(ctx context.Context, scope CategoryScope, id int64, version int32) (Category, error) {
 	if err := s.validateScope(ctx, scope); err != nil {
 		return Category{}, err
 	}
-	if version <= 0 {
+	if id <= 0 || version <= 0 {
 		return Category{}, ErrValidation
 	}
 	if _, err := s.repository.Get(ctx, id, scope.Owner, true); err != nil {
@@ -175,7 +176,7 @@ func (s *Categories) Restore(ctx context.Context, scope CategoryScope, id uuid.U
 }
 
 func (s *Categories) validateScope(ctx context.Context, scope CategoryScope) error {
-	if scope.Actor.UserID == uuid.Nil || scope.Owner == uuid.Nil {
+	if scope.Actor.UserID <= 0 || scope.Owner <= 0 {
 		return ErrValidation
 	}
 	if scope.Admin {
@@ -206,7 +207,7 @@ func validateCategoryName(value string) (string, error) {
 }
 
 func categoryFromDB(item db.Category) Category {
-	return Category{ID: uuid.UUID(item.ID.Bytes), UserID: uuid.UUID(item.UserID.Bytes), Type: item.Type, Name: item.Name, IsDelete: item.IsDelete, Version: item.Version}
+	return Category{ID: item.ID, UserID: item.UserID, Type: item.Type, Name: item.Name, IsDelete: item.IsDelete, Version: item.Version}
 }
 
 func classifyCategoryError(err error) error {

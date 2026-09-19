@@ -5,10 +5,10 @@ FOR UPDATE;
 
 -- name: CreateTransaction :one
 INSERT INTO transactions (
-    id, user_id, category_id, type, amount, transaction_date, title,
+    user_id, category_id, type, amount, transaction_date, title,
     client_request_id, request_hash, created_by, updated_by
 )
-SELECT sqlc.arg(id), sqlc.arg(user_id), sqlc.arg(category_id), sqlc.arg(type),
+SELECT sqlc.arg(user_id), sqlc.arg(category_id), sqlc.arg(type),
        sqlc.arg(amount), sqlc.arg(transaction_date), btrim(sqlc.arg(title)),
        sqlc.arg(client_request_id), sqlc.arg(request_hash),
        sqlc.arg(actor_user_id), sqlc.arg(actor_user_id)
@@ -52,7 +52,7 @@ WHERE t.user_id = sqlc.arg(user_id)
   AND (sqlc.arg(filter_type)::text = '' OR t.type = sqlc.arg(filter_type))
   AND (NOT sqlc.arg(has_category)::boolean OR t.category_id = sqlc.arg(category_id))
   AND (NOT sqlc.arg(has_cursor)::boolean OR (t.transaction_date, t.created_at, t.id) <
-      (sqlc.arg(cursor_date)::date, sqlc.arg(cursor_created_at)::timestamptz, sqlc.arg(cursor_id)::uuid))
+      (sqlc.arg(cursor_date)::date, sqlc.arg(cursor_created_at)::timestamptz, sqlc.arg(cursor_id)::bigint))
 ORDER BY t.transaction_date DESC, t.created_at DESC, t.id DESC
 LIMIT sqlc.arg(page_size);
 
@@ -66,7 +66,7 @@ WHERE t.user_id = sqlc.arg(user_id)
   AND (sqlc.arg(filter_type)::text = '' OR t.type = sqlc.arg(filter_type))
   AND (NOT sqlc.arg(has_category)::boolean OR t.category_id = sqlc.arg(category_id))
   AND (NOT sqlc.arg(has_cursor)::boolean OR (t.updated_at, t.id) <
-      (sqlc.arg(cursor_updated_at)::timestamptz, sqlc.arg(cursor_id)::uuid))
+      (sqlc.arg(cursor_updated_at)::timestamptz, sqlc.arg(cursor_id)::bigint))
 ORDER BY t.updated_at DESC, t.id DESC
 LIMIT sqlc.arg(page_size);
 

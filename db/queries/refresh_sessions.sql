@@ -1,16 +1,14 @@
 -- Create a refresh session after successful login or refresh rotation.
 -- name: CreateRefreshSession :one
 INSERT INTO refresh_sessions (
-    id,
     user_id,
     family_id,
     token_hash,
     expires_at
 )
 VALUES (
-    sqlc.arg(id),
     sqlc.arg(user_id),
-    sqlc.arg(family_id),
+    COALESCE(sqlc.narg(family_id)::bigint, nextval('refresh_session_families_seq')),
     sqlc.arg(token_hash),
     sqlc.arg(expires_at)
 )

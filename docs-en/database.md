@@ -3,7 +3,7 @@ Draft v0.3 • 14 September 2026
 Logical design; executable migrations/queries arrive in Issue 002. Full admin management is Issue 013.
 
 ## Common conventions
-UUID identifiers. created_at/updated_at TIMESTAMPTZ; update timestamps on mutations.
+Primary keys use BIGSERIAL and relational identifiers use BIGINT. created_at/updated_at use TIMESTAMPTZ; update timestamps on mutations.
 Soft-deletable entities have is_delete BOOLEAN NOT NULL DEFAULT FALSE and version INTEGER NOT NULL DEFAULT 1 CHECK(version>0).
 JSON exposes isDelete (exact spelling) and Go uses IsDelete. Other JSON fields remain snake_case.
 NULL is not a deletion state. Rows are active only when is_delete=false.
@@ -13,9 +13,9 @@ NULL is not a deletion state. Rows are active only when is_delete=false.
 | --- | --- |
 | users | id PK; email normalized lowercase UNIQUE NOT NULL; password_hash NOT NULL; role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','admin')); timezone NOT NULL default Asia/Jakarta; currency NOT NULL default IDR CHECK(currency='IDR'); is_delete; version; created_at; updated_at |
 | categories | id PK; user_id FK users NOT NULL; type NOT NULL CHECK IN ('income','expense'); name VARCHAR(80) NOT NULL; is_delete; version; created_at; updated_at; UNIQUE(id,user_id,type) |
-| transactions | id PK; user_id FK users NOT NULL; category_id NOT NULL; type NOT NULL CHECK IN ('income','expense'); amount NUMERIC(14,2) NOT NULL CHECK(amount>0); transaction_date DATE NOT NULL; title VARCHAR(200) NOT NULL; client_request_id UUID NOT NULL; request_hash TEXT NOT NULL; created_by/updated_by UUID NOT NULL FK users; is_delete; version; created_at; updated_at; UNIQUE(user_id,client_request_id) |
-| refresh_sessions | id PK; user_id FK users; family_id UUID; token_hash UNIQUE NOT NULL; expires_at NOT NULL; revoked_at nullable; replaced_by nullable self FK; created_at |
-| admin_access_events | id PK; actor_user_id UUID NOT NULL FK users; target_user_id UUID nullable FK users; resource_type TEXT NOT NULL; resource_id UUID nullable; action TEXT NOT NULL; outcome TEXT NOT NULL; request_id TEXT NOT NULL; safe_metadata JSONB NOT NULL default '{}'; created_at TIMESTAMPTZ NOT NULL default current_timestamp |
+| transactions | id BIGSERIAL PK; user_id BIGINT FK users NOT NULL; category_id BIGINT NOT NULL; type NOT NULL CHECK IN ('income','expense'); amount NUMERIC(14,2) NOT NULL CHECK(amount>0); transaction_date DATE NOT NULL; title VARCHAR(200) NOT NULL; client_request_id BIGINT NOT NULL; request_hash TEXT NOT NULL; created_by/updated_by BIGINT NOT NULL FK users; is_delete; version; created_at; updated_at; UNIQUE(user_id,client_request_id) |
+| refresh_sessions | id BIGSERIAL PK; user_id BIGINT FK users; family_id BIGINT; token_hash UNIQUE NOT NULL; expires_at NOT NULL; revoked_at nullable; replaced_by BIGINT nullable self FK; created_at |
+| admin_access_events | id BIGSERIAL PK; actor_user_id BIGINT NOT NULL FK users; target_user_id BIGINT nullable FK users; resource_type TEXT NOT NULL; resource_id BIGINT nullable; action TEXT NOT NULL; outcome TEXT NOT NULL; request_id TEXT NOT NULL; safe_metadata JSONB NOT NULL default '{}'; created_at TIMESTAMPTZ NOT NULL default current_timestamp |
 | transaction_templates (later) | id PK; user_id FK users; category_id; type; name VARCHAR(80); amount NUMERIC(14,2) CHECK(amount>0); title; is_delete; version; created_at; updated_at |
 | export_jobs (later, 009) | id PK; owner_user_id FK users; requested_by FK users; request_mode personal/admin; immutable filters/format; status; artifact locator; expires_at; created_at/updated_at |
 | drive_connections (later, 012) | id PK; user_id UNIQUE FK users; encrypted_refresh_token; provider_account_label; revoked_at nullable; created_at/updated_at |
@@ -42,7 +42,7 @@ Do not add a standalone low-selectivity boolean index. Measure EXPLAIN on repres
 ## Authorization and concurrency
 Service creates explicit scope {actor_user_id,owner_user_id,mode}. Personal owner=actor; admin owner=validated path target.
 All scoped reads/writes include owner ID, even for admins. A related record from another target yields 404.
-Before mutation, lock involved account rows in UUID order with FOR UPDATE, recheck actor active/current admin role as needed and target account state, then mutate resource under required version.
+Before mutation, lock involved account rows in stable ID order with FOR UPDATE, recheck actor active/current admin role as needed and target account state, then mutate resource under required version.
 Account delete/restore/role change follows the same locking protocol. Do not hold these locks while calling Google or rendering files.
 Domain rules allow a regular owner or current admin; repository scope cannot come straight from a request body.
 

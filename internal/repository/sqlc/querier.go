@@ -6,8 +6,6 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -20,7 +18,7 @@ type Querier interface {
 	GetActiveCategory(ctx context.Context, arg GetActiveCategoryParams) (Category, error)
 	GetActiveTransaction(ctx context.Context, arg GetActiveTransactionParams) (GetActiveTransactionRow, error)
 	GetActiveUserByEmail(ctx context.Context, email string) (User, error)
-	GetActiveUserByID(ctx context.Context, id pgtype.UUID) (User, error)
+	GetActiveUserByID(ctx context.Context, id int64) (User, error)
 	GetCategoryByID(ctx context.Context, arg GetCategoryByIDParams) (Category, error)
 	GetDeletedCategory(ctx context.Context, arg GetDeletedCategoryParams) (Category, error)
 	GetDeletedTransaction(ctx context.Context, arg GetDeletedTransactionParams) (GetDeletedTransactionRow, error)
@@ -31,26 +29,26 @@ type Querier interface {
 	GetReportSummary(ctx context.Context, arg GetReportSummaryParams) (GetReportSummaryRow, error)
 	GetTransactionByRequestIDForUpdate(ctx context.Context, arg GetTransactionByRequestIDForUpdateParams) (Transaction, error)
 	GetTransactionStateForUpdate(ctx context.Context, arg GetTransactionStateForUpdateParams) (Transaction, error)
-	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
+	GetUserByID(ctx context.Context, id int64) (User, error)
 	InsertAdminAccessEvent(ctx context.Context, arg InsertAdminAccessEventParams) (AdminAccessEvent, error)
-	ListActiveCategories(ctx context.Context, userID pgtype.UUID) ([]Category, error)
+	ListActiveCategories(ctx context.Context, userID int64) ([]Category, error)
 	ListActiveTransactions(ctx context.Context, arg ListActiveTransactionsParams) ([]ListActiveTransactionsRow, error)
 	ListAdminAccessEventsByActor(ctx context.Context, arg ListAdminAccessEventsByActorParams) ([]AdminAccessEvent, error)
 	ListAdminAccessEventsByTarget(ctx context.Context, arg ListAdminAccessEventsByTargetParams) ([]AdminAccessEvent, error)
 	ListDailySummaries(ctx context.Context, arg ListDailySummariesParams) ([]ListDailySummariesRow, error)
-	ListDeletedCategories(ctx context.Context, userID pgtype.UUID) ([]Category, error)
+	ListDeletedCategories(ctx context.Context, userID int64) ([]Category, error)
 	ListDeletedTransactions(ctx context.Context, arg ListDeletedTransactionsParams) ([]ListDeletedTransactionsRow, error)
 	ListReportCategoryBreakdown(ctx context.Context, arg ListReportCategoryBreakdownParams) ([]ListReportCategoryBreakdownRow, error)
 	ListReportPeriodBreakdown(ctx context.Context, arg ListReportPeriodBreakdownParams) ([]ListReportPeriodBreakdownRow, error)
 	ListTopReportCategories(ctx context.Context, arg ListTopReportCategoriesParams) ([]ListTopReportCategoriesRow, error)
 	LockInitialAdminBootstrap(ctx context.Context) error
 	LockScopedCategoryForTransaction(ctx context.Context, arg LockScopedCategoryForTransactionParams) (Category, error)
-	LockUsersForUpdate(ctx context.Context, ids []pgtype.UUID) ([]User, error)
+	LockUsersForUpdate(ctx context.Context, ids []int64) ([]User, error)
 	RestoreCategory(ctx context.Context, arg RestoreCategoryParams) (Category, error)
 	RestoreTransaction(ctx context.Context, arg RestoreTransactionParams) (Transaction, error)
 	RestoreUser(ctx context.Context, arg RestoreUserParams) (User, error)
 	// Revoke all active refresh sessions for a user during account deletion or security action.
-	RevokeAllUserRefreshSessions(ctx context.Context, userID pgtype.UUID) (int64, error)
+	RevokeAllUserRefreshSessions(ctx context.Context, userID int64) (int64, error)
 	// Revoke one active refresh session and optionally link its replacement.
 	RevokeRefreshSession(ctx context.Context, arg RevokeRefreshSessionParams) (RefreshSession, error)
 	// Revoke every active session in one refresh-token family during logout or reuse detection.

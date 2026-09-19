@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -16,7 +17,7 @@ func TestJWTIssuesAndStrictlyValidatesAccessTokens(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewJWT() error = %v", err)
 	}
-	subject := uuid.New()
+	var subject int64 = 42
 	raw, expiresAt, err := validator.Issue(subject)
 	if err != nil {
 		t.Fatalf("Issue() error = %v", err)
@@ -28,7 +29,7 @@ func TestJWTIssuesAndStrictlyValidatesAccessTokens(t *testing.T) {
 		t.Fatalf("access lifetime = %s, want 24 hours", remaining)
 	}
 
-	baseClaims := AccessClaims{TokenType: "access", RegisteredClaims: jwt.RegisteredClaims{Issuer: issuer, Subject: subject.String(), Audience: jwt.ClaimStrings{audience}, ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)), IssuedAt: jwt.NewNumericDate(time.Now()), ID: uuid.NewString()}}
+	baseClaims := AccessClaims{TokenType: "access", RegisteredClaims: jwt.RegisteredClaims{Issuer: issuer, Subject: strconv.FormatInt(subject, 10), Audience: jwt.ClaimStrings{audience}, ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)), IssuedAt: jwt.NewNumericDate(time.Now()), ID: uuid.NewString()}}
 	tests := []struct {
 		name   string
 		claims AccessClaims

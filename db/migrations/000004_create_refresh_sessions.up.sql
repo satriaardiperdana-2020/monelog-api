@@ -1,11 +1,13 @@
+CREATE SEQUENCE refresh_session_families_seq AS BIGINT;
+
 CREATE TABLE refresh_sessions (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
-    family_id UUID NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+    family_id BIGINT NOT NULL DEFAULT nextval('refresh_session_families_seq'),
     token_hash TEXT NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL,
     revoked_at TIMESTAMPTZ,
-    replaced_by UUID REFERENCES refresh_sessions (id) ON DELETE RESTRICT,
+    replaced_by BIGINT REFERENCES refresh_sessions (id) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT refresh_sessions_token_hash_not_blank CHECK (length(btrim(token_hash)) > 0),
     CONSTRAINT refresh_sessions_expiry_valid CHECK (expires_at > created_at),

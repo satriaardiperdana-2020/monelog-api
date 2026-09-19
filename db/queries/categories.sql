@@ -1,6 +1,6 @@
 -- name: CreateCategory :one
-INSERT INTO categories (id, user_id, type, name)
-VALUES (sqlc.arg(id), sqlc.arg(user_id), sqlc.arg(type), btrim(sqlc.arg(name)))
+INSERT INTO categories (user_id, type, name)
+VALUES (sqlc.arg(user_id), sqlc.arg(type), btrim(sqlc.arg(name)))
 RETURNING *;
 
 -- name: GetActiveCategory :one

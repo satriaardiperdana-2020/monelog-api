@@ -7,13 +7,10 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const insertAdminAccessEvent = `-- name: InsertAdminAccessEvent :one
 INSERT INTO admin_access_events (
-    id,
     actor_user_id,
     target_user_id,
     resource_type,
@@ -31,27 +28,24 @@ VALUES (
     $5,
     $6,
     $7,
-    $8,
-    $9
+    $8
 )
 RETURNING id, actor_user_id, target_user_id, resource_type, resource_id, action, outcome, request_id, safe_metadata, created_at
 `
 
 type InsertAdminAccessEventParams struct {
-	ID           pgtype.UUID `db:"id" json:"id"`
-	ActorUserID  pgtype.UUID `db:"actor_user_id" json:"actor_user_id"`
-	TargetUserID pgtype.UUID `db:"target_user_id" json:"target_user_id"`
-	ResourceType string      `db:"resource_type" json:"resource_type"`
-	ResourceID   pgtype.UUID `db:"resource_id" json:"resource_id"`
-	Action       string      `db:"action" json:"action"`
-	Outcome      string      `db:"outcome" json:"outcome"`
-	RequestID    string      `db:"request_id" json:"request_id"`
-	SafeMetadata []byte      `db:"safe_metadata" json:"safe_metadata"`
+	ActorUserID  int64  `db:"actor_user_id" json:"actor_user_id"`
+	TargetUserID *int64 `db:"target_user_id" json:"target_user_id"`
+	ResourceType string `db:"resource_type" json:"resource_type"`
+	ResourceID   *int64 `db:"resource_id" json:"resource_id"`
+	Action       string `db:"action" json:"action"`
+	Outcome      string `db:"outcome" json:"outcome"`
+	RequestID    string `db:"request_id" json:"request_id"`
+	SafeMetadata []byte `db:"safe_metadata" json:"safe_metadata"`
 }
 
 func (q *Queries) InsertAdminAccessEvent(ctx context.Context, arg InsertAdminAccessEventParams) (AdminAccessEvent, error) {
 	row := q.db.QueryRow(ctx, insertAdminAccessEvent,
-		arg.ID,
 		arg.ActorUserID,
 		arg.TargetUserID,
 		arg.ResourceType,
@@ -86,8 +80,8 @@ LIMIT $2
 `
 
 type ListAdminAccessEventsByActorParams struct {
-	ActorUserID pgtype.UUID `db:"actor_user_id" json:"actor_user_id"`
-	PageSize    int32       `db:"page_size" json:"page_size"`
+	ActorUserID int64 `db:"actor_user_id" json:"actor_user_id"`
+	PageSize    int32 `db:"page_size" json:"page_size"`
 }
 
 func (q *Queries) ListAdminAccessEventsByActor(ctx context.Context, arg ListAdminAccessEventsByActorParams) ([]AdminAccessEvent, error) {
@@ -130,8 +124,8 @@ LIMIT $2
 `
 
 type ListAdminAccessEventsByTargetParams struct {
-	TargetUserID pgtype.UUID `db:"target_user_id" json:"target_user_id"`
-	PageSize     int32       `db:"page_size" json:"page_size"`
+	TargetUserID *int64 `db:"target_user_id" json:"target_user_id"`
+	PageSize     int32  `db:"page_size" json:"page_size"`
 }
 
 func (q *Queries) ListAdminAccessEventsByTarget(ctx context.Context, arg ListAdminAccessEventsByTargetParams) ([]AdminAccessEvent, error) {

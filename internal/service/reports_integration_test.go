@@ -6,8 +6,6 @@ import (
 	"context"
 	"testing"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 func TestReportSummaryAndBreakdown(t *testing.T) {
@@ -21,16 +19,16 @@ func TestReportSummaryAndBreakdown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	categories, err := authService.queries.ListActiveCategories(ctx, toPGUUID(owner.ID))
+	categories, err := authService.queries.ListActiveCategories(ctx, owner.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var incomeCategory, expenseCategory uuid.UUID
+	var incomeCategory, expenseCategory int64
 	for _, category := range categories {
 		if category.Type == CategoryTypeIncome {
-			incomeCategory = fromPGUUID(category.ID)
+			incomeCategory = category.ID
 		} else if category.Type == CategoryTypeExpense {
-			expenseCategory = fromPGUUID(category.ID)
+			expenseCategory = category.ID
 		}
 	}
 
@@ -40,9 +38,9 @@ func TestReportSummaryAndBreakdown(t *testing.T) {
 
 	// Create transactions
 	for _, input := range []TransactionInput{
-		{TransactionDate: "2026-09-10", Type: CategoryTypeIncome, CategoryID: incomeCategory, Amount: "1000.00", Title: "Income 1", ClientRequestID: uuid.New()},
-		{TransactionDate: "2026-09-11", Type: CategoryTypeExpense, CategoryID: expenseCategory, Amount: "500.00", Title: "Expense 1", ClientRequestID: uuid.New()},
-		{TransactionDate: "2026-09-12", Type: CategoryTypeExpense, CategoryID: expenseCategory, Amount: "200.00", Title: "Expense 2", ClientRequestID: uuid.New()},
+		{TransactionDate: "2026-09-10", Type: CategoryTypeIncome, CategoryID: incomeCategory, Amount: "1000.00", Title: "Income 1", ClientRequestID: 1},
+		{TransactionDate: "2026-09-11", Type: CategoryTypeExpense, CategoryID: expenseCategory, Amount: "500.00", Title: "Expense 1", ClientRequestID: 2},
+		{TransactionDate: "2026-09-12", Type: CategoryTypeExpense, CategoryID: expenseCategory, Amount: "200.00", Title: "Expense 2", ClientRequestID: 3},
 	} {
 		if _, err := transactions.Create(ctx, scope, input); err != nil {
 			t.Fatalf("create transaction: %v", err)

@@ -3,12 +3,10 @@ package service
 import (
 	"testing"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 func TestTransactionCanonicalHashUsesNormalizedValues(t *testing.T) {
-	owner, category := uuid.New(), uuid.New()
+	owner, category := int64(1), int64(2)
 	one := validatedTransaction{date: time.Date(2026, 9, 17, 0, 0, 0, 0, time.UTC), kind: CategoryTypeExpense, categoryID: category, amount: Money{cents: 4350000}, title: "Belanja"}
 	two := one
 	if canonicalTransactionHash(owner, one) != canonicalTransactionHash(owner, two) {
@@ -21,10 +19,10 @@ func TestTransactionCanonicalHashUsesNormalizedValues(t *testing.T) {
 }
 
 func TestTransactionCursorBindsScopeModeAndFilters(t *testing.T) {
-	actor, owner := uuid.New(), uuid.New()
+	actor, owner := int64(1), int64(2)
 	scope := TransactionScope{Actor: Actor{UserID: actor, Role: RoleAdmin}, Owner: owner, Admin: true}
 	filter := TransactionFilter{StartDate: "2026-09-01", EndDate: "2026-09-17", Type: CategoryTypeExpense}
-	encoded := encodeCursor(cursorFor(scope, filter, "transactions", time.Date(2026, 9, 10, 0, 0, 0, 0, time.UTC), time.Now(), uuid.New()))
+	encoded := encodeCursor(cursorFor(scope, filter, "transactions", time.Date(2026, 9, 10, 0, 0, 0, 0, time.UTC), time.Now(), 3))
 	cursor, err := decodeTransactionCursor(encoded)
 	if err != nil || !cursorMatches(cursor, scope, filter, "transactions") {
 		t.Fatalf("cursor round trip failed: %v", err)

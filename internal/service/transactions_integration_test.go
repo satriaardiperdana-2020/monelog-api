@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-
 	db "github.com/satriaardiperdana-2020/monelog-api/internal/repository/sqlc"
 )
 
@@ -24,25 +22,25 @@ func TestTransactionHistoryDailySummaryAndLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	categories, err := authService.queries.ListActiveCategories(ctx, toPGUUID(owner.ID))
+	categories, err := authService.queries.ListActiveCategories(ctx, owner.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var expenseCategory uuid.UUID
+	var expenseCategory int64
 	for _, category := range categories {
 		if category.Type == CategoryTypeExpense {
-			expenseCategory = fromPGUUID(category.ID)
+			expenseCategory = category.ID
 			break
 		}
 	}
-	if expenseCategory == uuid.Nil {
+	if expenseCategory == 0 {
 		t.Fatal("expense category was not seeded")
 	}
 
 	transactions := NewTransactions(pool)
 	transactions.now = func() time.Time { return time.Date(2026, 9, 17, 12, 0, 0, 0, time.UTC) }
 	scope := TransactionScope{Actor: Actor{UserID: owner.ID, Role: RoleUser}, Owner: owner.ID}
-	requestID := uuid.New()
+	requestID := int64(1)
 	input := TransactionInput{TransactionDate: "2026-09-16", Type: CategoryTypeExpense, CategoryID: expenseCategory, Amount: "43500.00", Title: " Belanja ", ClientRequestID: requestID}
 	created, err := transactions.Create(ctx, scope, input)
 	if err != nil || !created.Created || created.Transaction.Amount != "43500.00" || created.Transaction.Title != "Belanja" {
@@ -107,23 +105,23 @@ func TestAdminTransactionScopeAuditAndStableCursor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	categories, err := authService.queries.ListActiveCategories(ctx, toPGUUID(owner.ID))
+	categories, err := authService.queries.ListActiveCategories(ctx, owner.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var categoryID uuid.UUID
+	var categoryID int64
 	for _, category := range categories {
 		if category.Type == CategoryTypeExpense {
-			categoryID = fromPGUUID(category.ID)
+			categoryID = category.ID
 			break
 		}
 	}
 	transactions := NewTransactions(pool)
 	transactions.now = func() time.Time { return time.Date(2026, 9, 17, 12, 0, 0, 0, time.UTC) }
 	adminScope := TransactionScope{Actor: Actor{UserID: admin.ID, Role: RoleAdmin}, Owner: owner.ID, Admin: true, RequestID: "admin-request"}
-	createdIDs := make(map[uuid.UUID]struct{})
+	createdIDs := make(map[int64]struct{})
 	for i, amount := range []string{"1.00", "2.00", "3.00"} {
-		created, err := transactions.Create(ctx, adminScope, TransactionInput{TransactionDate: "2026-09-16", Type: CategoryTypeExpense, CategoryID: categoryID, Amount: amount, Title: "Admin entry " + amount, ClientRequestID: uuid.New()})
+		created, err := transactions.Create(ctx, adminScope, TransactionInput{TransactionDate: "2026-09-16", Type: CategoryTypeExpense, CategoryID: categoryID, Amount: amount, Title: "Admin entry " + amount, ClientRequestID: int64(i + 1)})
 		if err != nil {
 			t.Fatalf("admin create %d: %v", i, err)
 		}
@@ -140,10 +138,10 @@ func TestAdminTransactionScopeAuditAndStableCursor(t *testing.T) {
 	if err != nil || len(second.Items) != 1 || second.NextCursor != nil {
 		t.Fatalf("second page=%+v err=%v", second, err)
 	}
-	seen := map[uuid.UUID]struct{}{}
+	seen := map[int64]struct{}{}
 	for _, item := range append(first.Items, second.Items...) {
 		if _, exists := seen[item.ID]; exists {
-			t.Fatalf("duplicate paginated ID %s", item.ID)
+			t.Fatalf("duplicate paginated ID %d", item.ID)
 		}
 		seen[item.ID] = struct{}{}
 	}
@@ -157,7 +155,7 @@ func TestAdminTransactionScopeAuditAndStableCursor(t *testing.T) {
 		}
 		break
 	}
-	events, err := authService.queries.ListAdminAccessEventsByTarget(ctx, db.ListAdminAccessEventsByTargetParams{TargetUserID: toPGUUID(owner.ID), PageSize: 20})
+	events, err := authService.queries.ListAdminAccessEventsByTarget(ctx, db.ListAdminAccessEventsByTargetParams{TargetUserID: &owner.ID, PageSize: 20})
 	if err != nil || len(events) < 5 {
 		t.Fatalf("admin audit events=%d err=%v", len(events), err)
 	}

@@ -35,7 +35,7 @@ func TestAuthenticationLifecycleAndRefreshReplay(t *testing.T) {
 	if user.Role != RoleUser || user.IsDelete {
 		t.Fatalf("registration role/state = %+v", user)
 	}
-	stored, err := authService.queries.GetActiveUserByID(ctx, toPGUUID(user.ID))
+	stored, err := authService.queries.GetActiveUserByID(ctx, user.ID)
 	if err != nil || stored.PasswordHash == "correct horse battery staple" || !appauth.VerifyPassword(stored.PasswordHash, "correct horse battery staple") {
 		t.Fatalf("stored password was not an Argon2id hash: user=%+v err=%v", stored, err)
 	}

@@ -5,7 +5,7 @@ Desain logis; migrasi/query yang dapat dijalankan dibuat pada Issue 002. Pengelo
 
 ## Konvensi umum
 
-Identifier UUID. created_at/updated_at bertipe TIMESTAMPTZ; timestamp diperbarui pada mutasi.
+Primary key memakai BIGSERIAL dan seluruh identifier relasional memakai BIGINT. created_at/updated_at bertipe TIMESTAMPTZ; timestamp diperbarui pada mutasi.
 Entitas yang dapat dihapus lunak memiliki is_delete BOOLEAN NOT NULL DEFAULT FALSE dan version INTEGER NOT NULL DEFAULT 1 CHECK(version>0).
 JSON mengekspos isDelete (ejaan tepat) dan Go memakai IsDelete. Field JSON lain tetap snake_case.
 NULL bukan state penghapusan. Baris aktif hanya jika is_delete=false.
@@ -16,8 +16,8 @@ NULL bukan state penghapusan. Baris aktif hanya jika is_delete=false.
 | --- | --- |
 | users | id PK; email dinormalisasi lowercase UNIQUE NOT NULL; password_hash NOT NULL; role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','admin')); timezone default Asia/Jakarta; currency default IDR CHECK(currency='IDR'); is_delete; version; created_at; updated_at |
 | categories | id PK; user_id FK users NOT NULL; type CHECK IN ('income','expense'); name VARCHAR(80) NOT NULL; is_delete; version; created_at; updated_at; UNIQUE(id,user_id,type) |
-| transactions | id PK; user_id FK users NOT NULL; category_id NOT NULL; type CHECK IN ('income','expense'); amount NUMERIC(14,2) CHECK(amount>0); transaction_date DATE; title VARCHAR(200); client_request_id UUID; request_hash TEXT; created_by/updated_by UUID FK users; is_delete; version; created_at; updated_at; UNIQUE(user_id,client_request_id) |
-| refresh_sessions | id PK; user_id FK users; family_id UUID; token_hash UNIQUE; expires_at; revoked_at nullable; replaced_by self FK nullable; created_at |
+| transactions | id BIGSERIAL PK; user_id BIGINT FK users NOT NULL; category_id BIGINT NOT NULL; type CHECK IN ('income','expense'); amount NUMERIC(14,2) CHECK(amount>0); transaction_date DATE; title VARCHAR(200); client_request_id BIGINT; request_hash TEXT; created_by/updated_by BIGINT FK users; is_delete; version; created_at; updated_at; UNIQUE(user_id,client_request_id) |
+| refresh_sessions | id BIGSERIAL PK; user_id BIGINT FK users; family_id BIGINT; token_hash UNIQUE; expires_at; revoked_at nullable; replaced_by BIGINT self FK nullable; created_at |
 | admin_access_events | id PK; actor_user_id FK users; target_user_id FK users nullable; resource_type; resource_id nullable; action; outcome; request_id; safe_metadata JSONB default '{}'; created_at UTC |
 | transaction_templates (nanti) | id PK; user_id; category_id; type; name; amount; title; is_delete; version; created_at; updated_at |
 | export_jobs (nanti, 009) | id PK; owner_user_id; requested_by; request_mode personal/admin; filter/format immutable; status; artifact locator; expires_at; created_at/updated_at |
@@ -48,7 +48,7 @@ Jangan menambah index boolean dengan selektivitas rendah secara mandiri. Ukur EX
 
 Service membuat scope eksplisit {actor_user_id,owner_user_id,mode}. Personal owner=actor; admin owner=target path tervalidasi.
 Semua baca/tulis berscope menyertakan owner ID, termasuk untuk admin. Resource terkait dari target lain menghasilkan 404.
-Sebelum mutasi, lock baris akun yang terlibat dalam urutan UUID dengan FOR UPDATE, periksa ulang actor aktif/role admin dan state target, lalu mutasikan resource dengan version wajib.
+Sebelum mutasi, lock baris akun yang terlibat dalam urutan ID stabil dengan FOR UPDATE, periksa ulang actor aktif/role admin dan state target, lalu mutasikan resource dengan version wajib.
 Delete/restore/perubahan role akun memakai protokol lock yang sama. Jangan menahan lock saat memanggil Google atau merender file.
 Aturan domain menerima owner biasa atau admin aktif; scope repository tidak boleh berasal langsung dari body request.
 

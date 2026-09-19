@@ -333,12 +333,12 @@ func (e GetReportSummaryParamsRange) Valid() bool {
 
 // Category defines model for Category.
 type Category struct {
-	Id       openapi_types.UUID `json:"id"`
-	IsDelete bool               `json:"isDelete"`
-	Name     string             `json:"name"`
-	Type     TransactionType    `json:"type"`
-	UserId   openapi_types.UUID `json:"user_id"`
-	Version  int32              `json:"version"`
+	Id       int64           `json:"id"`
+	IsDelete bool            `json:"isDelete"`
+	Name     string          `json:"name"`
+	Type     TransactionType `json:"type"`
+	UserId   int64           `json:"user_id"`
+	Version  int32           `json:"version"`
 }
 
 // CategoryCreateRequest defines model for CategoryCreateRequest.
@@ -480,10 +480,10 @@ type ReportBreakdownResponse struct {
 // ReportCategoryTotal defines model for ReportCategoryTotal.
 type ReportCategoryTotal struct {
 	// Amount Example: 43500.00
-	Amount     Money              `json:"amount"`
-	CategoryId openapi_types.UUID `json:"category_id"`
-	Name       string             `json:"name"`
-	Type       TransactionType    `json:"type"`
+	Amount     Money           `json:"amount"`
+	CategoryId int64           `json:"category_id"`
+	Name       string          `json:"name"`
+	Type       TransactionType `json:"type"`
 }
 
 // ReportPeriod defines model for ReportPeriod.
@@ -527,19 +527,19 @@ type ReportSummaryResponse struct {
 type Transaction struct {
 	// Amount Example: 43500.00
 	Amount          Money              `json:"amount"`
-	CategoryId      openapi_types.UUID `json:"category_id"`
+	CategoryId      int64              `json:"category_id"`
 	CategoryName    string             `json:"category_name"`
-	ClientRequestId openapi_types.UUID `json:"client_request_id"`
+	ClientRequestId int64              `json:"client_request_id"`
 	CreatedAt       time.Time          `json:"created_at"`
-	CreatedBy       openapi_types.UUID `json:"created_by"`
-	Id              openapi_types.UUID `json:"id"`
+	CreatedBy       int64              `json:"created_by"`
+	Id              int64              `json:"id"`
 	IsDelete        bool               `json:"isDelete"`
 	Title           string             `json:"title"`
 	TransactionDate openapi_types.Date `json:"transaction_date"`
 	Type            TransactionType    `json:"type"`
 	UpdatedAt       time.Time          `json:"updated_at"`
-	UpdatedBy       openapi_types.UUID `json:"updated_by"`
-	UserId          openapi_types.UUID `json:"user_id"`
+	UpdatedBy       int64              `json:"updated_by"`
+	UserId          int64              `json:"user_id"`
 	Version         int32              `json:"version"`
 }
 
@@ -547,8 +547,8 @@ type Transaction struct {
 type TransactionCreateRequest struct {
 	// Amount Example: 43500.00
 	Amount          Money              `json:"amount"`
-	CategoryId      openapi_types.UUID `json:"category_id"`
-	ClientRequestId openapi_types.UUID `json:"client_request_id"`
+	CategoryId      int64              `json:"category_id"`
+	ClientRequestId int64              `json:"client_request_id"`
 	Title           string             `json:"title"`
 	TransactionDate openapi_types.Date `json:"transaction_date"`
 	Type            TransactionType    `json:"type"`
@@ -572,7 +572,7 @@ type TransactionType string
 type TransactionUpdateRequest struct {
 	// Amount Example: 43500.00
 	Amount          Money              `json:"amount"`
-	CategoryId      openapi_types.UUID `json:"category_id"`
+	CategoryId      int64              `json:"category_id"`
 	Title           string             `json:"title"`
 	TransactionDate openapi_types.Date `json:"transaction_date"`
 	Type            TransactionType    `json:"type"`
@@ -583,7 +583,7 @@ type TransactionUpdateRequest struct {
 type User struct {
 	Currency UserCurrency        `json:"currency"`
 	Email    openapi_types.Email `json:"email"`
-	Id       openapi_types.UUID  `json:"id"`
+	Id       int64               `json:"id"`
 	IsDelete bool                `json:"isDelete"`
 	Role     UserRole            `json:"role"`
 	Timezone string              `json:"timezone"`
@@ -631,13 +631,13 @@ type ReportRange string
 type ReportStartDate = openapi_types.Date
 
 // ResourceId defines model for ResourceId.
-type ResourceId = openapi_types.UUID
+type ResourceId = int64
 
 // StartDate defines model for StartDate.
 type StartDate = openapi_types.Date
 
 // UserId defines model for UserId.
-type UserId = openapi_types.UUID
+type UserId = int64
 
 // AuthenticationFailed defines model for AuthenticationFailed.
 type AuthenticationFailed = ErrorResponse
@@ -718,13 +718,13 @@ type AdminGetReportSummaryParamsRange string
 
 // AdminListTransactionsParams defines parameters for AdminListTransactions.
 type AdminListTransactionsParams struct {
-	StartDate  StartDate           `form:"start_date" json:"start_date"`
-	EndDate    EndDate             `form:"end_date" json:"end_date"`
-	Type       *TransactionType    `form:"type,omitempty" json:"type,omitempty"`
-	CategoryId *openapi_types.UUID `form:"category_id,omitempty" json:"category_id,omitempty"`
-	IsDelete   *bool               `form:"isDelete,omitempty" json:"isDelete,omitempty"`
-	Limit      *Limit              `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor     *Cursor             `form:"cursor,omitempty" json:"cursor,omitempty"`
+	StartDate  StartDate        `form:"start_date" json:"start_date"`
+	EndDate    EndDate          `form:"end_date" json:"end_date"`
+	Type       *TransactionType `form:"type,omitempty" json:"type,omitempty"`
+	CategoryId *int64           `form:"category_id,omitempty" json:"category_id,omitempty"`
+	IsDelete   *bool            `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+	Limit      *Limit           `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor     *Cursor          `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // AdminDeleteTransactionParams defines parameters for AdminDeleteTransaction.
@@ -795,13 +795,13 @@ type GetReportSummaryParamsRange string
 
 // ListTransactionsParams defines parameters for ListTransactions.
 type ListTransactionsParams struct {
-	StartDate  StartDate           `form:"start_date" json:"start_date"`
-	EndDate    EndDate             `form:"end_date" json:"end_date"`
-	Type       *TransactionType    `form:"type,omitempty" json:"type,omitempty"`
-	CategoryId *openapi_types.UUID `form:"category_id,omitempty" json:"category_id,omitempty"`
-	IsDelete   *bool               `form:"isDelete,omitempty" json:"isDelete,omitempty"`
-	Limit      *Limit              `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor     *Cursor             `form:"cursor,omitempty" json:"cursor,omitempty"`
+	StartDate  StartDate        `form:"start_date" json:"start_date"`
+	EndDate    EndDate          `form:"end_date" json:"end_date"`
+	Type       *TransactionType `form:"type,omitempty" json:"type,omitempty"`
+	CategoryId *int64           `form:"category_id,omitempty" json:"category_id,omitempty"`
+	IsDelete   *bool            `form:"isDelete,omitempty" json:"isDelete,omitempty"`
+	Limit      *Limit           `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor     *Cursor          `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // DeleteTransactionParams defines parameters for DeleteTransaction.
@@ -997,7 +997,7 @@ func (w *ServerInterfaceWrapper) AdminListCategories(ctx *echo.Context) error {
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1029,7 +1029,7 @@ func (w *ServerInterfaceWrapper) AdminCreateCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1045,7 +1045,7 @@ func (w *ServerInterfaceWrapper) AdminDeleteCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1053,7 +1053,7 @@ func (w *ServerInterfaceWrapper) AdminDeleteCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1091,7 +1091,7 @@ func (w *ServerInterfaceWrapper) AdminGetCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1099,7 +1099,7 @@ func (w *ServerInterfaceWrapper) AdminGetCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1124,7 +1124,7 @@ func (w *ServerInterfaceWrapper) AdminUpdateCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1132,7 +1132,7 @@ func (w *ServerInterfaceWrapper) AdminUpdateCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1148,7 +1148,7 @@ func (w *ServerInterfaceWrapper) AdminRestoreCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1156,7 +1156,7 @@ func (w *ServerInterfaceWrapper) AdminRestoreCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1172,7 +1172,7 @@ func (w *ServerInterfaceWrapper) AdminListDailySummaries(ctx *echo.Context) erro
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1218,7 +1218,7 @@ func (w *ServerInterfaceWrapper) AdminGetReportBreakdown(ctx *echo.Context) erro
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1264,7 +1264,7 @@ func (w *ServerInterfaceWrapper) AdminGetReportSummary(ctx *echo.Context) error 
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1303,7 +1303,7 @@ func (w *ServerInterfaceWrapper) AdminListTransactions(ctx *echo.Context) error 
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1333,7 +1333,7 @@ func (w *ServerInterfaceWrapper) AdminListTransactions(ctx *echo.Context) error 
 
 	// ------------- Optional query parameter "category_id" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "category_id", ctx.QueryParams(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category_id", ctx.QueryParams(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter category_id: %s", err))
 	}
@@ -1370,7 +1370,7 @@ func (w *ServerInterfaceWrapper) AdminCreateTransaction(ctx *echo.Context) error
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1386,7 +1386,7 @@ func (w *ServerInterfaceWrapper) AdminDeleteTransaction(ctx *echo.Context) error
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1394,7 +1394,7 @@ func (w *ServerInterfaceWrapper) AdminDeleteTransaction(ctx *echo.Context) error
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1432,7 +1432,7 @@ func (w *ServerInterfaceWrapper) AdminGetTransaction(ctx *echo.Context) error {
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1440,7 +1440,7 @@ func (w *ServerInterfaceWrapper) AdminGetTransaction(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1465,7 +1465,7 @@ func (w *ServerInterfaceWrapper) AdminUpdateTransaction(ctx *echo.Context) error
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1473,7 +1473,7 @@ func (w *ServerInterfaceWrapper) AdminUpdateTransaction(ctx *echo.Context) error
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1489,7 +1489,7 @@ func (w *ServerInterfaceWrapper) AdminRestoreTransaction(ctx *echo.Context) erro
 	// ------------- Path parameter "user_id" -------------
 	var userId UserId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
 	}
@@ -1497,7 +1497,7 @@ func (w *ServerInterfaceWrapper) AdminRestoreTransaction(ctx *echo.Context) erro
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1583,7 +1583,7 @@ func (w *ServerInterfaceWrapper) DeleteCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1621,7 +1621,7 @@ func (w *ServerInterfaceWrapper) GetCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1646,7 +1646,7 @@ func (w *ServerInterfaceWrapper) UpdateCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1662,7 +1662,7 @@ func (w *ServerInterfaceWrapper) RestoreCategory(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1860,7 +1860,7 @@ func (w *ServerInterfaceWrapper) ListTransactions(ctx *echo.Context) error {
 
 	// ------------- Optional query parameter "category_id" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "category_id", ctx.QueryParams(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category_id", ctx.QueryParams(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter category_id: %s", err))
 	}
@@ -1906,7 +1906,7 @@ func (w *ServerInterfaceWrapper) DeleteTransaction(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1944,7 +1944,7 @@ func (w *ServerInterfaceWrapper) GetTransaction(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1969,7 +1969,7 @@ func (w *ServerInterfaceWrapper) UpdateTransaction(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -1985,7 +1985,7 @@ func (w *ServerInterfaceWrapper) RestoreTransaction(ctx *echo.Context) error {
 	// ------------- Path parameter "id" -------------
 	var id ResourceId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
@@ -5212,100 +5212,101 @@ func (sh *strictHandler) HealthReady(ctx *echo.Context) error {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"D7f/NwA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

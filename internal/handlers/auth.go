@@ -301,7 +301,7 @@ type profileRequest struct {
 }
 
 type userPayload struct {
-	ID       string `json:"id"`
+	ID       int64  `json:"id"`
 	Email    string `json:"email"`
 	Role     string `json:"role"`
 	Timezone string `json:"timezone"`
@@ -311,5 +311,5 @@ type userPayload struct {
 }
 
 func userResponse(user service.User) userPayload {
-	return userPayload{ID: user.ID.String(), Email: user.Email, Role: user.Role, Timezone: user.Timezone, Currency: user.Currency, IsDelete: user.IsDelete, Version: user.Version}
+	return userPayload{ID: user.ID, Email: user.Email, Role: user.Role, Timezone: user.Timezone, Currency: user.Currency, IsDelete: user.IsDelete, Version: user.Version}
 }

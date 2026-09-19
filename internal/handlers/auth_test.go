@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
 	"github.com/satriaardiperdana-2020/monelog-api/internal/middleware"
@@ -130,7 +129,7 @@ func TestLoginFailureIsGeneric(t *testing.T) {
 }
 
 func testUser() service.User {
-	return service.User{ID: uuid.New(), Email: "person@example.com", Role: service.RoleUser, Timezone: "Asia/Jakarta", Currency: "IDR", Version: 1}
+	return service.User{ID: 1, Email: "person@example.com", Role: service.RoleUser, Timezone: "Asia/Jakarta", Currency: "IDR", Version: 1}
 }
 
 func testSession() service.Session {

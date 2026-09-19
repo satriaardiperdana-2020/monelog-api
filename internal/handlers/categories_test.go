@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
 	api "github.com/satriaardiperdana-2020/monelog-api/internal/api"
@@ -25,21 +24,21 @@ func (f *fakeCategoryService) List(_ context.Context, _ service.CategoryScope, _
 	f.listDeleted = deleted
 	return nil, nil
 }
-func (f *fakeCategoryService) Get(context.Context, service.CategoryScope, uuid.UUID, bool) (service.Category, error) {
+func (f *fakeCategoryService) Get(context.Context, service.CategoryScope, int64, bool) (service.Category, error) {
 	return service.Category{}, service.ErrNotFound
 }
 func (f *fakeCategoryService) Create(_ context.Context, scope service.CategoryScope, categoryType, name string) (service.Category, error) {
 	f.createCalls++
 	f.createScope = scope
-	return service.Category{ID: uuid.New(), UserID: scope.Owner, Type: categoryType, Name: name, Version: 1}, nil
+	return service.Category{ID: 2, UserID: scope.Owner, Type: categoryType, Name: name, Version: 1}, nil
 }
-func (f *fakeCategoryService) Update(context.Context, service.CategoryScope, uuid.UUID, string, int32) (service.Category, error) {
+func (f *fakeCategoryService) Update(context.Context, service.CategoryScope, int64, string, int32) (service.Category, error) {
 	return service.Category{}, nil
 }
-func (f *fakeCategoryService) Archive(context.Context, service.CategoryScope, uuid.UUID, int32) error {
+func (f *fakeCategoryService) Archive(context.Context, service.CategoryScope, int64, int32) error {
 	return nil
 }
-func (f *fakeCategoryService) Restore(context.Context, service.CategoryScope, uuid.UUID, int32) (service.Category, error) {
+func (f *fakeCategoryService) Restore(context.Context, service.CategoryScope, int64, int32) (service.Category, error) {
 	return service.Category{}, nil
 }
 
@@ -53,7 +52,7 @@ func TestCategoryCreateRejectsOwnerInjection(t *testing.T) {
 	fake := &fakeCategoryService{}
 	handler := NewCategories(fake)
 	e := echo.New()
-	e.POST("/categories", handler.Create, middleware.Authenticate(categoryAuthenticator{actor: service.Actor{UserID: uuid.New(), Role: service.RoleUser}}))
+	e.POST("/categories", handler.Create, middleware.Authenticate(categoryAuthenticator{actor: service.Actor{UserID: 1, Role: service.RoleUser}}))
 	request := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(`{"name":"Food","type":"expense","owner_id":"ignored"}`))
 	request.Header.Set(echo.HeaderAuthorization, "Bearer token")
 	response := httptest.NewRecorder()
@@ -64,7 +63,7 @@ func TestCategoryCreateRejectsOwnerInjection(t *testing.T) {
 }
 
 func TestCategoryCreateUsesAuthenticatedOwner(t *testing.T) {
-	actorID := uuid.New()
+	var actorID int64 = 1
 	fake := &fakeCategoryService{}
 	handler := NewCategories(fake)
 	e := echo.New()
@@ -83,7 +82,7 @@ func TestCategoryUpdateRejectsTypeChange(t *testing.T) {
 	e := echo.New()
 	request := httptest.NewRequest(http.MethodPatch, "/categories/id", strings.NewReader(`{"name":"Food","type":"income","version":1}`))
 	response := httptest.NewRecorder()
-	if err := handler.Update(e.NewContext(request, response), uuid.New()); err != nil {
+	if err := handler.Update(e.NewContext(request, response), 1); err != nil {
 		t.Fatal(err)
 	}
 	if response.Code != http.StatusBadRequest {
@@ -95,7 +94,7 @@ func TestCategoryListDefaultsToActive(t *testing.T) {
 	fake := &fakeCategoryService{}
 	handler := NewCategories(fake)
 	e := echo.New()
-	e.GET("/categories", func(c *echo.Context) error { return handler.List(c, api.ListCategoriesParams{}) }, middleware.Authenticate(categoryAuthenticator{actor: service.Actor{UserID: uuid.New(), Role: service.RoleUser}}))
+	e.GET("/categories", func(c *echo.Context) error { return handler.List(c, api.ListCategoriesParams{}) }, middleware.Authenticate(categoryAuthenticator{actor: service.Actor{UserID: 1, Role: service.RoleUser}}))
 	request := httptest.NewRequest(http.MethodGet, "/categories", nil)
 	request.Header.Set(echo.HeaderAuthorization, "Bearer token")
 	response := httptest.NewRecorder()

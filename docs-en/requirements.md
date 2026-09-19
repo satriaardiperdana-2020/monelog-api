@@ -70,7 +70,7 @@ Admins also have user create/update/role/delete/restore controls. Login session 
 - Expenses 500000.00 + 43500.00 + 226000.00 give daily expense 769500.00.
 - Empty day/report returns zero totals and empty lists.
 - Failed Save preserves input; duplicate submission does not create duplicate transactions.
-- Regular A cannot access/change B's data or call admin routes, even knowing UUIDs.
+- Regular A cannot access/change B's data or call admin routes, even knowing their IDs.
 - Admin C can create/edit/delete/restore records for A and B through their respective scoped routes; selected-user reports reflect each change.
 - Delete sets isDelete=true and increments version without removing the row. Active detail returns 404; Trash shows it. Restore sets false and reintroduces the amount exactly once.
 - Admin target A with record/category belonging to B returns 404 rather than silently switching owner.

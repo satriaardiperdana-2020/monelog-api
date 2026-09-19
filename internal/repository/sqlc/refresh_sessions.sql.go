@@ -13,7 +13,6 @@ import (
 
 const createRefreshSession = `-- name: CreateRefreshSession :one
 INSERT INTO refresh_sessions (
-    id,
     user_id,
     family_id,
     token_hash,
@@ -21,18 +20,16 @@ INSERT INTO refresh_sessions (
 )
 VALUES (
     $1,
-    $2,
+    COALESCE($2::bigint, nextval('refresh_session_families_seq')),
     $3,
-    $4,
-    $5
+    $4
 )
 RETURNING id, user_id, family_id, token_hash, expires_at, revoked_at, replaced_by, created_at
 `
 
 type CreateRefreshSessionParams struct {
-	ID        pgtype.UUID        `db:"id" json:"id"`
-	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
-	FamilyID  pgtype.UUID        `db:"family_id" json:"family_id"`
+	UserID    int64              `db:"user_id" json:"user_id"`
+	FamilyID  *int64             `db:"family_id" json:"family_id"`
 	TokenHash string             `db:"token_hash" json:"token_hash"`
 	ExpiresAt pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
 }
@@ -40,7 +37,6 @@ type CreateRefreshSessionParams struct {
 // Create a refresh session after successful login or refresh rotation.
 func (q *Queries) CreateRefreshSession(ctx context.Context, arg CreateRefreshSessionParams) (RefreshSession, error) {
 	row := q.db.QueryRow(ctx, createRefreshSession,
-		arg.ID,
 		arg.UserID,
 		arg.FamilyID,
 		arg.TokenHash,
@@ -115,7 +111,7 @@ WHERE user_id = $1
 `
 
 // Revoke all active refresh sessions for a user during account deletion or security action.
-func (q *Queries) RevokeAllUserRefreshSessions(ctx context.Context, userID pgtype.UUID) (int64, error) {
+func (q *Queries) RevokeAllUserRefreshSessions(ctx context.Context, userID int64) (int64, error) {
 	result, err := q.db.Exec(ctx, revokeAllUserRefreshSessions, userID)
 	if err != nil {
 		return 0, err
@@ -133,8 +129,8 @@ RETURNING id, user_id, family_id, token_hash, expires_at, revoked_at, replaced_b
 `
 
 type RevokeRefreshSessionParams struct {
-	ReplacedBy pgtype.UUID `db:"replaced_by" json:"replaced_by"`
-	ID         pgtype.UUID `db:"id" json:"id"`
+	ReplacedBy *int64 `db:"replaced_by" json:"replaced_by"`
+	ID         int64  `db:"id" json:"id"`
 }
 
 // Revoke one active refresh session and optionally link its replacement.
@@ -163,8 +159,8 @@ WHERE user_id = $1
 `
 
 type RevokeRefreshSessionFamilyParams struct {
-	UserID   pgtype.UUID `db:"user_id" json:"user_id"`
-	FamilyID pgtype.UUID `db:"family_id" json:"family_id"`
+	UserID   int64 `db:"user_id" json:"user_id"`
+	FamilyID int64 `db:"family_id" json:"family_id"`
 }
 
 // Revoke every active session in one refresh-token family during logout or reuse detection.

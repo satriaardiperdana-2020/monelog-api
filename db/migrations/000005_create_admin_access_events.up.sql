@@ -1,9 +1,9 @@
 CREATE TABLE admin_access_events (
-    id UUID PRIMARY KEY,
-    actor_user_id UUID NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
-    target_user_id UUID REFERENCES users (id) ON DELETE RESTRICT,
+    id BIGSERIAL PRIMARY KEY,
+    actor_user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+    target_user_id BIGINT REFERENCES users (id) ON DELETE RESTRICT,
     resource_type TEXT NOT NULL,
-    resource_id UUID,
+    resource_id BIGINT,
     action TEXT NOT NULL,
     outcome TEXT NOT NULL,
     request_id TEXT NOT NULL,

@@ -13,38 +13,36 @@ import (
 
 const createTransaction = `-- name: CreateTransaction :one
 INSERT INTO transactions (
-    id, user_id, category_id, type, amount, transaction_date, title,
+    user_id, category_id, type, amount, transaction_date, title,
     client_request_id, request_hash, created_by, updated_by
 )
-SELECT $1, $2, $3, $4,
-       $5, $6, btrim($7),
-       $8, $9,
-       $10, $10
+SELECT $1, $2, $3,
+       $4, $5, btrim($6),
+       $7, $8,
+       $9, $9
 FROM categories
-WHERE categories.id = $3
-  AND categories.user_id = $2
-  AND categories.type = $4
+WHERE categories.id = $2
+  AND categories.user_id = $1
+  AND categories.type = $3
   AND categories.is_delete = FALSE
 ON CONFLICT (user_id, client_request_id) DO NOTHING
 RETURNING transactions.id, transactions.user_id, transactions.category_id, transactions.type, transactions.amount, transactions.transaction_date, transactions.title, transactions.client_request_id, transactions.request_hash, transactions.created_by, transactions.updated_by, transactions.is_delete, transactions.version, transactions.created_at, transactions.updated_at
 `
 
 type CreateTransactionParams struct {
-	ID              pgtype.UUID    `db:"id" json:"id"`
-	UserID          pgtype.UUID    `db:"user_id" json:"user_id"`
-	CategoryID      pgtype.UUID    `db:"category_id" json:"category_id"`
+	UserID          int64          `db:"user_id" json:"user_id"`
+	CategoryID      int64          `db:"category_id" json:"category_id"`
 	Type            string         `db:"type" json:"type"`
 	Amount          pgtype.Numeric `db:"amount" json:"amount"`
 	TransactionDate pgtype.Date    `db:"transaction_date" json:"transaction_date"`
 	Title           string         `db:"title" json:"title"`
-	ClientRequestID pgtype.UUID    `db:"client_request_id" json:"client_request_id"`
+	ClientRequestID int64          `db:"client_request_id" json:"client_request_id"`
 	RequestHash     string         `db:"request_hash" json:"request_hash"`
-	ActorUserID     pgtype.UUID    `db:"actor_user_id" json:"actor_user_id"`
+	ActorUserID     int64          `db:"actor_user_id" json:"actor_user_id"`
 }
 
 func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error) {
 	row := q.db.QueryRow(ctx, createTransaction,
-		arg.ID,
 		arg.UserID,
 		arg.CategoryID,
 		arg.Type,
@@ -84,22 +82,22 @@ WHERE t.id = $1 AND t.user_id = $2 AND t.is_delete = FALSE
 `
 
 type GetActiveTransactionParams struct {
-	ID     pgtype.UUID `db:"id" json:"id"`
-	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	ID     int64 `db:"id" json:"id"`
+	UserID int64 `db:"user_id" json:"user_id"`
 }
 
 type GetActiveTransactionRow struct {
-	ID              pgtype.UUID        `db:"id" json:"id"`
-	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
-	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	ID              int64              `db:"id" json:"id"`
+	UserID          int64              `db:"user_id" json:"user_id"`
+	CategoryID      int64              `db:"category_id" json:"category_id"`
 	Type            string             `db:"type" json:"type"`
 	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
 	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
 	Title           string             `db:"title" json:"title"`
-	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	ClientRequestID int64              `db:"client_request_id" json:"client_request_id"`
 	RequestHash     string             `db:"request_hash" json:"request_hash"`
-	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
-	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	CreatedBy       int64              `db:"created_by" json:"created_by"`
+	UpdatedBy       int64              `db:"updated_by" json:"updated_by"`
 	IsDelete        bool               `db:"is_delete" json:"is_delete"`
 	Version         int32              `db:"version" json:"version"`
 	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
@@ -139,22 +137,22 @@ WHERE t.id = $1 AND t.user_id = $2 AND t.is_delete = TRUE
 `
 
 type GetDeletedTransactionParams struct {
-	ID     pgtype.UUID `db:"id" json:"id"`
-	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	ID     int64 `db:"id" json:"id"`
+	UserID int64 `db:"user_id" json:"user_id"`
 }
 
 type GetDeletedTransactionRow struct {
-	ID              pgtype.UUID        `db:"id" json:"id"`
-	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
-	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	ID              int64              `db:"id" json:"id"`
+	UserID          int64              `db:"user_id" json:"user_id"`
+	CategoryID      int64              `db:"category_id" json:"category_id"`
 	Type            string             `db:"type" json:"type"`
 	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
 	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
 	Title           string             `db:"title" json:"title"`
-	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	ClientRequestID int64              `db:"client_request_id" json:"client_request_id"`
 	RequestHash     string             `db:"request_hash" json:"request_hash"`
-	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
-	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	CreatedBy       int64              `db:"created_by" json:"created_by"`
+	UpdatedBy       int64              `db:"updated_by" json:"updated_by"`
 	IsDelete        bool               `db:"is_delete" json:"is_delete"`
 	Version         int32              `db:"version" json:"version"`
 	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
@@ -197,7 +195,7 @@ WHERE user_id = $1
 `
 
 type GetReportSummaryParams struct {
-	UserID    pgtype.UUID `db:"user_id" json:"user_id"`
+	UserID    int64       `db:"user_id" json:"user_id"`
 	StartDate pgtype.Date `db:"start_date" json:"start_date"`
 	EndDate   pgtype.Date `db:"end_date" json:"end_date"`
 }
@@ -221,8 +219,8 @@ FOR UPDATE
 `
 
 type GetTransactionByRequestIDForUpdateParams struct {
-	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
-	ClientRequestID pgtype.UUID `db:"client_request_id" json:"client_request_id"`
+	UserID          int64 `db:"user_id" json:"user_id"`
+	ClientRequestID int64 `db:"client_request_id" json:"client_request_id"`
 }
 
 func (q *Queries) GetTransactionByRequestIDForUpdate(ctx context.Context, arg GetTransactionByRequestIDForUpdateParams) (Transaction, error) {
@@ -255,8 +253,8 @@ FOR UPDATE
 `
 
 type GetTransactionStateForUpdateParams struct {
-	ID     pgtype.UUID `db:"id" json:"id"`
-	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	ID     int64 `db:"id" json:"id"`
+	UserID int64 `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) GetTransactionStateForUpdate(ctx context.Context, arg GetTransactionStateForUpdateParams) (Transaction, error) {
@@ -292,37 +290,37 @@ WHERE t.user_id = $1
   AND ($4::text = '' OR t.type = $4)
   AND (NOT $5::boolean OR t.category_id = $6)
   AND (NOT $7::boolean OR (t.transaction_date, t.created_at, t.id) <
-      ($8::date, $9::timestamptz, $10::uuid))
+      ($8::date, $9::timestamptz, $10::bigint))
 ORDER BY t.transaction_date DESC, t.created_at DESC, t.id DESC
 LIMIT $11
 `
 
 type ListActiveTransactionsParams struct {
-	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	UserID          int64              `db:"user_id" json:"user_id"`
 	StartDate       pgtype.Date        `db:"start_date" json:"start_date"`
 	EndDate         pgtype.Date        `db:"end_date" json:"end_date"`
 	FilterType      string             `db:"filter_type" json:"filter_type"`
 	HasCategory     bool               `db:"has_category" json:"has_category"`
-	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	CategoryID      int64              `db:"category_id" json:"category_id"`
 	HasCursor       bool               `db:"has_cursor" json:"has_cursor"`
 	CursorDate      pgtype.Date        `db:"cursor_date" json:"cursor_date"`
 	CursorCreatedAt pgtype.Timestamptz `db:"cursor_created_at" json:"cursor_created_at"`
-	CursorID        pgtype.UUID        `db:"cursor_id" json:"cursor_id"`
+	CursorID        int64              `db:"cursor_id" json:"cursor_id"`
 	PageSize        int32              `db:"page_size" json:"page_size"`
 }
 
 type ListActiveTransactionsRow struct {
-	ID              pgtype.UUID        `db:"id" json:"id"`
-	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
-	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	ID              int64              `db:"id" json:"id"`
+	UserID          int64              `db:"user_id" json:"user_id"`
+	CategoryID      int64              `db:"category_id" json:"category_id"`
 	Type            string             `db:"type" json:"type"`
 	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
 	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
 	Title           string             `db:"title" json:"title"`
-	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	ClientRequestID int64              `db:"client_request_id" json:"client_request_id"`
 	RequestHash     string             `db:"request_hash" json:"request_hash"`
-	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
-	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	CreatedBy       int64              `db:"created_by" json:"created_by"`
+	UpdatedBy       int64              `db:"updated_by" json:"updated_by"`
 	IsDelete        bool               `db:"is_delete" json:"is_delete"`
 	Version         int32              `db:"version" json:"version"`
 	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
@@ -393,7 +391,7 @@ LIMIT $6
 `
 
 type ListDailySummariesParams struct {
-	UserID     pgtype.UUID `db:"user_id" json:"user_id"`
+	UserID     int64       `db:"user_id" json:"user_id"`
 	StartDate  pgtype.Date `db:"start_date" json:"start_date"`
 	EndDate    pgtype.Date `db:"end_date" json:"end_date"`
 	HasCursor  bool        `db:"has_cursor" json:"has_cursor"`
@@ -444,36 +442,36 @@ WHERE t.user_id = $1
   AND ($4::text = '' OR t.type = $4)
   AND (NOT $5::boolean OR t.category_id = $6)
   AND (NOT $7::boolean OR (t.updated_at, t.id) <
-      ($8::timestamptz, $9::uuid))
+      ($8::timestamptz, $9::bigint))
 ORDER BY t.updated_at DESC, t.id DESC
 LIMIT $10
 `
 
 type ListDeletedTransactionsParams struct {
-	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	UserID          int64              `db:"user_id" json:"user_id"`
 	StartDate       pgtype.Date        `db:"start_date" json:"start_date"`
 	EndDate         pgtype.Date        `db:"end_date" json:"end_date"`
 	FilterType      string             `db:"filter_type" json:"filter_type"`
 	HasCategory     bool               `db:"has_category" json:"has_category"`
-	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	CategoryID      int64              `db:"category_id" json:"category_id"`
 	HasCursor       bool               `db:"has_cursor" json:"has_cursor"`
 	CursorUpdatedAt pgtype.Timestamptz `db:"cursor_updated_at" json:"cursor_updated_at"`
-	CursorID        pgtype.UUID        `db:"cursor_id" json:"cursor_id"`
+	CursorID        int64              `db:"cursor_id" json:"cursor_id"`
 	PageSize        int32              `db:"page_size" json:"page_size"`
 }
 
 type ListDeletedTransactionsRow struct {
-	ID              pgtype.UUID        `db:"id" json:"id"`
-	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
-	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	ID              int64              `db:"id" json:"id"`
+	UserID          int64              `db:"user_id" json:"user_id"`
+	CategoryID      int64              `db:"category_id" json:"category_id"`
 	Type            string             `db:"type" json:"type"`
 	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
 	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
 	Title           string             `db:"title" json:"title"`
-	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	ClientRequestID int64              `db:"client_request_id" json:"client_request_id"`
 	RequestHash     string             `db:"request_hash" json:"request_hash"`
-	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
-	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	CreatedBy       int64              `db:"created_by" json:"created_by"`
+	UpdatedBy       int64              `db:"updated_by" json:"updated_by"`
 	IsDelete        bool               `db:"is_delete" json:"is_delete"`
 	Version         int32              `db:"version" json:"version"`
 	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
@@ -542,14 +540,14 @@ ORDER BY t.type ASC, amount DESC, t.category_id ASC
 `
 
 type ListReportCategoryBreakdownParams struct {
-	UserID    pgtype.UUID `db:"user_id" json:"user_id"`
+	UserID    int64       `db:"user_id" json:"user_id"`
 	StartDate pgtype.Date `db:"start_date" json:"start_date"`
 	EndDate   pgtype.Date `db:"end_date" json:"end_date"`
 }
 
 type ListReportCategoryBreakdownRow struct {
 	Type       string         `db:"type" json:"type"`
-	CategoryID pgtype.UUID    `db:"category_id" json:"category_id"`
+	CategoryID int64          `db:"category_id" json:"category_id"`
 	Name       string         `db:"name" json:"name"`
 	Amount     pgtype.Numeric `db:"amount" json:"amount"`
 }
@@ -593,7 +591,7 @@ ORDER BY period_start ASC
 
 type ListReportPeriodBreakdownParams struct {
 	GroupBy   string      `db:"group_by" json:"group_by"`
-	UserID    pgtype.UUID `db:"user_id" json:"user_id"`
+	UserID    int64       `db:"user_id" json:"user_id"`
 	StartDate pgtype.Date `db:"start_date" json:"start_date"`
 	EndDate   pgtype.Date `db:"end_date" json:"end_date"`
 }
@@ -648,14 +646,14 @@ ORDER BY type ASC, amount DESC, category_id ASC
 `
 
 type ListTopReportCategoriesParams struct {
-	UserID    pgtype.UUID `db:"user_id" json:"user_id"`
+	UserID    int64       `db:"user_id" json:"user_id"`
 	StartDate pgtype.Date `db:"start_date" json:"start_date"`
 	EndDate   pgtype.Date `db:"end_date" json:"end_date"`
 }
 
 type ListTopReportCategoriesRow struct {
 	Type       string         `db:"type" json:"type"`
-	CategoryID pgtype.UUID    `db:"category_id" json:"category_id"`
+	CategoryID int64          `db:"category_id" json:"category_id"`
 	Name       string         `db:"name" json:"name"`
 	Amount     pgtype.Numeric `db:"amount" json:"amount"`
 }
@@ -692,8 +690,8 @@ FOR UPDATE
 `
 
 type LockScopedCategoryForTransactionParams struct {
-	CategoryID pgtype.UUID `db:"category_id" json:"category_id"`
-	UserID     pgtype.UUID `db:"user_id" json:"user_id"`
+	CategoryID int64 `db:"category_id" json:"category_id"`
+	UserID     int64 `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) LockScopedCategoryForTransaction(ctx context.Context, arg LockScopedCategoryForTransactionParams) (Category, error) {
@@ -725,10 +723,10 @@ RETURNING id, user_id, category_id, type, amount, transaction_date, title, clien
 `
 
 type RestoreTransactionParams struct {
-	ActorUserID     pgtype.UUID `db:"actor_user_id" json:"actor_user_id"`
-	ID              pgtype.UUID `db:"id" json:"id"`
-	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
-	ExpectedVersion int32       `db:"expected_version" json:"expected_version"`
+	ActorUserID     int64 `db:"actor_user_id" json:"actor_user_id"`
+	ID              int64 `db:"id" json:"id"`
+	UserID          int64 `db:"user_id" json:"user_id"`
+	ExpectedVersion int32 `db:"expected_version" json:"expected_version"`
 }
 
 func (q *Queries) RestoreTransaction(ctx context.Context, arg RestoreTransactionParams) (Transaction, error) {
@@ -769,10 +767,10 @@ RETURNING id, user_id, category_id, type, amount, transaction_date, title, clien
 `
 
 type SoftDeleteTransactionParams struct {
-	ActorUserID     pgtype.UUID `db:"actor_user_id" json:"actor_user_id"`
-	ID              pgtype.UUID `db:"id" json:"id"`
-	UserID          pgtype.UUID `db:"user_id" json:"user_id"`
-	ExpectedVersion int32       `db:"expected_version" json:"expected_version"`
+	ActorUserID     int64 `db:"actor_user_id" json:"actor_user_id"`
+	ID              int64 `db:"id" json:"id"`
+	UserID          int64 `db:"user_id" json:"user_id"`
+	ExpectedVersion int32 `db:"expected_version" json:"expected_version"`
 }
 
 func (q *Queries) SoftDeleteTransaction(ctx context.Context, arg SoftDeleteTransactionParams) (Transaction, error) {
@@ -817,14 +815,14 @@ RETURNING id, user_id, category_id, type, amount, transaction_date, title, clien
 `
 
 type UpdateTransactionParams struct {
-	CategoryID      pgtype.UUID    `db:"category_id" json:"category_id"`
+	CategoryID      int64          `db:"category_id" json:"category_id"`
 	Type            string         `db:"type" json:"type"`
 	Amount          pgtype.Numeric `db:"amount" json:"amount"`
 	TransactionDate pgtype.Date    `db:"transaction_date" json:"transaction_date"`
 	Title           string         `db:"title" json:"title"`
-	ActorUserID     pgtype.UUID    `db:"actor_user_id" json:"actor_user_id"`
-	ID              pgtype.UUID    `db:"id" json:"id"`
-	UserID          pgtype.UUID    `db:"user_id" json:"user_id"`
+	ActorUserID     int64          `db:"actor_user_id" json:"actor_user_id"`
+	ID              int64          `db:"id" json:"id"`
+	UserID          int64          `db:"user_id" json:"user_id"`
 	ExpectedVersion int32          `db:"expected_version" json:"expected_version"`
 }
 

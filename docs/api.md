@@ -5,7 +5,7 @@ Base /api/v1. Operasi terlindungi memakai access JWT Bearer dan otorisasi sisi s
 Ini adalah panduan desain; Issue 004 menghasilkan api/openapi.yaml tervalidasi dan interface hasil generate sebelum implementasi domain.
 Nama JSON snake_case kecuali boolean isDelete yang diminta. Go IsDelete dipetakan ke SQL is_delete.
 Uang memakai string desimal eksak, misalnya "43500.00"; jumlah unsigned cocok dengan ^[0-9]+\.[0-9]{2}$, sedangkan difference boleh negatif.
-Tanggal YYYY-MM-DD, timestamp UTC RFC3339, ID UUID opak.
+Tanggal YYYY-MM-DD, timestamp UTC RFC3339, ID integer 64-bit positif.
 
 ## Otorisasi
 
@@ -96,10 +96,10 @@ POST /admin/users/6b3ab04b-22cb-4777-b3ec-15f3247b123d/transactions
 {
   "transaction_date": "2026-09-08",
   "type": "expense",
-  "category_id": "bda088ec-2694-473c-997d-cb93161456f1",
+  "category_id": 1,
   "amount": "43500.00",
   "title": "Belanja",
-  "client_request_id": "22f60b83-db97-48f7-b591-b403b93c4c12"
+  "client_request_id": 1001
 }
 ```
 
@@ -111,7 +111,7 @@ Respons 201 ilustratif:
     "user_id": "6b3ab04b-22cb-4777-b3ec-15f3247b123d",
     "transaction_date": "2026-09-08",
     "type": "expense",
-    "category_id": "bda088ec-2694-473c-997d-cb93161456f1",
+    "category_id": 1,
     "amount": "43500.00",
     "title": "Belanja",
     "isDelete": false,

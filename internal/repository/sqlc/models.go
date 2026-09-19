@@ -9,11 +9,11 @@ import (
 )
 
 type AdminAccessEvent struct {
-	ID           pgtype.UUID        `db:"id" json:"id"`
-	ActorUserID  pgtype.UUID        `db:"actor_user_id" json:"actor_user_id"`
-	TargetUserID pgtype.UUID        `db:"target_user_id" json:"target_user_id"`
+	ID           int64              `db:"id" json:"id"`
+	ActorUserID  int64              `db:"actor_user_id" json:"actor_user_id"`
+	TargetUserID *int64             `db:"target_user_id" json:"target_user_id"`
 	ResourceType string             `db:"resource_type" json:"resource_type"`
-	ResourceID   pgtype.UUID        `db:"resource_id" json:"resource_id"`
+	ResourceID   *int64             `db:"resource_id" json:"resource_id"`
 	Action       string             `db:"action" json:"action"`
 	Outcome      string             `db:"outcome" json:"outcome"`
 	RequestID    string             `db:"request_id" json:"request_id"`
@@ -22,8 +22,8 @@ type AdminAccessEvent struct {
 }
 
 type Category struct {
-	ID        pgtype.UUID        `db:"id" json:"id"`
-	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	ID        int64              `db:"id" json:"id"`
+	UserID    int64              `db:"user_id" json:"user_id"`
 	Type      string             `db:"type" json:"type"`
 	Name      string             `db:"name" json:"name"`
 	IsDelete  bool               `db:"is_delete" json:"is_delete"`
@@ -33,28 +33,28 @@ type Category struct {
 }
 
 type RefreshSession struct {
-	ID         pgtype.UUID        `db:"id" json:"id"`
-	UserID     pgtype.UUID        `db:"user_id" json:"user_id"`
-	FamilyID   pgtype.UUID        `db:"family_id" json:"family_id"`
+	ID         int64              `db:"id" json:"id"`
+	UserID     int64              `db:"user_id" json:"user_id"`
+	FamilyID   int64              `db:"family_id" json:"family_id"`
 	TokenHash  string             `db:"token_hash" json:"token_hash"`
 	ExpiresAt  pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
 	RevokedAt  pgtype.Timestamptz `db:"revoked_at" json:"revoked_at"`
-	ReplacedBy pgtype.UUID        `db:"replaced_by" json:"replaced_by"`
+	ReplacedBy *int64             `db:"replaced_by" json:"replaced_by"`
 	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
 type Transaction struct {
-	ID              pgtype.UUID        `db:"id" json:"id"`
-	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
-	CategoryID      pgtype.UUID        `db:"category_id" json:"category_id"`
+	ID              int64              `db:"id" json:"id"`
+	UserID          int64              `db:"user_id" json:"user_id"`
+	CategoryID      int64              `db:"category_id" json:"category_id"`
 	Type            string             `db:"type" json:"type"`
 	Amount          pgtype.Numeric     `db:"amount" json:"amount"`
 	TransactionDate pgtype.Date        `db:"transaction_date" json:"transaction_date"`
 	Title           string             `db:"title" json:"title"`
-	ClientRequestID pgtype.UUID        `db:"client_request_id" json:"client_request_id"`
+	ClientRequestID int64              `db:"client_request_id" json:"client_request_id"`
 	RequestHash     string             `db:"request_hash" json:"request_hash"`
-	CreatedBy       pgtype.UUID        `db:"created_by" json:"created_by"`
-	UpdatedBy       pgtype.UUID        `db:"updated_by" json:"updated_by"`
+	CreatedBy       int64              `db:"created_by" json:"created_by"`
+	UpdatedBy       int64              `db:"updated_by" json:"updated_by"`
 	IsDelete        bool               `db:"is_delete" json:"is_delete"`
 	Version         int32              `db:"version" json:"version"`
 	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
@@ -62,7 +62,7 @@ type Transaction struct {
 }
 
 type User struct {
-	ID           pgtype.UUID        `db:"id" json:"id"`
+	ID           int64              `db:"id" json:"id"`
 	Email        string             `db:"email" json:"email"`
 	PasswordHash string             `db:"password_hash" json:"password_hash"`
 	Role         string             `db:"role" json:"role"`

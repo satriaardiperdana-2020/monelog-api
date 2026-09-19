@@ -1,6 +1,5 @@
 -- name: InsertAdminAccessEvent :one
 INSERT INTO admin_access_events (
-    id,
     actor_user_id,
     target_user_id,
     resource_type,
@@ -11,7 +10,6 @@ INSERT INTO admin_access_events (
     safe_metadata
 )
 VALUES (
-    sqlc.arg(id),
     sqlc.arg(actor_user_id),
     sqlc.narg(target_user_id),
     sqlc.arg(resource_type),

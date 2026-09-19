@@ -136,7 +136,7 @@ Templat (ISSUE-011) dan Drive/backup (ISSUE-012) berada setelah MVP/release terk
 
 | Schema | Bentuk |
 | --- | --- |
-| `UUID` | string, format `uuid` |
+| `BIGINT` identifier | integer, format `int64` |
 | `LocalDate` | string, format `date`, `YYYY-MM-DD` |
 | `UTCDateTime` | string, format `date-time`, timestamp UTC RFC3339 |
 | `Version` | integer int32, minimum 1 |
@@ -360,7 +360,7 @@ git diff --check
 - Semua field uang dihasilkan sebagai Go string atau named string type, tidak sebagai float32/float64.
 - Missing/malformed If-Match → 400; stale version/lifecycle → 409; owner mismatch/missing → 404.
 - Cursor rusak/lintas actor-mode-owner-filter → 400; list akhir memakai `next_cursor: null`.
-- Date range invalid atau lebih dari 366 hari → 422; UUID/boolean/cursor syntax rusak → 400.
+- Date range invalid atau lebih dari 366 hari → 422; ID integer/boolean/cursor syntax rusak → 400.
 - Empty totals memakai string `"0.00"`; report, daily summary, dan export planned tidak menerima `isDelete=true`.
 - Unknown request fields, owner override, role injection pada public/profile, dan lifecycle override ditolak.
 - Planned category/transaction/report/admin/export route tetap tidak terdaftar pada runtime sampai issue implementasinya selesai.

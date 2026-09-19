@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
@@ -17,11 +16,11 @@ import (
 
 type transactionService interface {
 	List(context.Context, service.TransactionScope, service.TransactionFilter) (service.TransactionPage, error)
-	Get(context.Context, service.TransactionScope, uuid.UUID, bool) (service.Transaction, error)
+	Get(context.Context, service.TransactionScope, int64, bool) (service.Transaction, error)
 	Create(context.Context, service.TransactionScope, service.TransactionInput) (service.CreateTransactionResult, error)
-	Update(context.Context, service.TransactionScope, uuid.UUID, service.TransactionInput) (service.Transaction, error)
-	SoftDeleteTransaction(context.Context, service.TransactionScope, uuid.UUID, int32) error
-	RestoreTransaction(context.Context, service.TransactionScope, uuid.UUID, int32) (service.Transaction, error)
+	Update(context.Context, service.TransactionScope, int64, service.TransactionInput) (service.Transaction, error)
+	SoftDeleteTransaction(context.Context, service.TransactionScope, int64, int32) error
+	RestoreTransaction(context.Context, service.TransactionScope, int64, int32) (service.Transaction, error)
 	ListDailySummaries(context.Context, service.TransactionScope, string, string, int32, string) (service.DailySummaryPage, error)
 	GetReportSummary(context.Context, service.TransactionScope, service.ReportFilter) (service.ReportSummary, error)
 	GetReportBreakdown(context.Context, service.TransactionScope, service.ReportFilter) (service.ReportBreakdown, error)
@@ -30,7 +29,7 @@ type transactionService interface {
 func (h *Transactions) Summary(c *echo.Context, p api.GetReportSummaryParams) error {
 	return h.summary(c, h.personalScope(c), service.ReportFilter{Range: string(p.Range), StartDate: dateParam(p.StartDate), EndDate: dateParam(p.EndDate)})
 }
-func (h *Transactions) AdminSummary(c *echo.Context, owner uuid.UUID, p api.AdminGetReportSummaryParams) error {
+func (h *Transactions) AdminSummary(c *echo.Context, owner int64, p api.AdminGetReportSummaryParams) error {
 	return h.summary(c, h.adminScope(c, owner), service.ReportFilter{Range: string(p.Range), StartDate: dateParam(p.StartDate), EndDate: dateParam(p.EndDate)})
 }
 func (h *Transactions) summary(c *echo.Context, scope service.TransactionScope, filter service.ReportFilter) error {
@@ -43,7 +42,7 @@ func (h *Transactions) summary(c *echo.Context, scope service.TransactionScope, 
 func (h *Transactions) Breakdown(c *echo.Context, p api.GetReportBreakdownParams) error {
 	return h.breakdown(c, h.personalScope(c), service.ReportFilter{Range: string(p.Range), StartDate: dateParam(p.StartDate), EndDate: dateParam(p.EndDate), GroupBy: string(p.GroupBy)})
 }
-func (h *Transactions) AdminBreakdown(c *echo.Context, owner uuid.UUID, p api.AdminGetReportBreakdownParams) error {
+func (h *Transactions) AdminBreakdown(c *echo.Context, owner int64, p api.AdminGetReportBreakdownParams) error {
 	return h.breakdown(c, h.adminScope(c, owner), service.ReportFilter{Range: string(p.Range), StartDate: dateParam(p.StartDate), EndDate: dateParam(p.EndDate), GroupBy: string(p.GroupBy)})
 }
 func (h *Transactions) breakdown(c *echo.Context, scope service.TransactionScope, filter service.ReportFilter) error {
@@ -87,7 +86,7 @@ func NewTransactions(transactionService transactionService) *Transactions {
 func (h *Transactions) List(c *echo.Context, params api.ListTransactionsParams) error {
 	return h.list(c, h.personalScope(c), transactionFilter(params.StartDate.Time, params.EndDate.Time, params.Type, params.CategoryId, params.IsDelete, params.Limit, params.Cursor))
 }
-func (h *Transactions) AdminList(c *echo.Context, owner uuid.UUID, params api.AdminListTransactionsParams) error {
+func (h *Transactions) AdminList(c *echo.Context, owner int64, params api.AdminListTransactionsParams) error {
 	return h.list(c, h.adminScope(c, owner), transactionFilter(params.StartDate.Time, params.EndDate.Time, params.Type, params.CategoryId, params.IsDelete, params.Limit, params.Cursor))
 }
 func (h *Transactions) list(c *echo.Context, scope service.TransactionScope, filter service.TransactionFilter) error {
@@ -98,13 +97,13 @@ func (h *Transactions) list(c *echo.Context, scope service.TransactionScope, fil
 	return c.JSON(http.StatusOK, api.TransactionListResponse{Data: transactionPayloads(page.Items), Page: api.Page{NextCursor: page.NextCursor}})
 }
 
-func (h *Transactions) Get(c *echo.Context, id uuid.UUID, params api.GetTransactionParams) error {
+func (h *Transactions) Get(c *echo.Context, id int64, params api.GetTransactionParams) error {
 	return h.get(c, h.personalScope(c), id, params.IsDelete != nil && *params.IsDelete)
 }
-func (h *Transactions) AdminGet(c *echo.Context, owner, id uuid.UUID, params api.AdminGetTransactionParams) error {
+func (h *Transactions) AdminGet(c *echo.Context, owner, id int64, params api.AdminGetTransactionParams) error {
 	return h.get(c, h.adminScope(c, owner), id, params.IsDelete != nil && *params.IsDelete)
 }
-func (h *Transactions) get(c *echo.Context, scope service.TransactionScope, id uuid.UUID, deleted bool) error {
+func (h *Transactions) get(c *echo.Context, scope service.TransactionScope, id int64, deleted bool) error {
 	item, err := h.service.Get(c.Request().Context(), scope, id, deleted)
 	if err != nil {
 		return h.writeError(c, err)
@@ -113,7 +112,7 @@ func (h *Transactions) get(c *echo.Context, scope service.TransactionScope, id u
 }
 
 func (h *Transactions) Create(c *echo.Context) error { return h.create(c, h.personalScope(c)) }
-func (h *Transactions) AdminCreate(c *echo.Context, owner uuid.UUID) error {
+func (h *Transactions) AdminCreate(c *echo.Context, owner int64) error {
 	return h.create(c, h.adminScope(c, owner))
 }
 func (h *Transactions) create(c *echo.Context, scope service.TransactionScope) error {
@@ -132,13 +131,13 @@ func (h *Transactions) create(c *echo.Context, scope service.TransactionScope) e
 	return c.JSON(status, api.TransactionResponse{Data: transactionPayload(result.Transaction)})
 }
 
-func (h *Transactions) Update(c *echo.Context, id uuid.UUID) error {
+func (h *Transactions) Update(c *echo.Context, id int64) error {
 	return h.update(c, h.personalScope(c), id)
 }
-func (h *Transactions) AdminUpdate(c *echo.Context, owner, id uuid.UUID) error {
+func (h *Transactions) AdminUpdate(c *echo.Context, owner, id int64) error {
 	return h.update(c, h.adminScope(c, owner), id)
 }
-func (h *Transactions) update(c *echo.Context, scope service.TransactionScope, id uuid.UUID) error {
+func (h *Transactions) update(c *echo.Context, scope service.TransactionScope, id int64) error {
 	var request api.TransactionUpdateRequest
 	if err := decodeJSON(c, &request); err != nil {
 		return categoryBadRequest(c)
@@ -150,13 +149,13 @@ func (h *Transactions) update(c *echo.Context, scope service.TransactionScope, i
 	return c.JSON(http.StatusOK, api.TransactionResponse{Data: transactionPayload(item)})
 }
 
-func (h *Transactions) Delete(c *echo.Context, id uuid.UUID, ifMatch string) error {
+func (h *Transactions) Delete(c *echo.Context, id int64, ifMatch string) error {
 	return h.delete(c, h.personalScope(c), id, ifMatch)
 }
-func (h *Transactions) AdminDelete(c *echo.Context, owner, id uuid.UUID, ifMatch string) error {
+func (h *Transactions) AdminDelete(c *echo.Context, owner, id int64, ifMatch string) error {
 	return h.delete(c, h.adminScope(c, owner), id, ifMatch)
 }
-func (h *Transactions) delete(c *echo.Context, scope service.TransactionScope, id uuid.UUID, ifMatch string) error {
+func (h *Transactions) delete(c *echo.Context, scope service.TransactionScope, id int64, ifMatch string) error {
 	version, err := ifMatchVersion(ifMatch)
 	if err != nil {
 		return categoryBadRequest(c)
@@ -167,13 +166,13 @@ func (h *Transactions) delete(c *echo.Context, scope service.TransactionScope, i
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *Transactions) Restore(c *echo.Context, id uuid.UUID) error {
+func (h *Transactions) Restore(c *echo.Context, id int64) error {
 	return h.restore(c, h.personalScope(c), id)
 }
-func (h *Transactions) AdminRestore(c *echo.Context, owner, id uuid.UUID) error {
+func (h *Transactions) AdminRestore(c *echo.Context, owner, id int64) error {
 	return h.restore(c, h.adminScope(c, owner), id)
 }
-func (h *Transactions) restore(c *echo.Context, scope service.TransactionScope, id uuid.UUID) error {
+func (h *Transactions) restore(c *echo.Context, scope service.TransactionScope, id int64) error {
 	var request api.VersionRequest
 	if err := decodeJSON(c, &request); err != nil {
 		return categoryBadRequest(c)
@@ -188,7 +187,7 @@ func (h *Transactions) restore(c *echo.Context, scope service.TransactionScope, 
 func (h *Transactions) Daily(c *echo.Context, params api.ListDailySummariesParams) error {
 	return h.daily(c, h.personalScope(c), params.StartDate.Time, params.EndDate.Time, params.Limit, params.Cursor)
 }
-func (h *Transactions) AdminDaily(c *echo.Context, owner uuid.UUID, params api.AdminListDailySummariesParams) error {
+func (h *Transactions) AdminDaily(c *echo.Context, owner int64, params api.AdminListDailySummariesParams) error {
 	return h.daily(c, h.adminScope(c, owner), params.StartDate.Time, params.EndDate.Time, params.Limit, params.Cursor)
 }
 func (h *Transactions) daily(c *echo.Context, scope service.TransactionScope, start, end time.Time, limit *int32, cursor *string) error {
@@ -207,7 +206,7 @@ func (h *Transactions) personalScope(c *echo.Context) service.TransactionScope {
 	actor, _ := middleware.Actor(c.Request().Context())
 	return service.TransactionScope{Actor: actor, Owner: actor.UserID, RequestID: requestID(c)}
 }
-func (h *Transactions) adminScope(c *echo.Context, owner uuid.UUID) service.TransactionScope {
+func (h *Transactions) adminScope(c *echo.Context, owner int64) service.TransactionScope {
 	actor, _ := middleware.Actor(c.Request().Context())
 	return service.TransactionScope{Actor: actor, Owner: owner, Admin: true, RequestID: requestID(c)}
 }
@@ -237,7 +236,7 @@ func (h *Transactions) writeError(c *echo.Context, err error) error {
 	}
 }
 
-func transactionFilter(start, end time.Time, kind *api.TransactionType, categoryID *uuid.UUID, deleted *bool, limit *int32, cursor *string) service.TransactionFilter {
+func transactionFilter(start, end time.Time, kind *api.TransactionType, categoryID *int64, deleted *bool, limit *int32, cursor *string) service.TransactionFilter {
 	filter := service.TransactionFilter{StartDate: start.Format(time.DateOnly), EndDate: end.Format(time.DateOnly), Limit: valueOr(limit, 0), Cursor: valueOr(cursor, "")}
 	if kind != nil {
 		filter.Type = string(*kind)
